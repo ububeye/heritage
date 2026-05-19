@@ -36,6 +36,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Explore'),
         actions: [
           BlocBuilder<ExploreCubit, ExploreState>(

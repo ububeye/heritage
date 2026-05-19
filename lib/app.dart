@@ -57,24 +57,6 @@ class StoneTownApp extends StatelessWidget {
           '/home': (context) => const HomeScreen(),
           '/admin': (context) => const AdminDashboardScreen(),
         },
-        builder: (context, child) {
-          return BlocListener<AuthCubit, AuthState>(
-            listener: (context, state) {
-              if (state.status == AuthStatus.unauthenticated) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/welcome',
-                  (route) => false,
-                );
-              } else if (state.status == AuthStatus.authenticated) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/home',
-                  (route) => false,
-                );
-              }
-            },
-            child: child,
-          );
-        },
       ),
     );
   }

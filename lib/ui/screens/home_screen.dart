@@ -82,6 +82,7 @@ class _HomeContent extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Stone Town Guide'),
         actions: [
           IconButton(
