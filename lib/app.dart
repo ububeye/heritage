@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/theme/app_theme.dart';
 import 'blocs/auth/auth_cubit.dart';
-import 'blocs/auth/auth_state.dart';
 import 'blocs/site_list/site_list_cubit.dart';
 import 'blocs/site_detail/site_detail_cubit.dart';
 import 'blocs/navigation/navigation_cubit.dart';
 import 'blocs/language/language_cubit.dart';
+import 'blocs/localization/localization_cubit.dart';
 import 'blocs/premium/premium_cubit.dart';
 import 'blocs/explore/explore_cubit.dart';
+import 'blocs/user/user_cubit.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/tts_service.dart';
 import 'ui/screens/splash_screen.dart';
 import 'ui/screens/welcome_screen.dart';
 import 'ui/screens/home_screen.dart';
-import 'ui/screens/admin/admin_dashboard_screen.dart';
+import 'ui/screens/admin/admin_shell.dart';
 
 class StoneTownApp extends StatelessWidget {
   const StoneTownApp({super.key});
@@ -40,11 +41,17 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<LanguageCubit>(
           create: (_) => LanguageCubit(),
         ),
+        BlocProvider<LocalizationCubit>(
+          create: (_) => LocalizationCubit()..loadTranslations(),
+        ),
         BlocProvider<PremiumCubit>(
           create: (_) => PremiumCubit(),
         ),
         BlocProvider<ExploreCubit>(
           create: (_) => ExploreCubit(),
+        ),
+        BlocProvider<UserCubit>(
+          create: (_) => UserCubit(),
         ),
       ],
       child: MaterialApp(
@@ -55,7 +62,7 @@ class StoneTownApp extends StatelessWidget {
         routes: {
           '/welcome': (context) => const WelcomeScreen(),
           '/home': (context) => const HomeScreen(),
-          '/admin': (context) => const AdminDashboardScreen(),
+          '/admin': (context) => const AdminShell(),
         },
       ),
     );

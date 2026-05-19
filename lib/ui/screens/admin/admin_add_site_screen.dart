@@ -104,6 +104,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Add Site'),
       ),
       body: Form(

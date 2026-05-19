@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/auth_service.dart';
+import '../../data/services/shared_prefs_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -16,6 +17,12 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final userModel = _authService.getCurrentUserModel();
       if (userModel != null) {
+        // Save to SharedPreferences for auto-login
+        await SharedPrefsService.instance.setUserLoggedIn(
+          true,
+          userId: userModel.id,
+          userRole: userModel.role.name,
+        );
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           user: userModel,
@@ -37,9 +44,17 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final user = await _authService.signInWithEmail(email, password);
       if (user != null) {
+        // Save to SharedPreferences for auto-login
+        await SharedPrefsService.instance.setUserLoggedIn(
+          true,
+          userId: user.id,
+          userRole: user.role.name,
+        );
+        // Reload to ensure latest user data/claims
+        final refreshedUser = await _authService.reloadUser();
         emit(state.copyWith(
           status: AuthStatus.authenticated,
-          user: user,
+          user: refreshedUser ?? user,
         ));
       } else {
         emit(state.copyWith(
@@ -61,6 +76,12 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final user = await _authService.signUpWithEmail(email, password);
       if (user != null) {
+        // Save to SharedPreferences for auto-login
+        await SharedPrefsService.instance.setUserLoggedIn(
+          true,
+          userId: user.id,
+          userRole: user.role.name,
+        );
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           user: user,
@@ -85,6 +106,12 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final user = await _authService.signInWithGoogle();
       if (user != null) {
+        // Save to SharedPreferences for auto-login
+        await SharedPrefsService.instance.setUserLoggedIn(
+          true,
+          userId: user.id,
+          userRole: user.role.name,
+        );
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           user: user,
@@ -105,6 +132,8 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await _authService.signOut();
+      // Clear saved user data
+      await SharedPrefsService.instance.setUserLoggedIn(false);
       emit(const AuthState(status: AuthStatus.unauthenticated));
     } catch (e) {
       emit(state.copyWith(

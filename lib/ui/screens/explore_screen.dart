@@ -6,6 +6,7 @@ import '../../blocs/site_list/site_list_cubit.dart';
 import '../../blocs/site_list/site_list_state.dart';
 import '../../blocs/explore/explore_cubit.dart';
 import '../../blocs/language/language_cubit.dart';
+import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import '../widgets/site_card.dart';
 import '../widgets/featured_site_card.dart';
@@ -33,100 +34,116 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Explore'),
-        actions: [
-          BlocBuilder<ExploreCubit, ExploreState>(
-            builder: (context, state) {
-              return IconButton(
-                icon: Icon(state.isMapView ? Icons.list : Icons.map),
-                onPressed: () => context.read<ExploreCubit>().toggleMapView(),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: SearchBarWidget(
-              controller: _searchController,
-              onChanged: (query) => context.read<SiteListCubit>().search(query),
-            ),
-          ),
-          const SizedBox(height: 8),
-          CategoryChips(
-            categories: AppConstants.siteCategories,
-            selectedCategory: _selectedCategory,
-            onSelected: (category) {
-              setState(() => _selectedCategory = category);
-              context.read<SiteListCubit>().filterByCategory(category);
-            },
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: BlocBuilder<SiteListCubit, SiteListState>(
-              builder: (context, state) {
-                if (state.status == SiteListStatus.loading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.accent),
+    return BlocBuilder<LocalizationCubit, LocalizationState>(
+      builder: (context, locState) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: Text(_tr(locState, 'explore')),
+            actions: [
+              BlocBuilder<ExploreCubit, ExploreState>(
+                builder: (context, state) {
+                  return IconButton(
+                    icon: Icon(state.isMapView ? Icons.list : Icons.map),
+                    onPressed: () => context.read<ExploreCubit>().toggleMapView(),
                   );
-                }
-
-                final sites = state.filteredSites;
-                if (sites.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off, size: 48, color: AppColors.textHint),
-                        SizedBox(height: 16),
-                        Text(
-                          'No places found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                },
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: SearchBarWidget(
+                  controller: _searchController,
+                  hintText: _tr(locState, 'search_places'),
+                  onChanged: (query) => context.read<SiteListCubit>().search(query),
+                ),
+              ),
+              const SizedBox(height: 8),
+              BlocBuilder<LocalizationCubit, LocalizationState>(
+                builder: (context, locState) {
+                  return CategoryChips(
+                    categories: AppConstants.siteCategories,
+                    selectedCategory: _selectedCategory,
+                    onSelected: (category) {
+                      setState(() => _selectedCategory = category);
+                      context.read<SiteListCubit>().filterByCategory(category);
+                    },
+                    locState: locState,
                   );
-                }
-
-                return BlocBuilder<ExploreCubit, ExploreState>(
-                  builder: (context, exploreState) {
-                    final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
-
-                    if (exploreState.isMapView) {
-                      return _MapView(
-                        sites: sites,
-                        uiLanguage: uiLanguage,
-                        onSiteTap: (site) => _navigateToDetail(site),
-                        onNavigate: (site) => _navigateToNav(site),
+                },
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: BlocBuilder<SiteListCubit, SiteListState>(
+                  builder: (context, state) {
+                    if (state.status == SiteListStatus.loading) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: AppColors.accent),
                       );
                     }
 
-                    return _ListView(
-                      sites: sites,
-                      uiLanguage: uiLanguage,
-                      featuredSite: sites.isNotEmpty ? sites.first : null,
-                      onSiteTap: (site) => _navigateToDetail(site),
-                      onNavigate: (site) => _navigateToNav(site),
-                      onFeaturedNavigate: (site) => _navigateToNav(site),
-                      onFeaturedAudio: (site) => _navigateToDetail(site),
+                    final sites = state.filteredSites;
+                    if (sites.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.search_off, size: 48, color: AppColors.textHint),
+                            const SizedBox(height: 16),
+                            Text(
+                              _tr(locState, 'search_places'),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return BlocBuilder<ExploreCubit, ExploreState>(
+                      builder: (context, exploreState) {
+                        final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
+
+                        if (exploreState.isMapView) {
+                          return _MapView(
+                            sites: sites,
+                            uiLanguage: uiLanguage,
+                            onSiteTap: (site) => _navigateToDetail(site),
+                            onNavigate: (site) => _navigateToNav(site),
+                            locState: locState,
+                          );
+                        }
+
+                        return _ListView(
+                          sites: sites,
+                          uiLanguage: uiLanguage,
+                          featuredSite: sites.isNotEmpty ? sites.first : null,
+                          onSiteTap: (site) => _navigateToDetail(site),
+                          onNavigate: (site) => _navigateToNav(site),
+                          onFeaturedNavigate: (site) => _navigateToNav(site),
+                          onFeaturedAudio: (site) => _navigateToDetail(site),
+                          locState: locState,
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  String _tr(LocalizationState state, String key) {
+    return state.translations[key] ?? key;
   }
 
   void _navigateToDetail(SiteModel site) {
@@ -150,6 +167,7 @@ class _ListView extends StatelessWidget {
   final Function(SiteModel) onNavigate;
   final Function(SiteModel) onFeaturedNavigate;
   final Function(SiteModel) onFeaturedAudio;
+  final LocalizationState locState;
 
   const _ListView({
     required this.sites,
@@ -159,7 +177,12 @@ class _ListView extends StatelessWidget {
     required this.onNavigate,
     required this.onFeaturedNavigate,
     required this.onFeaturedAudio,
+    required this.locState,
   });
+
+  String _tr(LocalizationState state, String key) {
+    return state.translations[key] ?? key;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,11 +200,11 @@ class _ListView extends StatelessWidget {
             onStartAudio: () => onFeaturedAudio(featuredSite!),
           ),
           const SizedBox(height: 24),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Best Places',
-              style: TextStyle(
+              _tr(locState, 'best_places'),
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
@@ -262,13 +285,19 @@ class _MapView extends StatelessWidget {
   final String uiLanguage;
   final Function(SiteModel) onSiteTap;
   final Function(SiteModel) onNavigate;
+  final LocalizationState locState;
 
   const _MapView({
     required this.sites,
     required this.uiLanguage,
     required this.onSiteTap,
     required this.onNavigate,
+    required this.locState,
   });
+
+  String _tr(LocalizationState state, String key) {
+    return state.translations[key] ?? key;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -278,9 +307,9 @@ class _MapView extends StatelessWidget {
         children: [
           const Icon(Icons.map, size: 64, color: AppColors.textHint),
           const SizedBox(height: 16),
-          const Text(
-            'Map View',
-            style: TextStyle(
+          Text(
+            _tr(locState, 'view_on_map'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -294,7 +323,7 @@ class _MapView extends StatelessWidget {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => context.read<ExploreCubit>().setMapView(false),
-            child: const Text('Switch to List View'),
+            child: Text(_tr(locState, 'close')),
           ),
         ],
       ),

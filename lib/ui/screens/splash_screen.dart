@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
 import '../../blocs/auth/auth_cubit.dart';
+import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
+import '../../blocs/localization/localization_cubit.dart';
+import '../../data/models/user_model.dart';
 import 'welcome_screen.dart';
+import 'home_screen.dart';
+import 'admin/admin_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -24,7 +29,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1500),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -54,10 +59,36 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initialize() async {
     try {
+      // Load language and translations
       await context.read<LanguageCubit>().loadLanguage();
+      await context.read<LocalizationCubit>().loadTranslations();
+      // Check if user was previously logged in
       await context.read<AuthCubit>().checkAuthStatus();
     } catch (e) {
       // Continue even if there's an error
+    }
+  }
+
+  void _navigateBasedOnAuth(AuthState authState) {
+    if (!mounted) return;
+
+    if (authState.status == AuthStatus.authenticated && authState.user != null) {
+      // User is logged in - navigate to appropriate screen
+      if (authState.user!.role == UserRole.admin) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AdminShell()),
+        );
+      } else {
+        // For regular users, check premium offer status
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } else {
+      // User not logged in - show welcome screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      );
     }
   }
 
@@ -67,114 +98,108 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  void _navigateToWelcome() {
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primaryDark,
-              AppColors.primary,
-              AppColors.primary.withAlpha(204),
-            ],
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        // Navigate when auth state changes to authenticated/unauthenticated
+        if (state.status == AuthStatus.authenticated ||
+            state.status == AuthStatus.unauthenticated) {
+          _navigateBasedOnAuth(state);
+        }
+      },
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primaryDark,
+                AppColors.primary,
+                AppColors.primary.withAlpha(204),
+              ],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              // Navigate after animation reaches 80%
-              if (_controller.value > 0.8 && mounted) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _navigateToWelcome();
-                });
-              }
-
-              return Opacity(
-                opacity: _fadeAnimation.value,
-                child: Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Transform.translate(
-                        offset: Offset(0, _slideAnimation.value),
-                        child: Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(35),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(51),
-                                blurRadius: 30,
-                                offset: const Offset(0, 15),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.account_balance,
-                            size: 70,
-                            color: AppColors.primary,
+          child: SafeArea(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Transform.translate(
+                          offset: Offset(0, _slideAnimation.value),
+                          child: Container(
+                            width: 140,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(35),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(51),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 15),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.account_balance,
+                              size: 70,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 40),
-                      Transform.translate(
-                        offset: Offset(0, _slideAnimation.value),
-                        child: const Text(
-                          'Stone Town Guide',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
+                        const SizedBox(height: 40),
+                        Transform.translate(
+                          offset: Offset(0, _slideAnimation.value),
+                          child: const Text(
+                            'Stone Town Guide',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Transform.translate(
-                        offset: Offset(0, _slideAnimation.value),
-                        child: Text(
-                          'Explore Zanzibar\'s Heritage',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white.withAlpha(204),
-                            letterSpacing: 0.5,
+                        const SizedBox(height: 12),
+                        Transform.translate(
+                          offset: Offset(0, _slideAnimation.value),
+                          child: Text(
+                            'Explore Zanzibar\'s Heritage',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withAlpha(204),
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 80),
-                      Transform.translate(
-                        offset: Offset(0, _slideAnimation.value),
-                        child: SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
+                        const SizedBox(height: 80),
+                        Transform.translate(
+                          offset: Offset(0, _slideAnimation.value),
+                          child: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),

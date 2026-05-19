@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
-import '../../blocs/premium/premium_cubit.dart';
+import '../../blocs/localization/localization_cubit.dart';
 import 'login_screen.dart';
-import 'register_screen.dart';
 import 'upgrade_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -19,150 +19,170 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Settings'),
+        title: _buildLocalizedText('settings'),
       ),
       body: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _SectionTitle(title: 'Language'),
-              _SettingsCard(
+          return BlocBuilder<LocalizationCubit, LocalizationState>(
+            builder: (context, locState) {
+              return ListView(
+                padding: const EdgeInsets.all(16),
                 children: [
-                  _DropdownTile(
-                    icon: Icons.language,
-                    title: 'App Language',
-                    value: context.watch<LanguageCubit>().state.uiLanguage,
-                    items: const ['en', 'sw'],
-                    labels: const ['English', 'Swahili'],
-                    onChanged: (value) {
-                      if (value != null) {
-                        context.read<LanguageCubit>().setUiLanguage(value);
-                      }
-                    },
+                  _SectionTitle(title: _tr(locState, 'app_language')),
+                  _SettingsCard(
+                    children: [
+                      _DropdownTile(
+                        icon: Icons.language,
+                        title: _tr(locState, 'app_language'),
+                        subtitle: _tr(locState, 'choose_language'),
+                        value: locState.currentLanguage,
+                        items: const ['en', 'sw'],
+                        labels: [_tr(locState, 'english'), _tr(locState, 'swahili')],
+                        onChanged: (value) {
+                          if (value != null) {
+                            context.read<LocalizationCubit>().setLanguage(value);
+                          }
+                        },
+                      ),
+                      const Divider(height: 1),
+                      _DropdownTile(
+                        icon: Icons.record_voice_over,
+                        title: _tr(locState, 'audio_language'),
+                        subtitle: authState.isPremium
+                            ? _tr(locState, 'benefit_audio_tours')
+                            : _tr(locState, 'upgrade_for_full_audio'),
+                        value: context.watch<LanguageCubit>().state.audioLanguage,
+                        items: authState.isPremium
+                            ? AppConstants.ttsLanguages
+                            : AppConstants.freeTtsLanguages,
+                        labels: authState.isPremium
+                            ? const ['English', 'Swahili', 'French', 'German', 'Arabic', 'Italian', 'Spanish']
+                            : const ['English', 'Swahili'],
+                        enabled: authState.isPremium,
+                        onChanged: (value) {
+                          if (value != null && authState.isPremium) {
+                            context.read<LanguageCubit>().setAudioLanguage(value);
+                          } else if (!authState.isPremium) {
+                            _showUpgradeDialog(context, locState);
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                  const Divider(height: 1),
-                  _DropdownTile(
-                    icon: Icons.record_voice_over,
-                    title: 'Audio Language',
-                    value: context.watch<LanguageCubit>().state.audioLanguage,
-                    items: authState.isPremium
-                        ? AppConstants.ttsLanguages
-                        : AppConstants.freeTtsLanguages,
-                    labels: authState.isPremium
-                        ? const ['English', 'Swahili', 'French', 'German', 'Arabic', 'Italian', 'Spanish']
-                        : const ['English', 'Swahili'],
-                    enabled: authState.isPremium,
-                    onChanged: (value) {
-                      if (value != null && authState.isPremium) {
-                        context.read<LanguageCubit>().setAudioLanguage(value);
-                      } else if (!authState.isPremium) {
-                        _showUpgradeDialog(context);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _SectionTitle(title: 'Account'),
-              _SettingsCard(
-                children: [
-                  if (authState.isAuthenticated)
-                    ListTile(
-                      leading: const Icon(Icons.email, color: AppColors.primary),
-                      title: Text(authState.user?.email ?? ''),
-                      subtitle: Text(
-                        authState.isPremium ? 'Premium User' : 'Free User',
-                        style: TextStyle(
-                          color: authState.isPremium ? AppColors.success : AppColors.textSecondary,
+                  const SizedBox(height: 24),
+                  _SectionTitle(title: _tr(locState, 'account')),
+                  _SettingsCard(
+                    children: [
+                      if (authState.isAuthenticated)
+                        ListTile(
+                          leading: const Icon(Icons.email, color: AppColors.primary),
+                          title: Text(authState.user?.email ?? ''),
+                          subtitle: Text(
+                            authState.isPremium ? 'Premium User' : _tr(locState, 'account'),
+                            style: TextStyle(
+                              color: authState.isPremium ? AppColors.success : AppColors.textSecondary,
+                            ),
+                          ),
+                        )
+                      else
+                        ListTile(
+                          leading: const Icon(Icons.person_outline, color: AppColors.primary),
+                          title: _buildLocalizedText('login'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          ),
                         ),
-                      ),
-                    )
-                  else
-                    ListTile(
-                      leading: const Icon(Icons.person_outline, color: AppColors.primary),
-                      title: const Text('Not logged in'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      ),
-                    ),
-                  if (authState.isAuthenticated) ...[
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.logout, color: AppColors.error),
-                      title: const Text('Logout'),
-                      onTap: () => _showLogoutDialog(context),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 24),
-              if (!authState.isPremium) ...[
-                _SectionTitle(title: 'Subscription'),
-                _SettingsCard(
-                  children: [
-                    ListTile(
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
+                      if (authState.isAuthenticated) ...[
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.logout, color: AppColors.error),
+                          title: _buildLocalizedText('logout'),
+                          onTap: () => _showLogoutDialog(context, locState),
                         ),
-                        child: const Icon(Icons.workspace_premium, color: AppColors.accent),
-                      ),
-                      title: const Text('Upgrade to Premium'),
-                      subtitle: const Text('Unlock all features'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-                      ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  if (!authState.isPremium) ...[
+                    _SectionTitle(title: _tr(locState, 'upgrade_to_premium')),
+                    _SettingsCard(
+                      children: [
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.workspace_premium, color: AppColors.accent),
+                          ),
+                          title: _buildLocalizedText('upgrade_to_premium'),
+                          subtitle: _buildLocalizedText('unlock_premium'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 24),
                   ],
-                ),
-                const SizedBox(height: 24),
-              ],
-              _SectionTitle(title: 'About'),
-              _SettingsCard(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.info_outline, color: AppColors.primary),
-                    title: const Text('Version'),
-                    trailing: const Text('1.0.0'),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
-                    title: const Text('Privacy Policy'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.description_outlined, color: AppColors.primary),
-                    title: const Text('Terms of Service'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {},
+                  _SectionTitle(title: _tr(locState, 'about')),
+                  _SettingsCard(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.info_outline, color: AppColors.primary),
+                        title: _buildLocalizedText('version'),
+                        trailing: const Text('1.0.0'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
+                        title: _buildLocalizedText('privacy_policy'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _openUrl('https://stonetownguide.com/privacy'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.description_outlined, color: AppColors.primary),
+                        title: _buildLocalizedText('terms_of_service'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _openUrl('https://stonetownguide.com/terms'),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           );
         },
       ),
     );
   }
 
-  void _showUpgradeDialog(BuildContext context) {
+  Widget _buildLocalizedText(String key) {
+    return BlocBuilder<LocalizationCubit, LocalizationState>(
+      builder: (context, state) {
+        return Text(state.translations[key] ?? key);
+      },
+    );
+  }
+
+  String _tr(LocalizationState state, String key) {
+    return state.translations[key] ?? key;
+  }
+
+  void _showUpgradeDialog(BuildContext context, LocalizationState locState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Premium Feature'),
-        content: const Text('Unlock all 7 audio languages with Premium subscription.'),
+        title: Text(_tr(locState, 'unlock_premium')),
+        content: Text(_tr(locState, 'benefit_audio_tours')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Later'),
+            child: Text(_tr(locState, 'try_free')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -171,35 +191,46 @@ class SettingsScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const UpgradeScreen()),
               );
             },
-            child: const Text('Upgrade'),
+            child: Text(_tr(locState, 'go_premium')),
           ),
         ],
       ),
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, LocalizationState locState) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(_tr(locState, 'logout')),
+        content: Text('${_tr(locState, 'logout')}?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(_tr(locState, 'cancel')),
           ),
           ElevatedButton(
             onPressed: () {
+              Navigator.of(dialogContext).pop();
               context.read<AuthCubit>().signOut();
-              Navigator.of(context).pop();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Logout'),
+            child: Text(_tr(locState, 'logout')),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }
 
@@ -245,6 +276,7 @@ class _SettingsCard extends StatelessWidget {
 class _DropdownTile extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final String value;
   final List<String> items;
   final List<String> labels;
@@ -254,6 +286,7 @@ class _DropdownTile extends StatelessWidget {
   const _DropdownTile({
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.value,
     required this.items,
     required this.labels,
@@ -266,10 +299,10 @@ class _DropdownTile extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: enabled ? AppColors.primary : AppColors.textHint),
       title: Text(title),
-      subtitle: !enabled
-          ? const Text(
-              'Upgrade for more languages',
-              style: TextStyle(color: AppColors.textHint, fontSize: 12),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: TextStyle(color: enabled ? AppColors.textSecondary : AppColors.textHint, fontSize: 12),
             )
           : null,
       trailing: Row(

@@ -44,7 +44,9 @@ class _DetailScreenState extends State<DetailScreen> {
 
         if (state.status == SiteDetailStatus.error || state.site == null) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+            ),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -72,6 +74,7 @@ class _DetailScreenState extends State<DetailScreen> {
           body: CustomScrollView(
             slivers: [
               SliverAppBar(
+                leading: const SizedBox.shrink(),
                 expandedHeight: 280,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(

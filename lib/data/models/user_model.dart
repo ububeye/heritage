@@ -10,6 +10,7 @@ class UserModel extends Equatable {
   final UserRole role;
   final DateTime? createdAt;
   final DateTime? subscriptionExpiry;
+  final bool disabled;
 
   const UserModel({
     required this.id,
@@ -19,6 +20,7 @@ class UserModel extends Equatable {
     this.role = UserRole.free,
     this.createdAt,
     this.subscriptionExpiry,
+    this.disabled = false,
   });
 
   bool get isPremium => role == UserRole.premium || role == UserRole.admin;
@@ -32,6 +34,7 @@ class UserModel extends Equatable {
     UserRole? role,
     DateTime? createdAt,
     DateTime? subscriptionExpiry,
+    bool? disabled,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -41,6 +44,7 @@ class UserModel extends Equatable {
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
+      disabled: disabled ?? this.disabled,
     );
   }
 
@@ -53,6 +57,7 @@ class UserModel extends Equatable {
       'role': role.name,
       'created_at': createdAt?.toIso8601String(),
       'subscription_expiry': subscriptionExpiry?.toIso8601String(),
+      'disabled': disabled,
     };
   }
 
@@ -69,6 +74,7 @@ class UserModel extends Equatable {
       subscriptionExpiry: map['subscription_expiry'] != null
           ? DateTime.tryParse(map['subscription_expiry'])
           : null,
+      disabled: map['disabled'] ?? false,
     );
   }
 

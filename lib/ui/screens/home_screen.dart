@@ -5,6 +5,7 @@ import '../../blocs/site_list/site_list_cubit.dart';
 import '../../blocs/site_list/site_list_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/explore/explore_cubit.dart';
+import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
 import 'navigation_screen.dart';
@@ -30,37 +31,45 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          _HomeContent(onNavigate: _navigateToSite),
-          const ExploreScreen(),
-          const SettingsScreen(),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+    return BlocBuilder<LocalizationCubit, LocalizationState>(
+      builder: (context, locState) {
+        return Scaffold(
+          body: IndexedStack(
+            index: _currentIndex,
+            children: [
+              _HomeContent(onNavigate: _navigateToSite, locState: locState),
+              const ExploreScreen(),
+              const SettingsScreen(),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
-            label: 'Explore',
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.home_outlined),
+                activeIcon: const Icon(Icons.home),
+                label: _tr(locState, 'home'),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.explore_outlined),
+                activeIcon: const Icon(Icons.explore),
+                label: _tr(locState, 'explore'),
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.settings_outlined),
+                activeIcon: const Icon(Icons.settings),
+                label: _tr(locState, 'settings'),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  String _tr(LocalizationState state, String key) {
+    return state.translations[key] ?? key;
   }
 
   void _navigateToSite(SiteModel site) {
@@ -74,8 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _HomeContent extends StatelessWidget {
   final Function(SiteModel) onNavigate;
+  final LocalizationState locState;
 
-  const _HomeContent({required this.onNavigate});
+  const _HomeContent({required this.onNavigate, required this.locState});
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +93,7 @@ class _HomeContent extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Stone Town Guide'),
+        title: Text(_tr(locState, 'stone_town_guide')),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -111,13 +121,13 @@ class _HomeContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    state.errorMessage ?? 'Something went wrong',
+                    state.errorMessage ?? _tr(locState, 'error_generic'),
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => context.read<SiteListCubit>().loadSites(),
-                    child: const Text('Retry'),
+                    child: Text(_tr(locState, 'retry')),
                   ),
                 ],
               ),
@@ -127,19 +137,19 @@ class _HomeContent extends StatelessWidget {
           final sites = state.sites;
 
           if (sites.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.location_city,
                     size: 64,
                     color: AppColors.textHint,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
-                    'No heritage sites found',
-                    style: TextStyle(
+                    _tr(locState, 'best_places'),
+                    style: const TextStyle(
                       fontSize: 18,
                       color: AppColors.textSecondary,
                     ),
@@ -182,5 +192,9 @@ class _HomeContent extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _tr(LocalizationState state, String key) {
+    return state.translations[key] ?? key;
   }
 }

@@ -124,6 +124,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Edit Site'),
       ),
       body: Form(

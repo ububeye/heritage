@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
+import 'firestore_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirestoreService _firestoreService = FirestoreService();
 
   User? get currentUser => _auth.currentUser;
 
@@ -23,7 +25,9 @@ class AuthService {
         password: password,
       );
       if (credential.user == null) return null;
-      return _createUserModel(credential.user!);
+      final userModel = _createUserModel(credential.user!);
+      await _syncUserToFirestore(userModel);
+      return userModel;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthError(e);
     }
@@ -36,7 +40,9 @@ class AuthService {
         password: password,
       );
       if (credential.user == null) return null;
-      return _createUserModel(credential.user!);
+      final userModel = _createUserModel(credential.user!);
+      await _syncUserToFirestore(userModel);
+      return userModel;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthError(e);
     }
@@ -55,9 +61,25 @@ class AuthService {
 
       final firebaseUser = await _auth.signInWithCredential(credential);
       if (firebaseUser.user == null) return null;
-      return _createUserModel(firebaseUser.user!);
+      final userModel = _createUserModel(firebaseUser.user!);
+      await _syncUserToFirestore(userModel);
+      return userModel;
     } catch (e) {
       throw Exception('Google sign-in failed: $e');
+    }
+  }
+
+  Future<void> _syncUserToFirestore(UserModel user) async {
+    try {
+      final existingUser = await _firestoreService.getUserById(user.id);
+      if (existingUser == null) {
+        await _firestoreService.createUser(user);
+      } else {
+        await _firestoreService.updateUserRole(user.id, user.role);
+      }
+    } catch (e) {
+      // Don't fail auth if Firestore sync fails
+      print('Failed to sync user to Firestore: $e');
     }
   }
 
@@ -102,12 +124,15 @@ class AuthService {
 
   UserRole _determineUserRole(User user) {
     final email = user.email?.toLowerCase() ?? '';
+    final emailLocalPart = email.split('@').first; // get part before @
 
-    if (email.contains('admin@')) {
+    // Check for admin - any email starting with "admin" (e.g., admin@gmail.com, admin@mydomain.com)
+    if (emailLocalPart.toLowerCase().startsWith('admin')) {
       return UserRole.admin;
     }
 
-    if (email.contains('premium@')) {
+    // Check for premium - any email starting with "premium"
+    if (emailLocalPart.toLowerCase().startsWith('premium')) {
       return UserRole.premium;
     }
 

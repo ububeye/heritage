@@ -96,6 +96,26 @@ class SharedPrefsService {
     }
   }
 
+  // Is User Logged In (for skipping welcome screen)
+  bool get isUserLoggedIn {
+    final userId = _preferences.getString(AppConstants.keyUserId);
+    return userId != null && userId.isNotEmpty;
+  }
+
+  Future<void> setUserLoggedIn(bool isLoggedIn, {String? userId, String? userRole}) async {
+    if (isLoggedIn && userId != null) {
+      await _preferences.setString(AppConstants.keyUserId, userId);
+      if (userRole != null) {
+        await _preferences.setString('user_role', userRole);
+      }
+    } else {
+      await _preferences.remove(AppConstants.keyUserId);
+      await _preferences.remove('user_role');
+    }
+  }
+
+  String? get savedUserRole => _preferences.getString('user_role');
+
   // Clear all
   Future<void> clearAll() async {
     await _preferences.clear();
