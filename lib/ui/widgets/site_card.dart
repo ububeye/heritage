@@ -1,0 +1,183 @@
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../core/constants/colors.dart';
+import '../../core/constants/app_constants.dart';
+import '../../data/models/site_model.dart';
+
+class SiteCard extends StatelessWidget {
+  final SiteModel site;
+  final String uiLanguage;
+  final VoidCallback onTap;
+  final VoidCallback? onNavigate;
+  final bool isInItinerary;
+  final VoidCallback? onToggleItinerary;
+
+  const SiteCard({
+    super.key,
+    required this.site,
+    required this.uiLanguage,
+    required this.onTap,
+    this.onNavigate,
+    this.isInItinerary = false,
+    this.onToggleItinerary,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.textPrimary.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppConstants.cardBorderRadius),
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl: site.getTransformedImageUrl(
+                        transformation: 'w_400,c_fill,q_auto,f_auto',
+                      ),
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: AppColors.surfaceDark,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.accent,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: AppColors.surfaceDark,
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          color: AppColors.textHint,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (isInItinerary)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check,
+                              size: 12,
+                              color: AppColors.textOnAccent,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Added',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textOnAccent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      site.getName(uiLanguage),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (site.rating != null)
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: AppColors.rating,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                site.rating!.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          const SizedBox(),
+                        if (onNavigate != null)
+                          GestureDetector(
+                            onTap: onNavigate,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.navigation,
+                                size: 16,
+                                color: AppColors.textOnAccent,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

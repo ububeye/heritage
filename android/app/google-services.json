@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "169976304333",
+    "firebase_url": "https://stone-town-heritage-vt-guide-default-rtdb.firebaseio.com",
+    "project_id": "stone-town-heritage-vt-guide",
+    "storage_bucket": "stone-town-heritage-vt-guide.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:169976304333:android:0667b08e7abddb03428f84",
+        "android_client_info": {
+          "package_name": "com.example.stone_town_heritage_vt_guide"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBg8J148vtijhOBAmk2nMKs5-1laZ5ql-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
