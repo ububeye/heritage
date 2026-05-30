@@ -97,6 +97,26 @@ class FirestoreService {
     }
   }
 
+  /// Translate site content for a specific language
+  Future<void> translateSite({
+    required String siteId,
+    required String languageCode,
+    required String name,
+    required String description,
+  }) async {
+    try {
+      final fieldName = 'name_${languageCode}';
+      final fieldDesc = 'description_${languageCode}';
+
+      await _sitesCollection.doc(siteId).update({
+        fieldName: name,
+        fieldDesc: description,
+      });
+    } catch (e) {
+      print('Failed to translate site: $e');
+    }
+  }
+
   Stream<List<SiteModel>> watchSites() {
     return _sitesCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {

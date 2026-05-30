@@ -28,6 +28,9 @@ dependencies:
 
   # Networking & Images
   cached_network_image: ^3.4.1
+  http: ^1.2.0
+  image_picker: ^1.0.7
+  webview_flutter: ^4.4.2
 
   # Text-to-Speech
   flutter_tts: ^4.2.0

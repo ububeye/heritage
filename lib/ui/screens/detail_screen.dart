@@ -24,10 +24,19 @@ class DetailScreen extends StatefulWidget {
 }
 
 class _DetailScreenState extends State<DetailScreen> {
+  int _currentImageIndex = 0;
+  final PageController _pageController = PageController();
+
   @override
   void initState() {
     super.initState();
     context.read<SiteDetailCubit>().loadSite(widget.siteId);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -68,6 +77,7 @@ class _DetailScreenState extends State<DetailScreen> {
         final site = state.site!;
         final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
         final isPremium = context.read<AuthCubit>().state.isPremium;
+        final allImages = site.allImages;
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -75,37 +85,104 @@ class _DetailScreenState extends State<DetailScreen> {
             slivers: [
               SliverAppBar(
                 leading: const SizedBox.shrink(),
-                expandedHeight: 280,
+                expandedHeight: 300,
                 pinned: true,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      CachedNetworkImage(
-                        imageUrl: site.getTransformedImageUrl(
-                          transformation: 'w_1200,c_fill,q_auto,f_auto',
-                        ),
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: AppColors.surfaceDark,
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.surfaceDark,
-                          child: const Icon(Icons.image_not_supported, size: 48),
-                        ),
+                      // Image Carousel
+                      PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() => _currentImageIndex = index);
+                        },
+                        itemCount: allImages.length,
+                        itemBuilder: (context, index) {
+                          return CachedNetworkImage(
+                            imageUrl: site.getTransformedImageUrl(
+                              transformation: 'w_1200,c_fill,q_auto,f_auto',
+                              imageIndex: index,
+                            ),
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: AppColors.surfaceDark,
+                              child: const Center(
+                                child: CircularProgressIndicator(color: AppColors.accent),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: AppColors.surfaceDark,
+                              child: const Icon(Icons.image_not_supported, size: 48),
+                            ),
+                          );
+                        },
                       ),
+                      // Gradient overlay
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
+                              Colors.black.withValues(alpha: 0.3),
                               Colors.transparent,
-                              Colors.black.withOpacity(0.5),
+                              Colors.black.withValues(alpha: 0.5),
                             ],
+                            stops: const [0.0, 0.5, 1.0],
                           ),
                         ),
                       ),
+                      // Image indicators
+                      if (allImages.length > 1)
+                        Positioned(
+                          bottom: 16,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              allImages.length,
+                              (index) => AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: _currentImageIndex == index ? 24 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: _currentImageIndex == index
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      // Image counter
+                      if (allImages.length > 1)
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 56,
+                          left: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.photo_library, color: Colors.white, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${_currentImageIndex + 1}/${allImages.length}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      // Rating badge
                       if (site.rating != null)
                         Positioned(
                           top: MediaQuery.of(context).padding.top + 56,

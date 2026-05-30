@@ -24,11 +24,14 @@ class _AdminShellState extends State<AdminShell> {
   @override
   void initState() {
     super.initState();
-    // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SiteListCubit>().loadSites();
       context.read<UserCubit>().loadUsers();
     });
+  }
+
+  String _tr(LocalizationState state, String key) {
+    return state.translations[key] ?? key;
   }
 
   @override
@@ -39,60 +42,130 @@ class _AdminShellState extends State<AdminShell> {
           body: IndexedStack(
             index: _currentIndex,
             children: [
-              _DashboardContent(locState: locState),
+              _AdminDashboard(locState: locState, tr: _tr),
               const AdminSitesScreen(),
               const AdminUserManagementScreen(),
               const AdminSettingsScreen(),
             ],
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: AppColors.surface,
-            selectedItemColor: AppColors.primary,
-            unselectedItemColor: AppColors.textHint,
-            items: [
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.dashboard_outlined),
-                activeIcon: const Icon(Icons.dashboard),
-                label: _tr(locState, 'admin'),
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.location_city_outlined),
-                activeIcon: const Icon(Icons.location_city),
-                label: _tr(locState, 'best_places'),
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.people_outlined),
-                activeIcon: const Icon(Icons.people),
-                label: _tr(locState, 'user_management'),
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.settings_outlined),
-                activeIcon: const Icon(Icons.settings),
-                label: _tr(locState, 'settings'),
-              ),
-            ],
-          ),
+          bottomNavigationBar: _buildBottomNav(locState),
         );
       },
     );
   }
 
-  String _tr(LocalizationState state, String key) {
-    return state.translations[key] ?? key;
+  Widget _buildBottomNav(LocalizationState locState) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon: Icons.dashboard_outlined,
+                activeIcon: Icons.dashboard,
+                label: _tr(locState, 'admin'),
+                isSelected: _currentIndex == 0,
+                onTap: () => setState(() => _currentIndex = 0),
+              ),
+              _NavItem(
+                icon: Icons.location_city_outlined,
+                activeIcon: Icons.location_city,
+                label: _tr(locState, 'best_places'),
+                isSelected: _currentIndex == 1,
+                onTap: () => setState(() => _currentIndex = 1),
+              ),
+              _NavItem(
+                icon: Icons.people_outline,
+                activeIcon: Icons.people,
+                label: _tr(locState, 'user_management'),
+                isSelected: _currentIndex == 2,
+                onTap: () => setState(() => _currentIndex = 2),
+              ),
+              _NavItem(
+                icon: Icons.settings_outlined,
+                activeIcon: Icons.settings,
+                label: _tr(locState, 'settings'),
+                isSelected: _currentIndex == 3,
+                onTap: () => setState(() => _currentIndex = 3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
-class _DashboardContent extends StatelessWidget {
-  final LocalizationState locState;
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const _DashboardContent({required this.locState});
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
-  String _tr(LocalizationState state, String key) {
-    return state.translations[key] ?? key;
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? AppColors.primary : AppColors.textHint,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppColors.primary : AppColors.textHint,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}
+
+class _AdminDashboard extends StatelessWidget {
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
+
+  const _AdminDashboard({required this.locState, required this.tr});
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +173,10 @@ class _DashboardContent extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(_tr(locState, 'admin_dashboard')),
+        title: Text(tr(locState, 'admin_dashboard')),
+        centerTitle: false,
+        elevation: 0,
+        backgroundColor: AppColors.background,
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -114,19 +190,29 @@ class _DashboardContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildWelcomeCard(context),
+              _WelcomeCard(locState: locState, tr: tr),
               const SizedBox(height: 20),
-              _buildStatsRow(),
+              _StatsSection(locState: locState, tr: tr),
               const SizedBox(height: 24),
-              _buildQuickActions(context),
+              _MenuSection(locState: locState, tr: tr),
+              const SizedBox(height: 24),
+              _QuickActionsSection(locState: locState, tr: tr),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildWelcomeCard(BuildContext context) {
+class _WelcomeCard extends StatelessWidget {
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
+
+  const _WelcomeCard({required this.locState, required this.tr});
+
+  @override
+  Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
         return Container(
@@ -136,17 +222,14 @@ class _DashboardContent extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                AppColors.primaryDark,
-                AppColors.primary,
-              ],
+              colors: [AppColors.primaryDark, AppColors.primary],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 76),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -155,14 +238,10 @@ class _DashboardContent extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 26),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.admin_panel_settings,
-                  color: Colors.white,
-                  size: 30,
-                ),
+                child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 32),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -170,10 +249,10 @@ class _DashboardContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${_tr(locState, 'admin')}!',
+                      'Welcome, Admin!',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -181,8 +260,8 @@ class _DashboardContent extends StatelessWidget {
                     Text(
                       authState.user?.email ?? 'admin@stonetownguide.com',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 179),
-                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -196,8 +275,16 @@ class _DashboardContent extends StatelessWidget {
       },
     );
   }
+}
 
-  Widget _buildStatsRow() {
+class _StatsSection extends StatelessWidget {
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
+
+  const _StatsSection({required this.locState, required this.tr});
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
@@ -205,8 +292,8 @@ class _DashboardContent extends StatelessWidget {
             builder: (context, state) {
               return _StatCard(
                 icon: Icons.location_city,
-                label: _tr(locState, 'best_places'),
                 value: state.sites.length.toString(),
+                label: 'Sites',
                 color: AppColors.primary,
               );
             },
@@ -218,8 +305,8 @@ class _DashboardContent extends StatelessWidget {
             builder: (context, state) {
               return _StatCard(
                 icon: Icons.people,
-                label: _tr(locState, 'user_management'),
                 value: state.totalUsers.toString(),
+                label: 'Users',
                 color: AppColors.accent,
               );
             },
@@ -231,8 +318,8 @@ class _DashboardContent extends StatelessWidget {
             builder: (context, state) {
               return _StatCard(
                 icon: Icons.workspace_premium,
-                label: 'Premium',
                 value: state.premiumUsers.toString(),
+                label: 'Premium',
                 color: AppColors.success,
               );
             },
@@ -241,62 +328,18 @@ class _DashboardContent extends StatelessWidget {
       ],
     );
   }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _tr(locState, 'start_audio_guide'),
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _ActionCard(
-                icon: Icons.add_location,
-                title: _tr(locState, 'add_site'),
-                subtitle: _tr(locState, 'site_name'),
-                color: AppColors.primary,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminSitesScreen(addNew: true)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _ActionCard(
-                icon: Icons.person_add,
-                title: _tr(locState, 'user_management'),
-                subtitle: _tr(locState, 'account'),
-                color: AppColors.accent,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 }
 
 class _StatCard extends StatelessWidget {
   final IconData icon;
-  final String label;
   final String value;
+  final String label;
   final Color color;
 
   const _StatCard({
     required this.icon,
-    required this.label,
     required this.value,
+    required this.label,
     required this.color,
   });
 
@@ -308,24 +351,38 @@ class _StatCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 10),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             label,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: AppColors.textSecondary,
             ),
           ),
@@ -335,14 +392,69 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
+class _MenuSection extends StatelessWidget {
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
+
+  const _MenuSection({required this.locState, required this.tr});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(title: 'Management'),
+        const SizedBox(height: 12),
+        _MenuCard(
+          icon: Icons.location_on,
+          title: tr(locState, 'best_places'),
+          subtitle: 'Add, edit & delete sites',
+          color: AppColors.primary,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AdminSitesScreen()),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _MenuCard(
+          icon: Icons.people,
+          title: tr(locState, 'user_management'),
+          subtitle: 'View & manage users',
+          color: AppColors.accent,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      ),
+    );
+  }
+}
+
+class _MenuCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
 
-  const _ActionCard({
+  const _MenuCard({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -354,39 +466,140 @@ class _ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Column(
+        child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 26),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: color, size: 28),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textHint, size: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionsSection extends StatelessWidget {
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
+
+  const _QuickActionsSection({required this.locState, required this.tr});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(title: tr(locState, 'start_audio_guide')),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.add_location,
+                label: tr(locState, 'add_site'),
+                color: AppColors.primary,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminSitesScreen(addNew: true)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.analytics,
+                label: 'Analytics',
+                color: AppColors.accent,
+                onTap: () {},
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
             Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
+              label,
+              style: TextStyle(
+                color: color,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+                fontSize: 14,
               ),
             ),
           ],
