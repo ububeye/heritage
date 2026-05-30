@@ -1,0 +1,508 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/constants/colors.dart';
+import '../../blocs/auth/auth_cubit.dart';
+import '../../blocs/auth/auth_state.dart';
+import 'login_screen.dart';
+
+class UserProfileScreen extends StatelessWidget {
+  const UserProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, authState) {
+        final user = authState.user;
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: const Text('Profile'),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Profile Header
+              _buildProfileHeader(user),
+              const SizedBox(height: 24),
+
+              // Account Section
+              _SectionTitle(title: 'Account'),
+              _SettingsCard(
+                children: [
+                  _ProfileMenuItem(
+                    icon: Icons.person_outline,
+                    title: 'Edit Profile',
+                    subtitle: 'Change name and photo',
+                    onTap: () => _showEditProfileDialog(context, authState),
+                  ),
+                  const Divider(height: 1),
+                  _ProfileMenuItem(
+                    icon: Icons.lock_outline,
+                    title: 'Change Password',
+                    subtitle: 'Update your password',
+                    onTap: () => _showChangePasswordDialog(context),
+                  ),
+                  const Divider(height: 1),
+                  _ProfileMenuItem(
+                    icon: Icons.language,
+                    title: 'Language',
+                    subtitle: 'App and audio language',
+                    onTap: () => _showLanguageDialog(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Subscription Section
+              _SectionTitle(title: 'Subscription'),
+              _SettingsCard(
+                children: [
+                  _ProfileMenuItem(
+                    icon: Icons.workspace_premium,
+                    title: 'Premium Plan',
+                    subtitle: authState.isPremium ? 'Active' : 'Upgrade for more features',
+                    trailing: authState.isPremium
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Active',
+                              style: TextStyle(
+                                color: AppColors.success,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.chevron_right),
+                    onTap: () => _showUpgradeDialog(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Danger Zone
+              _SectionTitle(title: 'Danger Zone'),
+              _SettingsCard(
+                children: [
+                  _ProfileMenuItem(
+                    icon: Icons.logout,
+                    title: 'Logout',
+                    iconColor: AppColors.error,
+                    onTap: () => _showLogoutDialog(context),
+                  ),
+                  const Divider(height: 1),
+                  _ProfileMenuItem(
+                    icon: Icons.delete_forever,
+                    title: 'Delete Account',
+                    iconColor: Colors.red,
+                    onTap: () => _showDeleteAccountDialog(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // App Info
+              Center(
+                child: Column(
+                  children: [
+                    const Text(
+                      'Stone Town Guide v1.0.0',
+                      style: TextStyle(
+                        color: AppColors.textHint,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Made with ❤️ for Zanzibar',
+                      style: TextStyle(
+                        color: AppColors.textHint,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileHeader(user) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primaryDark, AppColors.primary],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 36,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            backgroundImage:
+                user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
+            child: user?.photoUrl == null
+                ? Text(
+                    user?.email[0].toUpperCase() ?? 'U',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user?.displayName ?? user?.email ?? 'User',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user?.email ?? '',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    user?.role.name.toUpperCase() ?? 'FREE',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context, AuthState authState) {
+    final nameController = TextEditingController(
+      text: authState.user?.displayName ?? '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Display Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty) {
+                Navigator.pop(ctx);
+                // Update display name
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final currentController = TextEditingController();
+    final newController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Change Password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Current Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'New Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Confirm New Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (newController.text != confirmController.text) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Passwords do not match')),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Password updated!')),
+              );
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Language'),
+        content: const Text('Go to Settings to change language'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUpgradeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Upgrade to Premium'),
+        content: const Text(
+          'Unlock all features:\n\n'
+          '• Full audio guides in 7 languages\n'
+          '• Unlimited site access\n'
+          '• Priority support\n\n'
+          'Coming soon!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<AuthCubit>().signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This action cannot be undone. All your data will be permanently deleted.\n\n'
+          'Please contact support to delete your account.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please contact support to delete your account'),
+                ),
+              );
+            },
+            child: const Text('Contact Support'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SettingsCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _ProfileMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final Color? iconColor;
+  final VoidCallback onTap;
+
+  const _ProfileMenuItem({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: iconColor ?? AppColors.primary,
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            )
+          : null,
+      trailing: trailing ?? const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+}

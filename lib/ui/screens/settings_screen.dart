@@ -9,6 +9,7 @@ import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import 'login_screen.dart';
 import 'upgrade_screen.dart';
+import 'user_profile_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -73,18 +74,28 @@ class SettingsScreen extends StatelessWidget {
                   _SectionTitle(title: _tr(locState, 'account')),
                   _SettingsCard(
                     children: [
-                      if (authState.isAuthenticated)
+                      if (authState.isAuthenticated) ...[
                         ListTile(
-                          leading: const Icon(Icons.email, color: AppColors.primary),
+                          leading: const Icon(Icons.person, color: AppColors.primary),
                           title: Text(authState.user?.email ?? ''),
                           subtitle: Text(
-                            authState.isPremium ? 'Premium User' : _tr(locState, 'account'),
+                            authState.isPremium ? 'Premium User' : 'Free User',
                             style: TextStyle(
                               color: authState.isPremium ? AppColors.success : AppColors.textSecondary,
                             ),
                           ),
-                        )
-                      else
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.logout, color: AppColors.error),
+                          title: _buildLocalizedText('logout'),
+                          onTap: () => _showLogoutDialog(context, locState),
+                        ),
+                      ] else
                         ListTile(
                           leading: const Icon(Icons.person_outline, color: AppColors.primary),
                           title: _buildLocalizedText('login'),
@@ -93,14 +104,6 @@ class SettingsScreen extends StatelessWidget {
                             MaterialPageRoute(builder: (_) => const LoginScreen()),
                           ),
                         ),
-                      if (authState.isAuthenticated) ...[
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.logout, color: AppColors.error),
-                          title: _buildLocalizedText('logout'),
-                          onTap: () => _showLogoutDialog(context, locState),
-                        ),
-                      ],
                     ],
                   ),
                   const SizedBox(height: 24),
