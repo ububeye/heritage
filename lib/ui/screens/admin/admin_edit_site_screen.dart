@@ -3,6 +3,7 @@ import '../../../core/constants/colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/site_model.dart';
 import '../../../data/services/firestore_service.dart';
+import '../../widgets/heritage_map.dart';
 
 class AdminEditSiteScreen extends StatefulWidget {
   final SiteModel site;
@@ -19,6 +20,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
 
   late final TextEditingController _nameEnController;
   late final TextEditingController _nameSwController;
+  late final TextEditingController _nameFrController;
+  late final TextEditingController _nameDeController;
+  late final TextEditingController _nameArController;
+  late final TextEditingController _nameItController;
+  late final TextEditingController _nameEsController;
   late final TextEditingController _descEnController;
   late final TextEditingController _descSwController;
   late final TextEditingController _descFrController;
@@ -39,6 +45,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     super.initState();
     _nameEnController = TextEditingController(text: widget.site.nameEn);
     _nameSwController = TextEditingController(text: widget.site.nameSw);
+    _nameFrController = TextEditingController(text: widget.site.nameFr);
+    _nameDeController = TextEditingController(text: widget.site.nameDe);
+    _nameArController = TextEditingController(text: widget.site.nameAr);
+    _nameItController = TextEditingController(text: widget.site.nameIt);
+    _nameEsController = TextEditingController(text: widget.site.nameEs);
     _descEnController = TextEditingController(text: widget.site.descriptionEn);
     _descSwController = TextEditingController(text: widget.site.descriptionSw);
     _descFrController = TextEditingController(text: widget.site.descriptionFr);
@@ -57,6 +68,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
   void dispose() {
     _nameEnController.dispose();
     _nameSwController.dispose();
+    _nameFrController.dispose();
+    _nameDeController.dispose();
+    _nameArController.dispose();
+    _nameItController.dispose();
+    _nameEsController.dispose();
     _descEnController.dispose();
     _descSwController.dispose();
     _descFrController.dispose();
@@ -80,6 +96,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
       final site = widget.site.copyWith(
         nameEn: _nameEnController.text,
         nameSw: _nameSwController.text,
+        nameFr: _nameFrController.text,
+        nameDe: _nameDeController.text,
+        nameAr: _nameArController.text,
+        nameIt: _nameItController.text,
+        nameEs: _nameEsController.text,
         descriptionEn: _descEnController.text,
         descriptionSw: _descSwController.text,
         descriptionFr: _descFrController.text,
@@ -143,6 +164,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               label: 'Name (Swahili)',
               validator: (v) => v?.isEmpty == true ? 'Required' : null,
             ),
+            _TextField(controller: _nameFrController, label: 'Name (French)'),
+            _TextField(controller: _nameDeController, label: 'Name (German)'),
+            _TextField(controller: _nameArController, label: 'Name (Arabic)'),
+            _TextField(controller: _nameItController, label: 'Name (Italian)'),
+            _TextField(controller: _nameEsController, label: 'Name (Spanish)'),
             const SizedBox(height: 16),
             _DropdownField(
               label: 'Category',
@@ -166,6 +192,24 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               label: 'Image URL (Cloudinary)',
               validator: (v) => v?.isEmpty == true ? 'Required' : null,
             ),
+            const SizedBox(height: 12),
+            Container(
+              height: 400,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: HeritageMap.picker(
+                initialLat: widget.site.latitude,
+                initialLng: widget.site.longitude,
+                onLocationPicked: (pickedLat, pickedLng) {
+                  _latController.text = pickedLat.toStringAsFixed(6);
+                  _lngController.text = pickedLng.toStringAsFixed(6);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(

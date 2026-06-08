@@ -31,7 +31,7 @@ class FeaturedSiteCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textPrimary.withOpacity(0.15),
+              color: AppColors.textPrimary.withValues(alpha: 0.15),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -108,7 +108,7 @@ class FeaturedSiteCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

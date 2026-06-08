@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/colors.dart';
-import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
 
 class ArrivalOverlay extends StatefulWidget {
@@ -49,7 +48,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.7),
+      color: Colors.black.withValues(alpha: 0.7),
       child: SafeArea(
         child: Column(
           children: [
@@ -76,7 +75,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.accent.withOpacity(0.5),
+                            color: AppColors.accent.withValues(alpha: 0.5),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -113,7 +112,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                       'You have arrived at',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -139,7 +138,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                             borderRadius: BorderRadius.circular(40),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.accent.withOpacity(0.5),
+                                color: AppColors.accent.withValues(alpha: 0.5),
                                 blurRadius: 20,
                                 spreadRadius: 5,
                               ),

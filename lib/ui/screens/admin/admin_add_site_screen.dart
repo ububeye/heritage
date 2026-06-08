@@ -6,10 +6,8 @@ import '../../../core/constants/colors.dart';
 import '../../../data/models/site_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
-import '../../../data/services/translation_service.dart';
-import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
-import '../../widgets/osm_location_picker.dart';
+import '../../widgets/heritage_map.dart';
 
 class AdminAddSiteScreen extends StatefulWidget {
   const AdminAddSiteScreen({super.key});
@@ -22,11 +20,26 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firestoreService = FirestoreService();
   final _cloudinaryService = CloudinaryService();
-  final _translationService = TranslationService();
 
-  // Controllers
-  final _nameController = TextEditingController();
-  final _descController = TextEditingController();
+  // Controllers — names (7)
+  final _nameEnController = TextEditingController();
+  final _nameSwController = TextEditingController();
+  final _nameFrController = TextEditingController();
+  final _nameDeController = TextEditingController();
+  final _nameArController = TextEditingController();
+  final _nameItController = TextEditingController();
+  final _nameEsController = TextEditingController();
+
+  // Controllers — descriptions (7)
+  final _descEnController = TextEditingController();
+  final _descSwController = TextEditingController();
+  final _descFrController = TextEditingController();
+  final _descDeController = TextEditingController();
+  final _descArController = TextEditingController();
+  final _descItController = TextEditingController();
+  final _descEsController = TextEditingController();
+
+  // Location controllers
   final _latController = TextEditingController();
   final _lngController = TextEditingController();
 
@@ -36,7 +49,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   int _locationTabIndex = 1; // 0 = Map, 1 = Manual
 
   // Images
-  List<XFile> _selectedImages = [];
+  final List<XFile> _selectedImages = [];
   bool _isUploading = false;
 
   // Loading state
@@ -44,31 +57,27 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _descController.dispose();
-    _latController.dispose();
-    _lngController.dispose();
+    for (final c in [
+      _nameEnController, _nameSwController, _nameFrController,
+      _nameDeController, _nameArController, _nameItController, _nameEsController,
+      _descEnController, _descSwController, _descFrController,
+      _descDeController, _descArController, _descItController, _descEsController,
+      _latController, _lngController,
+    ]) {
+      c.dispose();
+    }
     super.dispose();
-  }
-
-  String get _currentLang {
-    final locState = context.read<LocalizationCubit>().state;
-    return locState.currentLanguage;
   }
 
   Future<void> _pickImages() async {
     final images = await _cloudinaryService.pickMultipleImages();
     if (images.isNotEmpty) {
-      setState(() {
-        _selectedImages.addAll(images);
-      });
+      setState(() => _selectedImages.addAll(images));
     }
   }
 
   void _removeImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
+    setState(() => _selectedImages.removeAt(index));
   }
 
   Future<void> _saveSite() async {
@@ -87,31 +96,23 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Upload images to Cloudinary
       setState(() => _isUploading = true);
-
       final uploadedUrls = await _cloudinaryService.uploadImages(_selectedImages);
-
       if (uploadedUrls.isEmpty) {
         throw Exception('Failed to upload images');
       }
 
-      // 2. Prepare base language data
-      final baseLang = _currentLang;
-      final isSwahili = baseLang == 'sw';
-
-      // 3. Create site with base language content
       final site = SiteModel(
         id: '',
-        nameEn: isSwahili ? '' : _nameController.text,
-        nameSw: isSwahili ? _nameController.text : '',
-        descriptionEn: isSwahili ? '' : _descController.text,
-        descriptionSw: isSwahili ? _descController.text : '',
-        descriptionFr: '',
-        descriptionDe: '',
-        descriptionAr: '',
-        descriptionIt: '',
-        descriptionEs: '',
+        nameEn: _nameEnController.text.trim(),
+        nameSw: _nameSwController.text.trim(),
+        descriptionEn: _descEnController.text.trim(),
+        descriptionSw: _descSwController.text.trim(),
+        descriptionFr: _descFrController.text.trim(),
+        descriptionDe: _descDeController.text.trim(),
+        descriptionAr: _descArController.text.trim(),
+        descriptionIt: _descItController.text.trim(),
+        descriptionEs: _descEsController.text.trim(),
         cloudinaryImageUrl: uploadedUrls.first,
         imageUrls: uploadedUrls,
         latitude: double.parse(_latController.text),
@@ -121,19 +122,13 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         createdAt: DateTime.now(),
       );
 
-      // 4. Save initial site to Firestore
       await _firestoreService.addSite(site);
 
-      // 5. Auto-translate missing languages
-      await _translateMissingLanguages(site.id, baseLang);
-
-      // 6. Reload sites list
       if (mounted) {
         context.read<SiteListCubit>().loadSites();
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Site added! Translations in progress...'),
+            content: Text('Site added successfully'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -158,129 +153,127 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     }
   }
 
-  Future<void> _translateMissingLanguages(String siteId, String baseLang) async {
-    final targetLangs = ['fr', 'de', 'ar', 'it', 'es'];
-    if (baseLang == 'sw') targetLangs.add('en');
-    if (baseLang == 'en') targetLangs.add('sw');
-
-    final baseName = _nameController.text;
-    final baseDesc = _descController.text;
-
-    for (final targetLang in targetLangs) {
-      final translatedName = await _translationService.translate(
-        text: baseName,
-        targetLanguage: targetLang,
-        sourceLanguage: baseLang,
-      );
-
-      final translatedDesc = await _translationService.translate(
-        text: baseDesc,
-        targetLanguage: targetLang,
-        sourceLanguage: baseLang,
-      );
-
-      await _firestoreService.translateSite(
-        siteId: siteId,
-        languageCode: targetLang,
-        name: translatedName ?? '',
-        description: translatedDesc ?? '',
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<LocalizationCubit, LocalizationState>(
-      builder: (context, locState) {
-        final nameLabel = _currentLang == 'sw' ? 'Jina la Eneo' : 'Site Name (${_currentLang.toUpperCase()})';
-        final descLabel = _currentLang == 'sw' ? 'Maelezo' : 'Description (${_currentLang.toUpperCase()})';
-
-        return Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text('Add Site'),
-          ),
-          body: _isLoading
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(color: AppColors.accent),
-                      const SizedBox(height: 16),
-                      Text(
-                        _isUploading ? 'Uploading images...' : 'Translating...',
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
-                    ],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Add Site'),
+      ),
+      body: _isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(color: AppColors.accent),
+                  const SizedBox(height: 16),
+                  Text(
+                    _isUploading ? 'Uploading images...' : 'Saving site...',
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
-                )
-              : Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Site Name
-                      _buildSectionTitle('Site Information'),
-                      _buildTextField(
-                        controller: _nameController,
-                        label: nameLabel,
-                        validator: (v) => v?.isEmpty == true ? 'Required' : null,
-                      ),
-                      const SizedBox(height: 16),
+                ],
+              ),
+            )
+          : Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildSectionTitle('Photos (Required - Min 1)'),
+                  _buildPhotoSection(),
+                  const SizedBox(height: 24),
 
-                      // Description
-                      _buildTextField(
-                        controller: _descController,
-                        label: descLabel,
-                        maxLines: 4,
-                        validator: (v) => v?.isEmpty == true ? 'Required' : null,
-                      ),
-                      const SizedBox(height: 16),
+                  _buildSectionTitle('Category'),
+                  _buildCategoryDropdown(),
+                  const SizedBox(height: 24),
 
-                      // Category
-                      _buildSectionTitle('Category'),
-                      _buildCategoryDropdown(),
-                      const SizedBox(height: 24),
+                  _buildSectionTitle('Location'),
+                  _buildLocationSection(),
+                  const SizedBox(height: 16),
 
-                      // Photos
-                      _buildSectionTitle('Photos (Required - Min 1)'),
-                      _buildPhotoSection(),
-                      const SizedBox(height: 24),
+                  _buildSectionTitle('Entry Radius: ${_entryRadius.round()}m'),
+                  _buildRadiusSlider(),
+                  const SizedBox(height: 24),
 
-                      // Location
-                      _buildSectionTitle('Location'),
-                      _buildLocationSection(),
-                      const SizedBox(height: 24),
+                  _buildSectionTitle('Translations (all 7 languages required)'),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Fill in the site name and description for every language. The user\'s chosen audio language will be read aloud.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLanguageSection(
+                    code: 'en',
+                    flag: '🇬🇧',
+                    name: 'English',
+                    nameController: _nameEnController,
+                    descController: _descEnController,
+                  ),
+                  _buildLanguageSection(
+                    code: 'sw',
+                    flag: '🇹🇿',
+                    name: 'Swahili',
+                    nameController: _nameSwController,
+                    descController: _descSwController,
+                  ),
+                  _buildLanguageSection(
+                    code: 'fr',
+                    flag: '🇫🇷',
+                    name: 'French',
+                    nameController: _nameFrController,
+                    descController: _descFrController,
+                  ),
+                  _buildLanguageSection(
+                    code: 'de',
+                    flag: '🇩🇪',
+                    name: 'German',
+                    nameController: _nameDeController,
+                    descController: _descDeController,
+                  ),
+                  _buildLanguageSection(
+                    code: 'ar',
+                    flag: '🇸🇦',
+                    name: 'Arabic',
+                    nameController: _nameArController,
+                    descController: _descArController,
+                  ),
+                  _buildLanguageSection(
+                    code: 'it',
+                    flag: '🇮🇹',
+                    name: 'Italian',
+                    nameController: _nameItController,
+                    descController: _descItController,
+                  ),
+                  _buildLanguageSection(
+                    code: 'es',
+                    flag: '🇪🇸',
+                    name: 'Spanish',
+                    nameController: _nameEsController,
+                    descController: _descEsController,
+                  ),
+                  const SizedBox(height: 32),
 
-                      // Entry Radius
-                      _buildSectionTitle('Entry Radius: ${_entryRadius.round()}m'),
-                      _buildRadiusSlider(),
-                      const SizedBox(height: 32),
-
-                      // Save Button
-                      SizedBox(
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _saveSite,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Save Site',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+                  SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _saveSite,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      const SizedBox(height: 32),
-                    ],
+                      child: const Text(
+                        'Save Site',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ),
                   ),
-                ),
-        );
-      },
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
     );
   }
 
@@ -483,17 +476,28 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   }
 
   Widget _buildMapLocation() {
+    final lat = double.tryParse(_latController.text) ?? -6.1621;
+    final lng = double.tryParse(_lngController.text) ?? 39.1835;
+
     return Column(
       children: [
-        OsmLocationPicker(
-          defaultLat: -6.1621,
-          defaultLng: 39.1835,
-          onLocationSelected: (lat, lng) {
-            _latController.text = lat.toStringAsFixed(6);
-            _lngController.text = lng.toStringAsFixed(6);
-          },
+        Container(
+          height: 400,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: HeritageMap.picker(
+            initialLat: lat,
+            initialLng: lng,
+            onLocationPicked: (pickedLat, pickedLng) {
+              _latController.text = pickedLat.toStringAsFixed(6);
+              _lngController.text = pickedLng.toStringAsFixed(6);
+            },
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(child: _buildTextField(controller: _latController, label: 'Latitude')),
@@ -567,6 +571,52 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
               Text('10m', style: TextStyle(fontSize: 12, color: AppColors.textHint)),
               Text('200m', style: TextStyle(fontSize: 12, color: AppColors.textHint)),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageSection({
+    required String code,
+    required String flag,
+    required String name,
+    required TextEditingController nameController,
+    required TextEditingController descController,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(flag, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Text(
+                name,
+                style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _buildTextField(
+            controller: nameController,
+            label: 'Name',
+            validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
+          ),
+          const SizedBox(height: 8),
+          _buildTextField(
+            controller: descController,
+            label: 'Description',
+            maxLines: 3,
+            validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
           ),
         ],
       ),

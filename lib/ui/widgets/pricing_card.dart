@@ -34,7 +34,7 @@ class PricingCard extends StatelessWidget {
           boxShadow: isPopular
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -93,7 +93,7 @@ class PricingCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       color: isPopular
-                          ? AppColors.textOnPrimary.withOpacity(0.8)
+                          ? AppColors.textOnPrimary.withValues(alpha: 0.8)
                           : AppColors.textSecondary,
                     ),
                   ),
@@ -104,7 +104,7 @@ class PricingCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.2),
+                  color: AppColors.success.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(

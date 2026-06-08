@@ -5,6 +5,7 @@ import '../../blocs/site_list/site_list_cubit.dart';
 import '../../blocs/site_list/site_list_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/explore/explore_cubit.dart';
+import '../../blocs/favorites/favorites_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
@@ -96,8 +97,9 @@ class _HomeContent extends StatelessWidget {
         title: Text(_tr(locState, 'stone_town_guide')),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
+            icon: const Icon(Icons.favorite_outline),
+            tooltip: 'Favorites',
+            onPressed: () => Navigator.of(context).pushNamed('/favorites'),
           ),
         ],
       ),
@@ -185,6 +187,8 @@ class _HomeContent extends StatelessWidget {
                   ),
                   onNavigate: () => onNavigate(site),
                   isInItinerary: context.read<ExploreCubit>().isInItinerary(site.id),
+                  isFavorite: context.read<FavoritesCubit>().isFavorite(site.id),
+                  onToggleFavorite: () => context.read<FavoritesCubit>().toggleFavorite(site.id),
                 );
               },
             ),

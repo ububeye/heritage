@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/colors.dart';
-import '../../core/constants/app_constants.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/site_detail/site_detail_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
-import '../../blocs/premium/premium_cubit.dart';
-import '../widgets/audio_player_card.dart';
+import '../../blocs/favorites/favorites_cubit.dart';
+import '../../core/utils/nav_guard.dart';
 import '../widgets/upgrade_banner.dart';
 import '../widgets/rating_stars.dart';
-import 'navigation_screen.dart';
+import 'site_map_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final String siteId;
@@ -87,6 +86,22 @@ class _DetailScreenState extends State<DetailScreen> {
                 leading: const SizedBox.shrink(),
                 expandedHeight: 300,
                 pinned: true,
+                actions: [
+                  BlocBuilder<FavoritesCubit, FavoritesState>(
+                    builder: (context, favState) {
+                      final isFav = favState.favoriteIds.contains(site.id);
+                      return IconButton(
+                        icon: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          color: isFav ? Colors.red : Colors.white,
+                        ),
+                        tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
+                        onPressed: () =>
+                            context.read<FavoritesCubit>().toggleFavorite(site.id),
+                      );
+                    },
+                  ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
@@ -248,19 +263,63 @@ class _DetailScreenState extends State<DetailScreen> {
                           message: '30 sec limit • Upgrade for full audio',
                         ),
                       const SizedBox(height: 16),
+                      // Primary action: play audio in-place. The existing
+                      // bottomSheet shows the play/pause/progress UI bound
+                      // to state.audioState — pressing this button makes
+                      // it react immediately.
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => NavigationScreen(site: site),
-                              ),
-                            );
+                            final audioLang = context.read<LanguageCubit>().state.audioLanguage;
+                            final isPremium = context.read<AuthCubit>().state.isPremium;
+                            context.read<SiteDetailCubit>().playAudio(
+                                  audioLang,
+                                  isPremium: isPremium,
+                                );
                           },
-                          icon: const Icon(Icons.navigation),
+                          icon: const Icon(Icons.play_arrow),
                           label: const Text('Start Audio Guide'),
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Secondary actions: open the site on a free OSM map,
+                      // or launch live GPS navigation (gated behind a Google
+                      // Maps API key — see safePushNavigation).
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => SiteMapScreen(site: site),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.map_outlined, size: 18),
+                              label: const Text('View on Map'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => safePushNavigation(context, site),
+                              icon: const Icon(Icons.navigation_outlined, size: 18),
+                              label: const Text('Navigate'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 100),
                     ],
@@ -275,7 +334,7 @@ class _DetailScreenState extends State<DetailScreen> {
               color: AppColors.surface,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),

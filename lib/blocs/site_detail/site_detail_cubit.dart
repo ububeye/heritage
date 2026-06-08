@@ -98,10 +98,6 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     ));
   }
 
-  void toggleFavorite() {
-    emit(state.copyWith(isFavorited: !state.isFavorited));
-  }
-
   @override
   Future<void> close() {
     _ttsService.stop();

@@ -107,6 +107,29 @@ class _NavigationScreenState extends State<NavigationScreen> {
                   child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                 ),
               ),
+              // Friendly explanation when the Google Maps API key isn't
+              // configured. The map tiles render blank; navigation logic
+              // (distance, ETA, arrival) still works via Geolocator.
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 8,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 64),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Map tiles disabled — add a Google Maps API key\nto enable the live map. Navigation still works.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                  ),
+                ),
+              ),
               if (_showArrivalOverlay)
                 ArrivalOverlay(
                   site: widget.site,
@@ -132,7 +155,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, -2),
                       ),

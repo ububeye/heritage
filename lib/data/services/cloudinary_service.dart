@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class CloudinaryService {
   final String cloudName;
   final String uploadPreset;
-  final String apiKey;
 
   CloudinaryService({
-    this.cloudName = 'demo',
-    this.uploadPreset = 'ml_default',
-    this.apiKey = 'YOUR_API_KEY',
+    this.cloudName = 'dpmcnfbpb',
+    this.uploadPreset = 'stone_town_unsigned',
   });
 
   /// Pick single image from gallery
@@ -46,7 +45,7 @@ class CloudinaryService {
       }
       return null;
     } catch (e) {
-      print('Cloudinary upload error: $e');
+      debugPrint('Cloudinary upload error: $e');
       return null;
     }
   }
@@ -88,7 +87,7 @@ class CloudinaryService {
       }
       return null;
     } catch (e) {
-      print('Cloudinary upload error: $e');
+      debugPrint('Cloudinary upload error: $e');
       return null;
     }
   }

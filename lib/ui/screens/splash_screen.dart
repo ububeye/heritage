@@ -58,12 +58,16 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initialize() async {
+    // Capture cubits before any await so we don't use BuildContext across gaps.
+    final languageCubit = context.read<LanguageCubit>();
+    final localizationCubit = context.read<LocalizationCubit>();
+    final authCubit = context.read<AuthCubit>();
     try {
       // Load language and translations
-      await context.read<LanguageCubit>().loadLanguage();
-      await context.read<LocalizationCubit>().loadTranslations();
+      await languageCubit.loadLanguage();
+      await localizationCubit.loadTranslations();
       // Check if user was previously logged in
-      await context.read<AuthCubit>().checkAuthStatus();
+      await authCubit.checkAuthStatus();
     } catch (e) {
       // Continue even if there's an error
     }

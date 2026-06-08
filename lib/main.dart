@@ -22,7 +22,7 @@ void main() async {
   );
 
   await Firebase.initializeApp();
-  await SharedPrefsService.getInstance();
+  await SharedPrefsService.getInstance(); 
 
   runApp(const StoneTownApp());
 }

@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import 'firestore_service.dart';
@@ -79,7 +80,7 @@ class AuthService {
       }
     } catch (e) {
       // Don't fail auth if Firestore sync fails
-      print('Failed to sync user to Firestore: $e');
+      debugPrint('Failed to sync user to Firestore: $e');
     }
   }
 

@@ -116,6 +116,30 @@ class SharedPrefsService {
 
   String? get savedUserRole => _preferences.getString('user_role');
 
+  // Favorites
+  List<String> get favorites =>
+      _preferences.getStringList(AppConstants.keyFavorites) ?? [];
+
+  Future<void> setFavorites(List<String> favoriteIds) async {
+    await _preferences.setStringList(AppConstants.keyFavorites, favoriteIds);
+  }
+
+  Future<void> addFavorite(String siteId) async {
+    final current = favorites;
+    if (!current.contains(siteId)) {
+      current.add(siteId);
+      await _preferences.setStringList(AppConstants.keyFavorites, current);
+    }
+  }
+
+  Future<void> removeFavorite(String siteId) async {
+    final current = favorites;
+    current.remove(siteId);
+    await _preferences.setStringList(AppConstants.keyFavorites, current);
+  }
+
+  bool isFavorite(String siteId) => favorites.contains(siteId);
+
   // Clear all
   Future<void> clearAll() async {
     await _preferences.clear();

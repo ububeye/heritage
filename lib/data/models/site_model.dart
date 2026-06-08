@@ -3,9 +3,14 @@ import 'package:equatable/equatable.dart';
 class SiteModel extends Equatable {
   final String id;
 
-  // Names
+  // Names (7 languages)
   final String nameEn;
   final String nameSw;
+  final String nameFr;
+  final String nameDe;
+  final String nameAr;
+  final String nameIt;
+  final String nameEs;
 
   // Descriptions (7 languages)
   final String descriptionEn;
@@ -35,6 +40,11 @@ class SiteModel extends Equatable {
     required this.id,
     required this.nameEn,
     required this.nameSw,
+    this.nameFr = '',
+    this.nameDe = '',
+    this.nameAr = '',
+    this.nameIt = '',
+    this.nameEs = '',
     required this.descriptionEn,
     required this.descriptionSw,
     required this.descriptionFr,
@@ -66,8 +76,24 @@ class SiteModel extends Equatable {
     return [];
   }
 
-  String getName(String languageCode) =>
-      languageCode == 'sw' ? nameSw : nameEn;
+  String getName(String languageCode) {
+    switch (languageCode) {
+      case 'sw':
+        return nameSw;
+      case 'fr':
+        return nameFr;
+      case 'de':
+        return nameDe;
+      case 'ar':
+        return nameAr;
+      case 'it':
+        return nameIt;
+      case 'es':
+        return nameEs;
+      default:
+        return nameEn;
+    }
+  }
 
   String getDescription(String languageCode) {
     switch (languageCode) {
@@ -112,6 +138,11 @@ class SiteModel extends Equatable {
     String? id,
     String? nameEn,
     String? nameSw,
+    String? nameFr,
+    String? nameDe,
+    String? nameAr,
+    String? nameIt,
+    String? nameEs,
     String? descriptionEn,
     String? descriptionSw,
     String? descriptionFr,
@@ -133,6 +164,11 @@ class SiteModel extends Equatable {
       id: id ?? this.id,
       nameEn: nameEn ?? this.nameEn,
       nameSw: nameSw ?? this.nameSw,
+      nameFr: nameFr ?? this.nameFr,
+      nameDe: nameDe ?? this.nameDe,
+      nameAr: nameAr ?? this.nameAr,
+      nameIt: nameIt ?? this.nameIt,
+      nameEs: nameEs ?? this.nameEs,
       descriptionEn: descriptionEn ?? this.descriptionEn,
       descriptionSw: descriptionSw ?? this.descriptionSw,
       descriptionFr: descriptionFr ?? this.descriptionFr,
@@ -157,6 +193,11 @@ class SiteModel extends Equatable {
       'id': id,
       'name_en': nameEn,
       'name_sw': nameSw,
+      'name_fr': nameFr,
+      'name_de': nameDe,
+      'name_ar': nameAr,
+      'name_it': nameIt,
+      'name_es': nameEs,
       'description_en': descriptionEn,
       'description_sw': descriptionSw,
       'description_fr': descriptionFr,
@@ -189,6 +230,11 @@ class SiteModel extends Equatable {
       id: map['id'] ?? '',
       nameEn: map['name_en'] ?? '',
       nameSw: map['name_sw'] ?? '',
+      nameFr: map['name_fr'] ?? '',
+      nameDe: map['name_de'] ?? '',
+      nameAr: map['name_ar'] ?? '',
+      nameIt: map['name_it'] ?? '',
+      nameEs: map['name_es'] ?? '',
       descriptionEn: map['description_en'] ?? '',
       descriptionSw: map['description_sw'] ?? '',
       descriptionFr: map['description_fr'] ?? '',
@@ -217,6 +263,11 @@ class SiteModel extends Equatable {
         id,
         nameEn,
         nameSw,
+        nameFr,
+        nameDe,
+        nameAr,
+        nameIt,
+        nameEs,
         descriptionEn,
         descriptionSw,
         descriptionFr,

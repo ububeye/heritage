@@ -68,7 +68,7 @@ class RatingBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
+        color: Colors.black.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
       ),
       child: Row(
@@ -94,7 +94,7 @@ class RatingBadge extends StatelessWidget {
               label!,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
           ],

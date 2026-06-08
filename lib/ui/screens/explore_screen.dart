@@ -12,6 +12,7 @@ import '../widgets/site_card.dart';
 import '../widgets/featured_site_card.dart';
 import '../widgets/category_chips.dart';
 import '../widgets/search_bar_widget.dart';
+import '../widgets/heritage_map.dart';
 import 'detail_screen.dart';
 import 'navigation_screen.dart';
 
@@ -301,32 +302,41 @@ class _MapView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.map, size: 64, color: AppColors.textHint),
-          const SizedBox(height: 16),
-          Text(
-            _tr(locState, 'view_on_map'),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+    return Column(
+      children: [
+        Expanded(
+          child: HeritageMap.browse(
+            sites: sites,
+            onSiteTap: onSiteTap,
+          ),
+        ),
+        Container(
+          color: AppColors.surface,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  '${sites.length} sites on map',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () => context.read<ExploreCubit>().setMapView(false),
+                  icon: const Icon(Icons.view_list, size: 18),
+                  label: Text(_tr(locState, 'close')),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '${sites.length} sites available',
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => context.read<ExploreCubit>().setMapView(false),
-            child: Text(_tr(locState, 'close')),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

@@ -31,7 +31,7 @@ class UpgradeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.accent.withOpacity(0.4),
+                      color: AppColors.accent.withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -165,7 +165,7 @@ class _BenefitItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.2),
+              color: AppColors.success.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

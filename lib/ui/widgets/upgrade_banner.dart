@@ -24,7 +24,7 @@ class UpgradeBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
           boxShadow: [
             BoxShadow(
-              color: AppColors.error.withOpacity(0.3),
+              color: AppColors.error.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -35,7 +35,7 @@ class UpgradeBanner extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.textOnPrimary.withOpacity(0.2),
+                color: AppColors.textOnPrimary.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -62,7 +62,7 @@ class UpgradeBanner extends StatelessWidget {
                       message!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textOnPrimary.withOpacity(0.8),
+                        color: AppColors.textOnPrimary.withValues(alpha: 0.8),
                       ),
                     ),
                 ],

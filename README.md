@@ -120,6 +120,20 @@ flutter pub get
 flutter run
 ```
 
+## Maps
+
+The app uses two map libraries, chosen for their respective strengths:
+
+- **`flutter_map` + OpenStreetMap** (free, no API key) is used for all browse and admin screens:
+  - Explore screen's "Map view" (taps a marker to open site detail)
+  - "View on Map" screen for a single site (with a Navigate FAB)
+  - Admin "Add Site" and "Edit Site" location pickers (drag the pin, tap to drop a new one, "My location" button snaps to GPS)
+- **`google_maps_flutter`** is used in the live-navigation screen (`NavigationScreen`) for GPS-follow + polylines. **It requires a Google Maps Android/iOS API key configured in `android/app/src/main/AndroidManifest.xml` and `ios/Runner/AppDelegate.swift` for tiles to render.** Without a key, the map shows a blank area with a friendly explanation banner, but the navigation logic (distance, ETA, arrival detection via `Geolocator`) still works correctly.
+
+### OSM tile usage
+
+`flutter_map` fetches tiles from `https://tile.openstreetmap.org/`. The OpenStreetMap Foundation's [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) allows light use with a descriptive `User-Agent` (we set `com.example.stone_town_heritage_vt_guide`) but prohibits heavy production traffic. For a final-year demo this is well within limits. For production deployment, switch to a paid tile provider (Stadia Maps, Mapbox, etc.) — only [lib/ui/widgets/heritage_map.dart](lib/ui/widgets/heritage_map.dart) would need to change.
+
 ## Screenshots
 
 - Welcome Screen with language selector

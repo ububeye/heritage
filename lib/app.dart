@@ -10,11 +10,13 @@ import 'blocs/localization/localization_cubit.dart';
 import 'blocs/premium/premium_cubit.dart';
 import 'blocs/explore/explore_cubit.dart';
 import 'blocs/user/user_cubit.dart';
+import 'blocs/favorites/favorites_cubit.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/tts_service.dart';
 import 'ui/screens/splash_screen.dart';
 import 'ui/screens/welcome_screen.dart';
 import 'ui/screens/home_screen.dart';
+import 'ui/screens/favorites_screen.dart';
 import 'ui/screens/admin/admin_shell.dart';
 
 class StoneTownApp extends StatelessWidget {
@@ -53,6 +55,9 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<UserCubit>(
           create: (_) => UserCubit(),
         ),
+        BlocProvider<FavoritesCubit>(
+          create: (_) => FavoritesCubit(),
+        ),
       ],
       child: MaterialApp(
         title: 'Stone Town Guide',
@@ -62,6 +67,7 @@ class StoneTownApp extends StatelessWidget {
         routes: {
           '/welcome': (context) => const WelcomeScreen(),
           '/home': (context) => const HomeScreen(),
+          '/favorites': (context) => const FavoritesScreen(),
           '/admin': (context) => const AdminShell(),
         },
       ),

@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "169976304333-0985i8hmn0pm5makt73mmn0kti59dbmg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.stone_town_heritage_vt_guide",
+            "certificate_hash": "60bda9b1f21e085f1fa83feff6f5cb5046697fda"
+          }
+        },
+        {
           "client_id": "169976304333-tfqb1i1sdpcfcg7sbaead5t42j1k33jf.apps.googleusercontent.com",
           "client_type": 3
         }

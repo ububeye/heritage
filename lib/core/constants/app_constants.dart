@@ -40,6 +40,16 @@ class AppConstants {
   static const double markerZoom = 17.0;
   static const double routePolylineWidth = 4.0;
 
+  /// Set this to a real Google Maps API key in production builds to enable
+  /// the live-navigation screen. When null, the "Navigate" buttons in the
+  /// app show a friendly snackbar instead of opening NavigationScreen
+  /// (which uses google_maps_flutter — broken on emulators / devices
+  /// without Google Play services, or without billing enabled).
+  ///
+  /// The rest of the map experience (browse, view, picker) uses
+  /// flutter_map + OpenStreetMap and works without any key.
+  static const String? googleMapsApiKey = null;
+
   // SharedPreferences Keys
   static const String keyFirstLaunch = 'first_launch';
   static const String keyUiLanguage = 'ui_language';
@@ -47,6 +57,7 @@ class AppConstants {
   static const String keyItinerary = 'itinerary';
   static const String keyShowPremiumOffer = 'show_premium_offer';
   static const String keyUserId = 'user_id';
+  static const String keyFavorites = 'favorites';
 
   // Firestore Collections
   static const String sitesCollection = 'sites';

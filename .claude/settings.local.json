@@ -10,7 +10,23 @@
       "Bash(flutter analyze *)",
       "Bash(flutter build *)",
       "Bash(flutter pub *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(keytool -list -v -keystore __TRACKED_VAR__/.android/debug.keystore -alias androiddebugkey -storepass android)",
+      "Bash(keytool -list -v -keystore \"C:\\\\Users\\\\noble\\\\.android\\\\debug.keystore\" -alias androiddebugkey -storepass android)",
+      "Read(//c/Users/noble/.android/**)",
+      "Bash(./gradlew signingReport)",
+      "Bash(java -version)",
+      "Bash(where keytool *)",
+      "Read(//c/Program Files/Java/**)",
+      "Read(//c/Program Files \\(x86\\)/Java/**)",
+      "Bash(\"/c/Program Files \\(x86\\)/Java/jre1.8.0_40/bin/keytool\" -list -v -keystore \"C:/Users/noble/.android/debug.keystore\" -alias androiddebugkey -storepass android)",
+      "Bash(\"/c/Program Files \\(x86\\)/Java/jre1.8.0_40/bin/keytool\" -genkeypair -v -keystore \"C:/Users/noble/.android/debug.keystore\" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname \"CN=Android Debug,O=Android,C=US\")",
+      "Bash(rm \"C:/Users/noble/.android/debug.keystore\" && \"/c/Program Files \\(x86\\)/Java/jre1.8.0_40/bin/keytool\" -genkeypair -v -keystore \"C:/Users/noble/.android/debug.keystore\" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname \"CN=Android Debug,O=Android,C=US\" 2>&1)",
+      "Bash(find \"c:\\\\Users\\\\noble\\\\StudioProjects\\\\stone_town_heritage_vt_guide\" -type f -not -path \"*/\\\\.*\" -not -path \"*/build/*\" -not -path \"*/node_modules/*\" -not -path \"*/.dart_tool/*\")",
+      "Bash(flutter test *)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\noble\\.android"
     ]
   }
 }
