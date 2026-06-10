@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/app_constants.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/site_detail/site_detail_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/auth/auth_cubit.dart';
-import '../../blocs/auth/auth_state.dart';
 import '../../blocs/favorites/favorites_cubit.dart';
 import '../../core/utils/nav_guard.dart';
 import '../widgets/upgrade_banner.dart';
@@ -36,6 +36,166 @@ class _DetailScreenState extends State<DetailScreen> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// Display name for the audio-language chip.
+  String _audioLanguageName(String code) {
+    switch (code) {
+      case 'en':
+        return 'English';
+      case 'sw':
+        return 'Kiswahili';
+      case 'fr':
+        return 'Français';
+      case 'de':
+        return 'Deutsch';
+      case 'ar':
+        return 'العربية';
+      case 'it':
+        return 'Italiano';
+      case 'es':
+        return 'Español';
+      default:
+        return code;
+    }
+  }
+
+  /// Show a modal bottom sheet with the 7 audio languages. Free users see
+  /// the 5 premium languages greyed out with a "Premium" badge; tapping a
+  /// free language updates the cubit and (if audio is currently playing)
+  /// restarts playback in the new language.
+  Future<void> _showAudioLanguagePicker(BuildContext context, bool isPremium) async {
+    final cubit = context.read<LanguageCubit>();
+    final siteDetailCubit = context.read<SiteDetailCubit>();
+    final wasPlaying = context.read<SiteDetailCubit>().state.audioState.isPlaying;
+
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Audio Language',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: AppConstants.ttsLanguages.map((code) {
+                    final isFree = AppConstants.freeTtsLanguages.contains(code);
+                    final locked = !isFree && !isPremium;
+                    final selected = cubit.state.audioLanguage == code;
+                    return ListTile(
+                      leading: Text(
+                        _audioLanguageName(code).isEmpty ? '🌐' : _flagForCode(code),
+                        style: const TextStyle(fontSize: 22),
+                      ),
+                      title: Text(
+                        _audioLanguageName(code),
+                        style: TextStyle(
+                          color: locked ? AppColors.textHint : AppColors.textPrimary,
+                          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      trailing: locked
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                'PREMIUM',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textOnAccent,
+                                ),
+                              ),
+                            )
+                          : (selected
+                              ? const Icon(Icons.check_circle, color: AppColors.success)
+                              : null),
+                      onTap: locked
+                          ? () {
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Upgrade to Premium to unlock this language.'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          : () => Navigator.of(sheetContext).pop(code),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked == null || picked == cubit.state.audioLanguage) return;
+
+    // Update the cubit — chip re-renders immediately.
+    await cubit.setAudioLanguage(picked);
+
+    if (!mounted) return;
+
+    // If audio was playing in the old language, stop and restart in the
+    // new one. The bottom sheet's play/pause button reads from the cubit
+    // so it stays in sync.
+    if (wasPlaying) {
+      await siteDetailCubit.stopAudio();
+      if (!mounted) return;
+      await siteDetailCubit.playAudio(picked, isPremium: isPremium);
+    }
+  }
+
+  String _flagForCode(String code) {
+    switch (code) {
+      case 'en':
+        return '🇬🇧';
+      case 'sw':
+        return '🇹🇿';
+      case 'fr':
+        return '🇫🇷';
+      case 'de':
+        return '🇩🇪';
+      case 'ar':
+        return '🇸🇦';
+      case 'it':
+        return '🇮🇹';
+      case 'es':
+        return '🇪🇸';
+      default:
+        return '🌐';
+    }
   }
 
   @override
@@ -148,7 +308,9 @@ class _DetailScreenState extends State<DetailScreen> {
                           ),
                         ),
                       ),
-                      // Image indicators
+                      // Image indicators (tappable so users can jump between
+                      // images even when horizontal swiping is consumed by
+                      // the parent CustomScrollView's vertical drag).
                       if (allImages.length > 1)
                         Positioned(
                           bottom: 16,
@@ -158,16 +320,26 @@ class _DetailScreenState extends State<DetailScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(
                               allImages.length,
-                              (index) => AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: _currentImageIndex == index ? 24 : 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: _currentImageIndex == index
-                                      ? Colors.white
-                                      : Colors.white.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(4),
+                              (index) => GestureDetector(
+                                onTap: () {
+                                  _pageController.animateToPage(
+                                    index,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                behavior: HitTestBehavior.opaque,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                                  width: _currentImageIndex == index ? 24 : 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: _currentImageIndex == index
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
                                 ),
                               ),
                             ),
@@ -204,6 +376,44 @@ class _DetailScreenState extends State<DetailScreen> {
                           right: 16,
                           child: RatingBadge(rating: site.rating!),
                         ),
+                      // Prev / Next arrow buttons — appear when there's more
+                      // than one image. Tap-to-cycle works regardless of
+                      // whether horizontal swipe is consumed by the parent
+                      // CustomScrollView's vertical drag.
+                      if (allImages.length > 1) ...[
+                        Positioned(
+                          left: 8,
+                          top: 0,
+                          bottom: 0,
+                          child: Center(
+                            child: _GalleryArrow(
+                              icon: Icons.chevron_left,
+                              onTap: _currentImageIndex > 0
+                                  ? () => _pageController.previousPage(
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                      )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          top: 0,
+                          bottom: 0,
+                          child: Center(
+                            child: _GalleryArrow(
+                              icon: Icons.chevron_right,
+                              onTap: _currentImageIndex < allImages.length - 1
+                                  ? () => _pageController.nextPage(
+                                        duration: const Duration(milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                      )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -373,6 +583,23 @@ class _DetailScreenState extends State<DetailScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Language chip — tap to switch audio language
+                        // in-place. Stops current audio (if playing) and
+                        // starts in the new language when one is picked.
+                        Builder(
+                          builder: (innerContext) {
+                            final audioLang = innerContext.watch<LanguageCubit>().state.audioLanguage;
+                            return Align(
+                              alignment: Alignment.centerLeft,
+                              child: _AudioLanguageChip(
+                                code: audioLang,
+                                name: _audioLanguageName(audioLang),
+                                onTap: () => _showAudioLanguagePicker(innerContext, isPremium),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 6),
                         LinearProgressIndicator(
                           value: state.audioState.progress.clamp(0.0, 1.0),
                           backgroundColor: AppColors.border,
@@ -401,6 +628,105 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Circular semi-transparent arrow button overlaid on the image gallery.
+/// When [onTap] is null the button renders disabled.
+class _GalleryArrow extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _GalleryArrow({required this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Material(
+      color: Colors.black.withValues(alpha: 0.4),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(
+            icon,
+            color: enabled ? Colors.white : Colors.white54,
+            size: 28,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Language flag emoji + display name + a small chevron.
+/// Tapping invokes [onTap]. Used as the audio-language chip on the
+/// bottom-sheet player.
+class _AudioLanguageChip extends StatelessWidget {
+  final String code;
+  final String name;
+  final VoidCallback onTap;
+
+  const _AudioLanguageChip({
+    required this.code,
+    required this.name,
+    required this.onTap,
+  });
+
+  String get _flag {
+    switch (code) {
+      case 'en':
+        return '🇬🇧';
+      case 'sw':
+        return '🇹🇿';
+      case 'fr':
+        return '🇫🇷';
+      case 'de':
+        return '🇩🇪';
+      case 'ar':
+        return '🇸🇦';
+      case 'it':
+        return '🇮🇹';
+      case 'es':
+        return '🇪🇸';
+      default:
+        return '🌐';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceDark,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_flag, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 4),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 2),
+            const Icon(Icons.expand_more, size: 16, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
     );
   }
 }

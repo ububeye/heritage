@@ -1,7 +1,7 @@
 {
 "env": { 
 "ANTHROPIC_BASE_URL": "https://llm.abdibaker.com",
-"ANTHROPIC_AUTH_TOKEN": "sk-MhLwwBAa0wOzSrb2fqgZHw",
+"ANTHROPIC_AUTH_TOKEN": "sk-qa7ygLG7gkctB9FbgBwTQA",
 "API_TIMEOUT_MS": "3000000", 
 "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
 "ANTHROPIC_MODEL": "MiniMax",

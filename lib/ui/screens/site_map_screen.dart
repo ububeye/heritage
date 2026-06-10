@@ -4,7 +4,7 @@ import '../../core/constants/colors.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../data/models/site_model.dart';
 import '../widgets/heritage_map.dart';
-import 'navigation_screen.dart';
+import '../../core/utils/nav_guard.dart';
 
 /// Full-screen map view for a single site. Shows the site as a labeled pin
 /// on an OpenStreetMap tile layer, with a Navigate FAB that pushes the
@@ -72,13 +72,7 @@ class SiteMapScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => NavigationScreen(site: site),
-            ),
-          );
-        },
+        onPressed: () => safePushNavigation(context, site),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.navigation),

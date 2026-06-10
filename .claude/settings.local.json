@@ -23,7 +23,8 @@
       "Bash(\"/c/Program Files \\(x86\\)/Java/jre1.8.0_40/bin/keytool\" -genkeypair -v -keystore \"C:/Users/noble/.android/debug.keystore\" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname \"CN=Android Debug,O=Android,C=US\")",
       "Bash(rm \"C:/Users/noble/.android/debug.keystore\" && \"/c/Program Files \\(x86\\)/Java/jre1.8.0_40/bin/keytool\" -genkeypair -v -keystore \"C:/Users/noble/.android/debug.keystore\" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname \"CN=Android Debug,O=Android,C=US\" 2>&1)",
       "Bash(find \"c:\\\\Users\\\\noble\\\\StudioProjects\\\\stone_town_heritage_vt_guide\" -type f -not -path \"*/\\\\.*\" -not -path \"*/build/*\" -not -path \"*/node_modules/*\" -not -path \"*/.dart_tool/*\")",
-      "Bash(flutter test *)"
+      "Bash(flutter test *)",
+      "Bash(git check-ignore *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\noble\\.android"

@@ -9,10 +9,10 @@ import '../../blocs/favorites/favorites_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
-import 'navigation_screen.dart';
 import 'explore_screen.dart';
 import 'settings_screen.dart';
 import '../widgets/site_card.dart';
+import '../../core/utils/nav_guard.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -74,11 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToSite(SiteModel site) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => NavigationScreen(site: site),
-      ),
-    );
+    safePushNavigation(context, site);
   }
 }
 

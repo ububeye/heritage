@@ -44,7 +44,7 @@ A digital tour guide app for Stone Town, Zanzibar (UNESCO World Heritage Site). 
 - **Multi-language Content**: Names and descriptions in 7 languages
 - **Photo Gallery**: Multiple images per site
 - **Location**: GPS coordinates with entry radius (10-200m)
-- **Auto-translation**: Google Cloud Translation API integration
+- **Auto-translation**: Admin enters all 7 languages by hand when adding a site. (The original Google Cloud Translation path was removed — paid API not needed for a demo.)
 
 ### 🎨 UI/UX
 - Modern Material Design 3
@@ -64,8 +64,8 @@ A digital tour guide app for Stone Town, Zanzibar (UNESCO World Heritage Site). 
 | State Management | flutter_bloc (Cubit) |
 | Backend | Firebase (Auth, Firestore) |
 | Image Storage | Cloudinary |
-| Maps | OpenStreetMap + Leaflet.js |
-| Translation | Google Cloud Translation API |
+| Maps (browse, view, picker) | `flutter_map` + OpenStreetMap (free, no API key) |
+| Maps (live navigation) | `google_maps_flutter` — **gated behind an API key** in `AppConstants.googleMapsApiKey`. Without a key, "Navigate" buttons show a friendly explanation instead of opening the screen, because the Google Maps SDK crashes on emulators and devices without Google Play services / billing. |
 | Text-to-Speech | flutter_tts |
 | Location | Geolocator |
 | Local Storage | SharedPreferences |
@@ -108,13 +108,9 @@ lib/
 1. Create Cloudinary account
 2. Create upload preset (unsigned)
 3. Update `cloudinary_service.dart` with your credentials
+   - The default cloud name is `dpmcnfbpb` and the upload preset is `stone_town_unsigned` (both hardcoded in `CloudinaryService`)
 
-### 3. Google Cloud Translation (Optional)
-1. Enable Cloud Translation API
-2. Get API key
-3. Update `translation_service.dart`
-
-### 4. Run the App
+### 3. Run the App
 ```bash
 flutter pub get
 flutter run

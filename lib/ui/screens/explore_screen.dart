@@ -14,7 +14,7 @@ import '../widgets/category_chips.dart';
 import '../widgets/search_bar_widget.dart';
 import '../widgets/heritage_map.dart';
 import 'detail_screen.dart';
-import 'navigation_screen.dart';
+import '../../core/utils/nav_guard.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -154,9 +154,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   void _navigateToNav(SiteModel site) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => NavigationScreen(site: site)),
-    );
+    safePushNavigation(context, site);
   }
 }
 
