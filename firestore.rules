@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Firestore security rules for Stone Town Heritage VT-Guide.
+//
+// This is a development / demo project, so we use a coarse time-based
+// rule that grants full read+write access to anyone until 2026-09-18
+// (3 months from project start). After that, the database rejects all
+// reads and writes until the deadline is bumped.
+//
+// IMPORTANT:
+//   1. The rule applies to ALL collections (sites, users, etc).
+//   2. When promoting this to a real production app, replace this with
+//      proper auth-based rules:
+//        - sites:    allow read: if true;
+//                    allow write: if request.auth != null;
+//        - users:    allow read, write: if request.auth != null
+//                                     && request.auth.uid == userId;
+//   3. The "now < timestamp" gate will lock you out if you forget to
+//      update it. Set a calendar reminder for early September 2026.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.time < timestamp.date(2026, 9, 18);
+    }
+  }
+}
