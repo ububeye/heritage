@@ -4,15 +4,29 @@ import '../../../core/constants/colors.dart';
 import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/user_model.dart';
 
-class AdminUserManagementScreen extends StatelessWidget {
+class AdminUserManagementScreen extends StatefulWidget {
   const AdminUserManagementScreen({super.key});
 
   @override
+  State<AdminUserManagementScreen> createState() => _AdminUserManagementState();
+}
+
+class _AdminUserManagementState extends State<AdminUserManagementScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Reuse the app-level UserCubit so dashboard stats stay in sync.
+    // The watch stream in UserCubit will keep the list live; loadUsers() is
+    // only needed on the very first navigation.
+    final cubit = context.read<UserCubit>();
+    if (cubit.state.users.isEmpty) {
+      cubit.loadUsers();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => UserCubit()..loadUsers(),
-      child: const _UserManagementContent(),
-    );
+    return const _UserManagementContent();
   }
 }
 

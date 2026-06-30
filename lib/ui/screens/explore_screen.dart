@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
-import '../../core/constants/app_constants.dart';
 import '../../blocs/site_list/site_list_cubit.dart';
 import '../../blocs/site_list/site_list_state.dart';
 import '../../blocs/explore/explore_cubit.dart';
@@ -45,8 +44,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
             actions: [
               BlocBuilder<ExploreCubit, ExploreState>(
                 builder: (context, state) {
+                  final locState = context.watch<LocalizationCubit>().state;
+                  final key = state.isMapView ? 'view_list' : 'view_map';
                   return IconButton(
                     icon: Icon(state.isMapView ? Icons.list : Icons.map),
+                    tooltip: locState.translations[key] ?? key,
                     onPressed: () => context.read<ExploreCubit>().toggleMapView(),
                   );
                 },
@@ -67,7 +69,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               BlocBuilder<LocalizationCubit, LocalizationState>(
                 builder: (context, locState) {
                   return CategoryChips(
-                    categories: AppConstants.siteCategories,
+                    categories: SiteCategories.all,
                     selectedCategory: _selectedCategory,
                     onSelected: (category) {
                       setState(() => _selectedCategory = category);
@@ -328,7 +330,7 @@ class _MapView extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => context.read<ExploreCubit>().setMapView(false),
                   icon: const Icon(Icons.view_list, size: 18),
-                  label: Text(_tr(locState, 'close')),
+                  label: Text(_tr(locState, 'view_list')),
                 ),
               ],
             ),

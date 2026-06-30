@@ -42,6 +42,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   // Location controllers
   final _latController = TextEditingController();
   final _lngController = TextEditingController();
+  final _addressController = TextEditingController();
 
   // Form state
   String _selectedCategory = 'historic';
@@ -62,7 +63,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       _nameDeController, _nameArController, _nameItController, _nameEsController,
       _descEnController, _descSwController, _descFrController,
       _descDeController, _descArController, _descItController, _descEsController,
-      _latController, _lngController,
+      _latController, _lngController, _addressController,
     ]) {
       c.dispose();
     }
@@ -118,6 +119,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         latitude: double.parse(_latController.text),
         longitude: double.parse(_lngController.text),
         entryRadiusM: _entryRadius,
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
         category: _selectedCategory,
         createdAt: DateTime.now(),
       );
@@ -446,7 +450,18 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: _locationTabIndex == 0 ? _buildMapLocation() : _buildManualLocation(),
+            child: Column(
+              children: [
+                _buildTextField(
+                  controller: _addressController,
+                  label: 'Display address (optional)',
+                ),
+                const SizedBox(height: 12),
+                _locationTabIndex == 0
+                    ? _buildMapLocation()
+                    : _buildManualLocation(),
+              ],
+            ),
           ),
         ],
       ),

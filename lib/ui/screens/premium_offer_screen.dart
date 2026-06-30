@@ -184,7 +184,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
                                   ),
                                 )
                               : const Text(
-                                  'Start 3-Day Free Trial',
+                                  'Start Demo Premium',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -193,6 +193,15 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
                         ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Demo build — no real purchase required',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white70,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   TextButton(

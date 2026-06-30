@@ -25,12 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   @override
-  void initState() {
-    super.initState();
-    context.read<SiteListCubit>().loadSites();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, locState) {
@@ -94,7 +88,7 @@ class _HomeContent extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.favorite_outline),
-            tooltip: 'Favorites',
+            tooltip: _tr(locState, 'favorites'),
             onPressed: () => Navigator.of(context).pushNamed('/favorites'),
           ),
         ],

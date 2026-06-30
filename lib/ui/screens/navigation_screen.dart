@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../blocs/navigation/navigation_cubit.dart';
@@ -169,16 +170,31 @@ class _NavigationScreenState extends State<NavigationScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                widget.site.cloudinaryImageUrl,
+                              child: CachedNetworkImage(
+                                imageUrl: widget.site.primaryImage,
                                 width: 60,
                                 height: 60,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                placeholder: (context, url) => Container(
                                   width: 60,
                                   height: 60,
                                   color: AppColors.surfaceDark,
-                                  child: const Icon(Icons.image, color: AppColors.textHint),
+                                  child: const Center(
+                                    child: SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.accent,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  width: 60,
+                                  height: 60,
+                                  color: AppColors.surfaceDark,
+                                  child: const Icon(Icons.image_not_supported, color: AppColors.textHint),
                                 ),
                               ),
                             ),

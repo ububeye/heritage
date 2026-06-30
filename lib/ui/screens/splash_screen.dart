@@ -6,9 +6,11 @@ import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/user_model.dart';
+import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
 import 'home_screen.dart';
 import 'admin/admin_shell.dart';
+import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -75,6 +77,15 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _navigateBasedOnAuth(AuthState authState) {
     if (!mounted) return;
+
+    // First-launch onboarding takes precedence over auth routing so the
+    // user sees the app intro before any sign-in screen.
+    if (SharedPrefsService.instance.isFirstLaunch) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OnboardingScreen(isFirstLaunch: true)),
+      );
+      return;
+    }
 
     if (authState.status == AuthStatus.authenticated && authState.user != null) {
       // User is logged in - navigate to appropriate screen

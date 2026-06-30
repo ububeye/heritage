@@ -105,5 +105,35 @@
   "delete": "Delete",
   "edit": "Edit",
   "done": "Done",
-  "close": "Close"
+  "close": "Close",
+
+  "favorites": "Favorites",
+  "no_favorites": "No favorites yet",
+  "no_favorites_hint": "Tap the heart icon on any site to add it to your favorites",
+  "removed_from_favorites": "%s removed from favorites",
+  "undo": "Undo",
+  "add_to_favorites": "Add to favorites",
+  "remove_from_favorites": "Remove from favorites",
+
+  "view_list": "View as list",
+  "view_map": "View as map",
+
+  "market": "Market",
+  "museum": "Museum",
+  "natural_landmark": "Natural Landmark",
+  "government": "Government",
+  "other": "Other",
+
+  "onboarding_skip": "Skip",
+  "onboarding_next": "Next",
+  "onboarding_get_started": "Get Started",
+  "onboarding_p1_title": "Explore Heritage",
+  "onboarding_p1_subtitle": "Discover the rich history and culture of Stone Town, Zanzibar's UNESCO World Heritage Site",
+  "onboarding_p2_title": "Audio Guides",
+  "onboarding_p2_subtitle": "Listen to fascinating stories and history in 7 languages with our audio guide",
+  "onboarding_p3_title": "GPS Navigation",
+  "onboarding_p3_subtitle": "Navigate to sites with turn-by-turn directions and auto-play audio when you arrive",
+
+  "start_demo_premium": "Start Demo Premium",
+  "demo_premium_note": "Demo build — no real purchase required"
 }

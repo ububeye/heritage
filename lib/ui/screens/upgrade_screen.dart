@@ -113,14 +113,14 @@ class UpgradeScreen extends StatelessWidget {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text('Start Free Trial'),
+                          : const Text('Start Demo Premium'),
                     ),
                   );
                 },
               ),
               const SizedBox(height: 16),
               const Text(
-                'Cancel anytime',
+                'Demo build — no real purchase required',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,

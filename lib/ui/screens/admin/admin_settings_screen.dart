@@ -167,7 +167,7 @@ class AdminSettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  authState.user?.email ?? 'admin@stonetownguide.com',
+                  authState.user?.email ?? '',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 179),
                     fontSize: 13,

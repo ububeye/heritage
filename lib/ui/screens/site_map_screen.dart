@@ -47,10 +47,10 @@ class SiteMapScreen extends StatelessWidget {
                   children: [
                     const Icon(Icons.location_on, color: AppColors.primary, size: 20),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Stone Town, Zanzibar',
-                        style: TextStyle(
+                        site.displayAddress,
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.textSecondary,
                         ),

@@ -59,15 +59,40 @@ class FirestoreService {
 
   Future<List<SiteModel>> searchSites(String query) async {
     try {
-      final snapshot = await _sitesCollection
-          .where('name_en', isGreaterThanOrEqualTo: query)
-          .where('name_en', isLessThanOrEqualTo: '$query')
-          .get();
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id;
-        return SiteModel.fromMap(data);
-      }).toList();
+      // Firestore's range query is case-sensitive and English-only, so we
+      // fetch the whole collection and filter in-memory across all language
+      // name fields. For a final-year demo with <100 sites this is fine.
+      final snapshot = await _sitesCollection.get();
+      final needle = query.trim().toLowerCase();
+      if (needle.isEmpty) {
+        return snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          data['id'] = doc.id;
+          return SiteModel.fromMap(data);
+        }).toList();
+      }
+      bool matches(Map<String, dynamic> data, String field) {
+        final v = data[field];
+        return v is String && v.toLowerCase().contains(needle);
+      }
+
+      return snapshot.docs
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            data['id'] = doc.id;
+            return data;
+          })
+          .where((data) =>
+              matches(data, 'name_en') ||
+              matches(data, 'name_sw') ||
+              matches(data, 'name_fr') ||
+              matches(data, 'name_de') ||
+              matches(data, 'name_ar') ||
+              matches(data, 'name_it') ||
+              matches(data, 'name_es') ||
+              matches(data, 'address'))
+          .map((data) => SiteModel.fromMap(data))
+          .toList();
     } catch (e) {
       throw Exception('Failed to search sites: $e');
     }

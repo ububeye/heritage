@@ -21,15 +21,6 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SiteListCubit>().loadSites();
-      context.read<UserCubit>().loadUsers();
-    });
-  }
-
   String _tr(LocalizationState state, String key) {
     return state.translations[key] ?? key;
   }
@@ -258,7 +249,7 @@ class _WelcomeCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      authState.user?.email ?? 'admin@stonetownguide.com',
+                      authState.user?.email ?? '',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,

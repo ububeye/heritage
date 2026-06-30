@@ -4,14 +4,22 @@ import '../../data/services/shared_prefs_service.dart';
 class PremiumCubit extends Cubit<PremiumState> {
   PremiumCubit() : super(const PremiumState());
 
+  /// Hydrate from SharedPreferences so the demo premium status survives
+  /// an app restart. Real billing integration would replace this with
+  /// a server-side check (RevenueCat / Cloud Function).
   Future<void> checkPremiumStatus() async {
-    final showOffer = SharedPrefsService.instance.showPremiumOffer;
-    emit(state.copyWith(showPremiumOffer: showOffer));
+    final prefs = SharedPrefsService.instance;
+    emit(state.copyWith(
+      showPremiumOffer: prefs.showPremiumOffer,
+      isPremium: prefs.isPremiumDemo,
+    ));
   }
 
   Future<void> subscribe() async {
     emit(state.copyWith(isLoading: true));
     await Future.delayed(const Duration(seconds: 1));
+    await SharedPrefsService.instance.setPremiumDemo(true);
+    await SharedPrefsService.instance.setShowPremiumOffer(false);
     emit(state.copyWith(
       isLoading: false,
       isPremium: true,
@@ -24,7 +32,8 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(showPremiumOffer: false));
   }
 
-  void setPremium(bool isPremium) {
+  Future<void> setPremium(bool isPremium) async {
+    await SharedPrefsService.instance.setPremiumDemo(isPremium);
     emit(state.copyWith(isPremium: isPremium));
   }
 }

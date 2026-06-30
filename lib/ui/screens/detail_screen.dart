@@ -12,6 +12,8 @@ import '../../core/utils/nav_guard.dart';
 import '../widgets/upgrade_banner.dart';
 import '../widgets/rating_stars.dart';
 import 'site_map_screen.dart';
+import 'upgrade_screen.dart';
+import '../../blocs/localization/localization_cubit.dart';
 
 class DetailScreen extends StatefulWidget {
   final String siteId;
@@ -67,7 +69,6 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> _showAudioLanguagePicker(BuildContext context, bool isPremium) async {
     final cubit = context.read<LanguageCubit>();
     final siteDetailCubit = context.read<SiteDetailCubit>();
-    final wasPlaying = context.read<SiteDetailCubit>().state.audioState.isPlaying;
 
     final picked = await showModalBottomSheet<String>(
       context: context,
@@ -162,6 +163,12 @@ class _DetailScreenState extends State<DetailScreen> {
 
     if (picked == null || picked == cubit.state.audioLanguage) return;
 
+    // Read the live playing state AFTER the modal closes. The modal could
+    // have been open for several seconds; TTS may have completed naturally
+    // or the user may have toggled play. Re-checking here keeps the bottom
+    // sheet in sync with the actual cubit state.
+    final wasPlaying = siteDetailCubit.state.audioState.isPlaying;
+
     // Update the cubit — chip re-renders immediately.
     await cubit.setAudioLanguage(picked);
 
@@ -250,12 +257,17 @@ class _DetailScreenState extends State<DetailScreen> {
                   BlocBuilder<FavoritesCubit, FavoritesState>(
                     builder: (context, favState) {
                       final isFav = favState.favoriteIds.contains(site.id);
+                      final loc = context.watch<LocalizationCubit>().state;
+                      final tooltipKey = isFav
+                          ? 'remove_from_favorites'
+                          : 'add_to_favorites';
                       return IconButton(
                         icon: Icon(
                           isFav ? Icons.favorite : Icons.favorite_border,
                           color: isFav ? Colors.red : Colors.white,
                         ),
-                        tooltip: isFav ? 'Remove from favorites' : 'Add to favorites',
+                        tooltip: loc.translations[tooltipKey] ??
+                            (isFav ? 'Remove from favorites' : 'Add to favorites'),
                         onPressed: () =>
                             context.read<FavoritesCubit>().toggleFavorite(site.id),
                       );
@@ -438,7 +450,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
-                            'Stone Town, Zanzibar',
+                            site.displayAddress,
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -467,9 +479,11 @@ class _DetailScreenState extends State<DetailScreen> {
                       const SizedBox(height: 24),
                       if (!isPremium)
                         UpgradeBanner(
-                          onUpgrade: () {
-                            // Navigate to upgrade screen
-                          },
+                          onUpgrade: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const UpgradeScreen(),
+                            ),
+                          ),
                           message: '30 sec limit • Upgrade for full audio',
                         ),
                       const SizedBox(height: 16),
@@ -618,9 +632,18 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ),
                   if (isPremium)
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.replay, color: AppColors.primary),
+                    Builder(
+                      builder: (innerContext) => IconButton(
+                        tooltip: 'Replay',
+                        onPressed: () async {
+                          final audioLang = innerContext.read<LanguageCubit>().state.audioLanguage;
+                          final cubit = innerContext.read<SiteDetailCubit>();
+                          await cubit.stopAudio();
+                          if (!mounted) return;
+                          await cubit.playAudio(audioLang, isPremium: isPremium);
+                        },
+                        icon: const Icon(Icons.replay, color: AppColors.primary),
+                      ),
                     ),
                 ],
               ),

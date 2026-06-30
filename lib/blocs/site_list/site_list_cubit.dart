@@ -8,16 +8,34 @@ import 'site_list_state.dart';
 class SiteListCubit extends Cubit<SiteListState> {
   final SiteRepository _siteRepository;
   StreamSubscription<List<SiteModel>>? _sitesSubscription;
+  bool _hasReceivedFirstSnapshot = false;
 
   SiteListCubit({SiteRepository? siteRepository})
       : _siteRepository = siteRepository ?? SiteRepository(),
         super(const SiteListState()) {
+    // Reflect "loading" on the very first frame so the UI doesn't sit on
+    // a stale empty list if the snapshot is slow to arrive.
+    if (state.sites.isEmpty) {
+      emit(state.copyWith(status: SiteListStatus.loading));
+    }
     // Live updates: any change in Firestore (admin add/edit/delete) is pushed
     // to the cubit automatically. No need to call loadSites() on app start.
     _sitesSubscription = _siteRepository.watchSites().listen(
       (sites) {
         // Preserve current filter/search when a new snapshot arrives.
-        final filtered = _applyFilters(sites, state.searchQuery, state.selectedCategory);
+        // Only re-filter when the filter inputs or the site list actually
+        // changed — otherwise every snapshot triggers an O(n) walk.
+        final filtered = (_hasReceivedFirstSnapshot &&
+                _sameList(sites, state.sites) &&
+                state.searchQuery.isEmpty &&
+                state.selectedCategory == null)
+            ? state.filteredSites
+            : _applyFilters(
+                sites,
+                state.searchQuery,
+                state.selectedCategory,
+              );
+        _hasReceivedFirstSnapshot = true;
         emit(state.copyWith(
           status: SiteListStatus.loaded,
           sites: sites,
@@ -40,6 +58,7 @@ class SiteListCubit extends Cubit<SiteListState> {
     try {
       final sites = await _siteRepository.getAllSites();
       final filtered = _applyFilters(sites, state.searchQuery, state.selectedCategory);
+      _hasReceivedFirstSnapshot = true;
       emit(state.copyWith(
         status: SiteListStatus.loaded,
         sites: sites,
@@ -51,6 +70,16 @@ class SiteListCubit extends Cubit<SiteListState> {
         errorMessage: e.toString(),
       ));
     }
+  }
+
+  /// Cheap list-equality check used to skip redundant re-filters when a
+  /// snapshot arrives but the underlying data hasn't changed.
+  static bool _sameList(List<SiteModel> a, List<SiteModel> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
   }
 
   void filterByCategory(String? category) {

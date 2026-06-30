@@ -30,6 +30,9 @@ class SiteModel extends Equatable {
   final double longitude;
   final double entryRadiusM;
 
+  // Display address (admin-supplied; falls back to "Stone Town, Zanzibar")
+  final String? address;
+
   // Metadata
   final double? rating;
   final String? category;
@@ -57,6 +60,7 @@ class SiteModel extends Equatable {
     required this.latitude,
     required this.longitude,
     this.entryRadiusM = 50.0,
+    this.address,
     this.rating,
     this.category,
     this.createdAt,
@@ -74,6 +78,14 @@ class SiteModel extends Equatable {
     if (imageUrls.isNotEmpty) return imageUrls;
     if (cloudinaryImageUrl.isNotEmpty) return [cloudinaryImageUrl];
     return [];
+  }
+
+  /// Human-readable address. Falls back to a sensible default if the
+  /// admin hasn't filled one in for the site.
+  String get displayAddress {
+    final raw = address?.trim();
+    if (raw == null || raw.isEmpty) return 'Stone Town, Zanzibar';
+    return raw;
   }
 
   String getName(String languageCode) {
@@ -155,6 +167,7 @@ class SiteModel extends Equatable {
     double? latitude,
     double? longitude,
     double? entryRadiusM,
+    String? address,
     double? rating,
     String? category,
     DateTime? createdAt,
@@ -181,6 +194,7 @@ class SiteModel extends Equatable {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       entryRadiusM: entryRadiusM ?? this.entryRadiusM,
+      address: address ?? this.address,
       rating: rating ?? this.rating,
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
@@ -210,6 +224,7 @@ class SiteModel extends Equatable {
       'latitude': latitude,
       'longitude': longitude,
       'entry_radius_m': entryRadiusM,
+      'address': address,
       'rating': rating,
       'category': category,
       'created_at': createdAt?.toIso8601String(),
@@ -247,6 +262,7 @@ class SiteModel extends Equatable {
       latitude: (map['latitude'] ?? 0.0).toDouble(),
       longitude: (map['longitude'] ?? 0.0).toDouble(),
       entryRadiusM: (map['entry_radius_m'] ?? 50.0).toDouble(),
+      address: map['address'],
       rating: map['rating']?.toDouble(),
       category: map['category'],
       createdAt: map['created_at'] != null
@@ -280,6 +296,7 @@ class SiteModel extends Equatable {
         latitude,
         longitude,
         entryRadiusM,
+        address,
         rating,
         category,
         createdAt,

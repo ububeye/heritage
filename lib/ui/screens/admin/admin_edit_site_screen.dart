@@ -36,6 +36,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
   late final TextEditingController _latController;
   late final TextEditingController _lngController;
   late final TextEditingController _radiusController;
+  late final TextEditingController _addressController;
 
   late String _selectedCategory;
   bool _isLoading = false;
@@ -61,6 +62,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     _latController = TextEditingController(text: widget.site.latitude.toString());
     _lngController = TextEditingController(text: widget.site.longitude.toString());
     _radiusController = TextEditingController(text: widget.site.entryRadiusM.toString());
+    _addressController = TextEditingController(text: widget.site.address ?? '');
     _selectedCategory = widget.site.category ?? 'historic';
   }
 
@@ -84,6 +86,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     _latController.dispose();
     _lngController.dispose();
     _radiusController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -112,6 +115,9 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
         latitude: double.parse(_latController.text),
         longitude: double.parse(_lngController.text),
         entryRadiusM: double.parse(_radiusController.text),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
         category: _selectedCategory,
       );
 
@@ -173,7 +179,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
             _DropdownField(
               label: 'Category',
               value: _selectedCategory,
-              items: AppConstants.siteCategories,
+              items: SiteCategories.all,
               onChanged: (v) => setState(() => _selectedCategory = v!),
             ),
             const SizedBox(height: 24),
@@ -233,6 +239,10 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               controller: _radiusController,
               label: 'Entry Radius (meters)',
               keyboardType: TextInputType.number,
+            ),
+            _TextField(
+              controller: _addressController,
+              label: 'Display address (optional)',
             ),
             const SizedBox(height: 32),
             SizedBox(

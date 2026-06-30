@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/colors.dart';
 import '../../blocs/site_list/site_list_cubit.dart';
 import '../../blocs/site_list/site_list_state.dart';
 import '../../blocs/favorites/favorites_cubit.dart';
 import '../../blocs/language/language_cubit.dart';
+import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
 
@@ -17,42 +19,51 @@ class FavoritesScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Favorites'),
+        title: BlocBuilder<LocalizationCubit, LocalizationState>(
+          builder: (context, loc) => Text(
+            loc.translations['favorites'] ?? 'Favorites',
+          ),
+        ),
       ),
       body: BlocBuilder<FavoritesCubit, FavoritesState>(
         builder: (context, favState) {
           if (favState.favoriteIds.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 80,
-                    color: AppColors.textHint,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No favorites yet',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(
-                      'Tap the heart icon on any site to add it to your favorites',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
+            return BlocBuilder<LocalizationCubit, LocalizationState>(
+              builder: (context, loc) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.favorite_border,
+                        size: 80,
+                        color: AppColors.textHint,
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      Text(
+                        loc.translations['no_favorites'] ?? 'No favorites yet',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          loc.translations['no_favorites_hint'] ??
+                              'Tap the heart icon on any site to add it to your favorites',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           }
 
@@ -70,34 +81,39 @@ class FavoritesScreen extends StatelessWidget {
                   .toList();
 
               if (favoriteSites.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.favorite_border,
-                        size: 80,
-                        color: AppColors.textHint,
+                return BlocBuilder<LocalizationCubit, LocalizationState>(
+                  builder: (context, loc) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.favorite_border,
+                            size: 80,
+                            color: AppColors.textHint,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            loc.translations['no_favorites'] ?? 'No favorites yet',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            loc.translations['no_favorites_hint'] ??
+                                'Tap the heart icon on any site to add it to your favorites',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No favorites yet',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Tap the heart icon on any site to add it to your favorites',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               }
 
@@ -113,6 +129,7 @@ class FavoritesScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final site = favoriteSites[index];
                   final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
+                  final loc = context.read<LocalizationCubit>().state;
 
                   return _FavoriteSiteCard(
                     site: site,
@@ -128,9 +145,12 @@ class FavoritesScreen extends StatelessWidget {
                       context.read<FavoritesCubit>().removeFavorite(site.id);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('${site.getName(uiLanguage)} removed from favorites'),
+                          content: Text(
+                            loc.translations['removed_from_favorites'] ??
+                                '${site.getName(uiLanguage)} removed from favorites',
+                          ),
                           action: SnackBarAction(
-                            label: 'Undo',
+                            label: loc.translations['undo'] ?? 'Undo',
                             onPressed: () {
                               context.read<FavoritesCubit>().addFavorite(site.id);
                             },
@@ -186,16 +206,26 @@ class _FavoriteSiteCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: Image.network(
-                    site.primaryImage,
+                  child: CachedNetworkImage(
+                    imageUrl: site.primaryImage,
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    placeholder: (context, url) => Container(
+                      height: 120,
+                      color: AppColors.surfaceDark,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.accent,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
                       height: 120,
                       color: AppColors.surfaceDark,
                       child: const Icon(
-                        Icons.image,
+                        Icons.image_not_supported,
                         size: 40,
                         color: AppColors.textHint,
                       ),
@@ -275,7 +305,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            'Stone Town, Zanzibar',
+                            site.displayAddress,
                             style: TextStyle(
                               fontSize: 11,
                               color: AppColors.textHint,

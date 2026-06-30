@@ -105,5 +105,35 @@
   "delete": "Futa",
   "edit": "Hariri",
   "done": "Kwisha",
-  "close": "Funga"
+  "close": "Funga",
+
+  "favorites": "Vipendwa",
+  "no_favorites": "Huna vipendwa bado",
+  "no_favorites_hint": "Gusa ikoni ya moyo kwenye mahali popote kuongeza kwenye vipendwa vyako",
+  "removed_from_favorites": "%s imeondolewa kwenye vipendwa",
+  "undo": "Tendua",
+  "add_to_favorites": "Ongeza kwenye vipendwa",
+  "remove_from_favorites": "Ondoa kwenye vipendwa",
+
+  "view_list": "Onyesha kama orodha",
+  "view_map": "Onyesha kama ramani",
+
+  "market": "Soko",
+  "museum": "Jumba la Makumbusho",
+  "natural_landmark": "Alama ya Asili",
+  "government": "Serikali",
+  "other": "Nyingine",
+
+  "onboarding_skip": "Ruka",
+  "onboarding_next": "Inayofuata",
+  "onboarding_get_started": "Anza Sasa",
+  "onboarding_p1_title": "Gundua Urithi",
+  "onboarding_p1_subtitle": "Gundua historia tajiri na utamaduni wa Stone Town, Tovuti ya Urithi wa Umoja wa Mataifa ya Ulimwengu",
+  "onboarding_p2_title": "Miongozo ya Sauti",
+  "onboarding_p2_subtitle": "Sikiliza hadithi na historia katika lugha 7 kwa kiongozi chetu cha sauti",
+  "onboarding_p3_title": "Urambazaji wa GPS",
+  "onboarding_p3_subtitle": "Elekea kwenye maeneo kwa miongozo ya hatua kwa hatua na ucheze sauti otomatiki unapofika",
+
+  "start_demo_premium": "Anza Premium ya Demo",
+  "demo_premium_note": "Toleo la demo — hakuna ununuzi halisi unaohitajika"
 }

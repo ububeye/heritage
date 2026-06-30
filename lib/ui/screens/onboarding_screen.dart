@@ -18,26 +18,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<OnboardingPage> _pages = [
-    OnboardingPage(
-      icon: Icons.location_city,
-      title: 'Explore Heritage',
-      subtitle: 'Discover the rich history and culture of Stone Town, Zanzibar\'s UNESCO World Heritage Site',
-      color: AppColors.primary,
-    ),
-    OnboardingPage(
-      icon: Icons.headphones,
-      title: 'Audio Guides',
-      subtitle: 'Listen to fascinating stories and history in 7 languages with our audio guide',
-      color: AppColors.accent,
-    ),
-    OnboardingPage(
-      icon: Icons.navigation,
-      title: 'GPS Navigation',
-      subtitle: 'Navigate to sites with turn-by-turn directions and auto-play audio when you arrive',
-      color: AppColors.success,
-    ),
-  ];
+  /// Build the page list from the current LocalizationState so the
+  /// onboarding copy honours the user's chosen language.
+  List<OnboardingPage> _buildPages(LocalizationState loc) => [
+        OnboardingPage(
+          icon: Icons.location_city,
+          title: loc.translations['onboarding_p1_title'] ?? 'Explore Heritage',
+          subtitle: loc.translations['onboarding_p1_subtitle'] ??
+              "Discover the rich history and culture of Stone Town, Zanzibar's UNESCO World Heritage Site",
+          color: AppColors.primary,
+        ),
+        OnboardingPage(
+          icon: Icons.headphones,
+          title: loc.translations['onboarding_p2_title'] ?? 'Audio Guides',
+          subtitle: loc.translations['onboarding_p2_subtitle'] ??
+              'Listen to fascinating stories and history in 7 languages with our audio guide',
+          color: AppColors.accent,
+        ),
+        OnboardingPage(
+          icon: Icons.navigation,
+          title: loc.translations['onboarding_p3_title'] ?? 'GPS Navigation',
+          subtitle: loc.translations['onboarding_p3_subtitle'] ??
+              'Navigate to sites with turn-by-turn directions and auto-play audio when you arrive',
+          color: AppColors.success,
+        ),
+      ];
 
   @override
   void dispose() {
@@ -46,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < _pages.length) {
+    if (_currentPage < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -67,91 +72,98 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _skip,
-                child: const Text(
-                  'Skip',
-                  style: TextStyle(color: AppColors.textSecondary),
+    return BlocBuilder<LocalizationCubit, LocalizationState>(
+      builder: (context, loc) {
+        final pages = _buildPages(loc);
+        final isLast = _currentPage == pages.length - 1;
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Skip button
+                Align(
+                  alignment: Alignment.topRight,
+                  child: TextButton(
+                    onPressed: _skip,
+                    child: Text(
+                      loc.translations['onboarding_skip'] ?? 'Skip',
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            // Page content
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  return _OnboardingPageWidget(page: _pages[index]);
-                },
-              ),
-            ),
-            // Language selection
-            _LanguageSelector(),
-            // Bottom controls
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Page indicators
-                  Row(
-                    children: List.generate(
-                      _pages.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.only(right: 8),
-                        width: _currentPage == index ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? AppColors.primary
-                              : AppColors.border,
-                          borderRadius: BorderRadius.circular(4),
+                // Page content
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) {
+                      setState(() => _currentPage = index);
+                    },
+                    itemCount: pages.length,
+                    itemBuilder: (context, index) {
+                      return _OnboardingPageWidget(page: pages[index]);
+                    },
+                  ),
+                ),
+                // Language selection
+                _LanguageSelector(),
+                // Bottom controls
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Page indicators
+                      Row(
+                        children: List.generate(
+                          pages.length,
+                          (index) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.only(right: 8),
+                            width: _currentPage == index ? 24 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _currentPage == index
+                                  ? AppColors.primary
+                                  : AppColors.border,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      // Next/Get Started button
+                      ElevatedButton(
+                        onPressed: isLast ? _completeOnboarding : _nextPage,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text(
+                          isLast
+                              ? (loc.translations['onboarding_get_started'] ??
+                                  'Get Started')
+                              : (loc.translations['onboarding_next'] ?? 'Next'),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  // Next/Get Started button
-                  ElevatedButton(
-                    onPressed: _currentPage == _pages.length - 1
-                        ? _completeOnboarding
-                        : _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text(
-                      _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

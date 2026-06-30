@@ -107,6 +107,27 @@ class AuthService {
     await _auth.currentUser!.updatePhotoURL(photoUrl);
   }
 
+  /// Re-authenticate with the current password, then update to a new one.
+  /// Firebase requires a recent login for the updatePassword call.
+  Future<void> changePassword({
+    required String email,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (_auth.currentUser == null) {
+      throw Exception('No signed-in user');
+    }
+    if (newPassword.length < 6) {
+      throw Exception('Password must be at least 6 characters');
+    }
+    final credential = EmailAuthProvider.credential(
+      email: email,
+      password: currentPassword,
+    );
+    await _auth.currentUser!.reauthenticateWithCredential(credential);
+    await _auth.currentUser!.updatePassword(newPassword);
+  }
+
   Future<UserModel?> reloadUser() async {
     await _auth.currentUser?.reload();
     return getCurrentUserModel();
