@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/colors.dart';
+import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/user_model.dart';
 
@@ -245,6 +246,8 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.watch<LocalizationCubit>().state;
+    final deleteLabel = loc.translations['delete_user_a11y'] ?? 'Delete user';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -310,6 +313,7 @@ class _UserCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                  tooltip: deleteLabel,
                   onPressed: onDelete,
                 ),
               ],

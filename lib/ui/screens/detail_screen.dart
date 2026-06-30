@@ -243,6 +243,7 @@ class _DetailScreenState extends State<DetailScreen> {
         final site = state.site!;
         final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
         final isPremium = context.read<AuthCubit>().state.isPremium;
+        final locState = context.read<LocalizationCubit>().state;
         final allImages = site.allImages;
 
         return Scaffold(
@@ -400,6 +401,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           child: Center(
                             child: _GalleryArrow(
                               icon: Icons.chevron_left,
+                              semanticsLabel: locState.translations['previous_image'] ?? 'Previous image',
                               onTap: _currentImageIndex > 0
                                   ? () => _pageController.previousPage(
                                         duration: const Duration(milliseconds: 300),
@@ -416,6 +418,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           child: Center(
                             child: _GalleryArrow(
                               icon: Icons.chevron_right,
+                              semanticsLabel: locState.translations['next_image'] ?? 'Next image',
                               onTap: _currentImageIndex < allImages.length - 1
                                   ? () => _pageController.nextPage(
                                         duration: const Duration(milliseconds: 300),
@@ -656,28 +659,39 @@ class _DetailScreenState extends State<DetailScreen> {
 }
 
 /// Circular semi-transparent arrow button overlaid on the image gallery.
-/// When [onTap] is null the button renders disabled.
+/// When [onTap] is null the button renders disabled. [semanticsLabel] is
+/// read aloud by TalkBack / VoiceOver.
 class _GalleryArrow extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final String semanticsLabel;
 
-  const _GalleryArrow({required this.icon, this.onTap});
+  const _GalleryArrow({
+    required this.icon,
+    required this.semanticsLabel,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    return Material(
-      color: Colors.black.withValues(alpha: 0.4),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Icon(
-            icon,
-            color: enabled ? Colors.white : Colors.white54,
-            size: 28,
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      enabled: enabled,
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.4),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(
+              icon,
+              color: enabled ? Colors.white : Colors.white54,
+              size: 28,
+            ),
           ),
         ),
       ),

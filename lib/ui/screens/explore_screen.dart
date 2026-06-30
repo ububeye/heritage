@@ -46,10 +46,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 builder: (context, state) {
                   final locState = context.watch<LocalizationCubit>().state;
                   final key = state.isMapView ? 'view_list' : 'view_map';
-                  return IconButton(
-                    icon: Icon(state.isMapView ? Icons.list : Icons.map),
-                    tooltip: locState.translations[key] ?? key,
-                    onPressed: () => context.read<ExploreCubit>().toggleMapView(),
+                  final label = locState.translations[key] ?? key;
+                  return Semantics(
+                    label: label,
+                    button: true,
+                    child: IconButton(
+                      icon: Icon(state.isMapView ? Icons.list : Icons.map),
+                      tooltip: label,
+                      onPressed: () => context.read<ExploreCubit>().toggleMapView(),
+                    ),
                   );
                 },
               ),
@@ -123,10 +128,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           );
                         }
 
+                        // Featured site pinning (B-08): prefer sites explicitly
+                        // marked `featured: true` in Firestore, fall back to
+                        // the first item in the list.
+                        SiteModel? featuredSite;
+                        if (_selectedCategory == null && sites.isNotEmpty) {
+                          try {
+                            featuredSite = sites.firstWhere((s) => s.featured);
+                          } catch (_) {
+                            featuredSite = sites.first;
+                          }
+                        }
+
                         return _ListView(
                           sites: sites,
                           uiLanguage: uiLanguage,
-                          featuredSite: sites.isNotEmpty ? sites.first : null,
+                          featuredSite: featuredSite,
                           onSiteTap: (site) => _navigateToDetail(site),
                           onNavigate: (site) => _navigateToNav(site),
                           onFeaturedNavigate: (site) => _navigateToNav(site),

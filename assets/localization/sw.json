@@ -135,5 +135,24 @@
   "onboarding_p3_subtitle": "Elekea kwenye maeneo kwa miongozo ya hatua kwa hatua na ucheze sauti otomatiki unapofika",
 
   "start_demo_premium": "Anza Premium ya Demo",
-  "demo_premium_note": "Toleo la demo — hakuna ununuzi halisi unaohitajika"
+  "demo_premium_note": "Toleo la demo — hakuna ununuzi halisi unaohitajika",
+
+  "analytics": "Uchambuzi",
+  "analytics_subtitle": "Takwimu za maeneo na watumiaji",
+  "analytics_total_sites": "Maeneo Yote",
+  "analytics_total_users": "Watumiaji Wote",
+  "analytics_premium_users": "Watumiaji wa Premium",
+  "analytics_featured_sites": "Maeneo Maalum",
+  "analytics_by_category": "Maeneo kwa Aina",
+  "analytics_top_rated": "Maeneo Yaliyopewa Alama Zaidi",
+  "analytics_no_rating": "Bado hakuna alama",
+  "copy_from_english": "Nakili kutoka Kiingereza",
+  "featured": "Maalum",
+  "set_featured": "Weka kama maalum",
+  "remove_featured": "Ondoa kwenye maalum",
+  "edit_site_a11y": "Hariri eneo",
+  "delete_site_a11y": "Futa eneo",
+  "delete_user_a11y": "Futa mtumiaji",
+  "previous_image": "Picha iliyotangulia",
+  "next_image": "Picha inayofuata"
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/constants/colors.dart';
+import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
@@ -599,6 +600,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     required TextEditingController nameController,
     required TextEditingController descController,
   }) {
+    final loc = context.watch<LocalizationCubit>().state;
+    final copyLabel = loc.translations['copy_from_english'] ?? 'Copy from English';
+    final isEnglish = code == 'en';
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -618,6 +622,33 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                 name,
                 style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
+              const Spacer(),
+              if (!isEnglish)
+                TextButton.icon(
+                  onPressed: () {
+                    if (_nameEnController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Fill the English name first'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      nameController.text = _nameEnController.text;
+                      descController.text = _descEnController.text;
+                    });
+                  },
+                  icon: const Icon(Icons.content_copy, size: 16),
+                  label: Text(copyLabel, style: const TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: AppColors.primary,
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 8),

@@ -39,6 +39,9 @@ class SiteModel extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  // Curation
+  final bool featured;
+
   const SiteModel({
     required this.id,
     required this.nameEn,
@@ -65,6 +68,7 @@ class SiteModel extends Equatable {
     this.category,
     this.createdAt,
     this.updatedAt,
+    this.featured = false,
   });
 
   // Get primary image (first in list, or fallback to single image)
@@ -172,6 +176,7 @@ class SiteModel extends Equatable {
     String? category,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? featured,
   }) {
     return SiteModel(
       id: id ?? this.id,
@@ -199,6 +204,7 @@ class SiteModel extends Equatable {
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      featured: featured ?? this.featured,
     );
   }
 
@@ -229,6 +235,7 @@ class SiteModel extends Equatable {
       'category': category,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'featured': featured,
     };
   }
 
@@ -271,6 +278,7 @@ class SiteModel extends Equatable {
       updatedAt: map['updated_at'] != null
           ? DateTime.tryParse(map['updated_at'])
           : null,
+      featured: map['featured'] == true,
     );
   }
 
@@ -301,6 +309,7 @@ class SiteModel extends Equatable {
         category,
         createdAt,
         updatedAt,
+        featured,
       ];
 }
 

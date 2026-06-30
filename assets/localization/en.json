@@ -135,5 +135,24 @@
   "onboarding_p3_subtitle": "Navigate to sites with turn-by-turn directions and auto-play audio when you arrive",
 
   "start_demo_premium": "Start Demo Premium",
-  "demo_premium_note": "Demo build — no real purchase required"
+  "demo_premium_note": "Demo build — no real purchase required",
+
+  "analytics": "Analytics",
+  "analytics_subtitle": "Site & user statistics",
+  "analytics_total_sites": "Total Sites",
+  "analytics_total_users": "Total Users",
+  "analytics_premium_users": "Premium Users",
+  "analytics_featured_sites": "Featured Sites",
+  "analytics_by_category": "Sites by Category",
+  "analytics_top_rated": "Top Rated Sites",
+  "analytics_no_rating": "No ratings yet",
+  "copy_from_english": "Copy from English",
+  "featured": "Featured",
+  "set_featured": "Set as featured",
+  "remove_featured": "Remove from featured",
+  "edit_site_a11y": "Edit site",
+  "delete_site_a11y": "Delete site",
+  "delete_user_a11y": "Delete user",
+  "previous_image": "Previous image",
+  "next_image": "Next image"
 }

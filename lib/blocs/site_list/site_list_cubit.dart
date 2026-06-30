@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/site_model.dart';
 import '../../data/repositories/site_repository.dart';
+import '../../data/services/firestore_service.dart';
 import 'site_list_state.dart';
 
 class SiteListCubit extends Cubit<SiteListState> {
@@ -120,6 +121,28 @@ class SiteListCubit extends Cubit<SiteListState> {
       selectedCategory: null,
       filteredSites: state.sites,
     ));
+  }
+
+  /// Flip the `featured` flag on the site with [siteId]. Only one site is
+  /// featured at a time in practice (the explore screen's "Best Places"
+  /// tile shows a single featured site), but the model allows several — we
+  /// just toggle the given one and write through to Firestore.
+  Future<void> setFeatured(String siteId, bool featured) async {
+    final site = state.sites.firstWhere(
+      (s) => s.id == siteId,
+      orElse: () => state.sites.first,
+    );
+    if (site.id != siteId) return;
+    try {
+      await FirestoreService().updateSite(
+        siteId,
+        site.copyWith(featured: featured),
+      );
+      // The watch stream will pick the change up and re-emit; no local
+      // optimistic update needed.
+    } catch (_) {
+      // Swallow — the watch stream will retry on next snapshot.
+    }
   }
 
   List<SiteModel> _applyFilters(

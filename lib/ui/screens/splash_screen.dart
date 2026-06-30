@@ -134,7 +134,7 @@ class _SplashScreenState extends State<SplashScreen>
               colors: [
                 AppColors.primaryDark,
                 AppColors.primary,
-                AppColors.primary.withAlpha(204),
+                AppColors.primary.withValues(alpha: 0.8),
               ],
             ),
           ),
@@ -159,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
                               borderRadius: BorderRadius.circular(35),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withAlpha(51),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 30,
                                   offset: const Offset(0, 15),
                                 ),
@@ -192,7 +192,7 @@ class _SplashScreenState extends State<SplashScreen>
                             'Explore Zanzibar\'s Heritage',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white.withAlpha(204),
+                              color: Colors.white.withValues(alpha: 0.8),
                               letterSpacing: 0.5,
                             ),
                           ),

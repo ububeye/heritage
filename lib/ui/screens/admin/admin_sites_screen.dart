@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/colors.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
+import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
 import '../../../data/services/firestore_service.dart';
 import 'admin_add_site_screen.dart';
@@ -254,6 +255,13 @@ class _SiteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.watch<LocalizationCubit>().state;
+    final editLabel = loc.translations['edit_site_a11y'] ?? 'Edit site';
+    final deleteLabel = loc.translations['delete_site_a11y'] ?? 'Delete site';
+    final featuredLabel = site.featured
+        ? (loc.translations['remove_featured'] ?? 'Remove from featured')
+        : (loc.translations['set_featured'] ?? 'Set as featured');
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -299,14 +307,24 @@ class _SiteCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      site.nameEn,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            site.nameEn,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (site.featured) ...[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.star, size: 16, color: AppColors.accent),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Container(
@@ -315,7 +333,7 @@ class _SiteCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 26),
+                        color: AppColors.accent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -329,7 +347,7 @@ class _SiteCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.location_on,
                           size: 14,
                           color: AppColors.textHint,
@@ -350,12 +368,28 @@ class _SiteCard extends StatelessWidget {
               Column(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.edit, color: AppColors.primary),
-                    onPressed: onEdit,
+                    icon: Icon(
+                      site.featured ? Icons.star : Icons.star_border,
+                      color: site.featured ? AppColors.accent : AppColors.textHint,
+                    ),
+                    tooltip: featuredLabel,
+                    onPressed: () =>
+                        context.read<SiteListCubit>().setFeatured(site.id, !site.featured),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: AppColors.error),
-                    onPressed: onDelete,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: AppColors.primary),
+                        tooltip: editLabel,
+                        onPressed: onEdit,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: AppColors.error),
+                        tooltip: deleteLabel,
+                        onPressed: onDelete,
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/rtl.dart';
 import 'blocs/auth/auth_cubit.dart';
 import 'blocs/site_list/site_list_cubit.dart';
 import 'blocs/site_detail/site_detail_cubit.dart';
@@ -59,16 +60,30 @@ class StoneTownApp extends StatelessWidget {
           create: (_) => FavoritesCubit(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Stone Town Guide',
-        theme: AppTheme.lightTheme,
-        debugShowCheckedModeBanner: false,
-        home: const SplashScreen(),
-        routes: {
-          '/welcome': (context) => const WelcomeScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/favorites': (context) => const FavoritesScreen(),
-          '/admin': (context) => const AdminShell(),
+      child: BlocBuilder<LocalizationCubit, LocalizationState>(
+        builder: (context, locState) {
+          return MaterialApp(
+            title: 'Stone Town Guide',
+            theme: AppTheme.lightTheme,
+            debugShowCheckedModeBanner: false,
+            // Force RTL layout for Arabic (and any future RTL locale). The
+            // translations map is already language-specific; the locale-aware
+            // directionality wrapper makes alignment, scroll direction and
+            // icon mirroring behave correctly.
+            builder: (context, child) {
+              return Directionality(
+                textDirection: directionFor(locState.currentLanguage),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
+            home: const SplashScreen(),
+            routes: {
+              '/welcome': (context) => const WelcomeScreen(),
+              '/home': (context) => const HomeScreen(),
+              '/favorites': (context) => const FavoritesScreen(),
+              '/admin': (context) => const AdminShell(),
+            },
+          );
         },
       ),
     );

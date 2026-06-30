@@ -1,8 +1,16 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
 import '../../../data/services/firestore_service.dart';
+import '../../../data/services/cloudinary_service.dart';
 import '../../widgets/heritage_map.dart';
 
 class AdminEditSiteScreen extends StatefulWidget {
@@ -17,7 +25,9 @@ class AdminEditSiteScreen extends StatefulWidget {
 class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firestoreService = FirestoreService();
+  final _cloudinaryService = CloudinaryService();
 
+  // Controllers for the 7-language name + description fields.
   late final TextEditingController _nameEnController;
   late final TextEditingController _nameSwController;
   late final TextEditingController _nameFrController;
@@ -32,7 +42,6 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
   late final TextEditingController _descArController;
   late final TextEditingController _descItController;
   late final TextEditingController _descEsController;
-  late final TextEditingController _imageUrlController;
   late final TextEditingController _latController;
   late final TextEditingController _lngController;
   late final TextEditingController _radiusController;
@@ -40,6 +49,12 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
 
   late String _selectedCategory;
   bool _isLoading = false;
+
+  // Multi-image support. `_existingImages` mirrors `widget.site.imageUrls`
+  // (and falls back to the legacy `cloudinaryImageUrl`); `_selectedImages`
+  // are locally-picked files that will be uploaded on save.
+  late List<String> _existingImages;
+  final List<XFile> _selectedImages = [];
 
   @override
   void initState() {
@@ -58,44 +73,72 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     _descArController = TextEditingController(text: widget.site.descriptionAr);
     _descItController = TextEditingController(text: widget.site.descriptionIt);
     _descEsController = TextEditingController(text: widget.site.descriptionEs);
-    _imageUrlController = TextEditingController(text: widget.site.cloudinaryImageUrl);
     _latController = TextEditingController(text: widget.site.latitude.toString());
     _lngController = TextEditingController(text: widget.site.longitude.toString());
     _radiusController = TextEditingController(text: widget.site.entryRadiusM.toString());
     _addressController = TextEditingController(text: widget.site.address ?? '');
     _selectedCategory = widget.site.category ?? 'historic';
+
+    // Prefer the modern `imageUrls` list; fall back to the legacy single
+    // image URL for sites that haven't been migrated yet.
+    _existingImages = widget.site.imageUrls.isNotEmpty
+        ? List.of(widget.site.imageUrls)
+        : (widget.site.cloudinaryImageUrl.isNotEmpty
+            ? [widget.site.cloudinaryImageUrl]
+            : <String>[]);
   }
 
   @override
   void dispose() {
-    _nameEnController.dispose();
-    _nameSwController.dispose();
-    _nameFrController.dispose();
-    _nameDeController.dispose();
-    _nameArController.dispose();
-    _nameItController.dispose();
-    _nameEsController.dispose();
-    _descEnController.dispose();
-    _descSwController.dispose();
-    _descFrController.dispose();
-    _descDeController.dispose();
-    _descArController.dispose();
-    _descItController.dispose();
-    _descEsController.dispose();
-    _imageUrlController.dispose();
-    _latController.dispose();
-    _lngController.dispose();
-    _radiusController.dispose();
-    _addressController.dispose();
+    for (final c in [
+      _nameEnController, _nameSwController, _nameFrController,
+      _nameDeController, _nameArController, _nameItController, _nameEsController,
+      _descEnController, _descSwController, _descFrController,
+      _descDeController, _descArController, _descItController, _descEsController,
+      _latController, _lngController, _radiusController, _addressController,
+    ]) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _pickImages() async {
+    final images = await _cloudinaryService.pickMultipleImages();
+    if (images.isNotEmpty) {
+      setState(() => _selectedImages.addAll(images));
+    }
+  }
+
+  void _removeExisting(int index) {
+    setState(() => _existingImages.removeAt(index));
+  }
+
+  void _removeSelected(int index) {
+    setState(() => _selectedImages.removeAt(index));
   }
 
   Future<void> _updateSite() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_existingImages.isEmpty && _selectedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please keep at least one image'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
+      // Upload only the locally-picked files; existing Cloudinary URLs are
+      // already in `imageUrls` shape and just need to be re-saved.
+      final uploaded = _selectedImages.isEmpty
+          ? <String>[]
+          : await _cloudinaryService.uploadImages(_selectedImages);
+      final allImages = <String>[..._existingImages, ...uploaded];
+
       final site = widget.site.copyWith(
         nameEn: _nameEnController.text,
         nameSw: _nameSwController.text,
@@ -111,7 +154,8 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
         descriptionAr: _descArController.text,
         descriptionIt: _descItController.text,
         descriptionEs: _descEsController.text,
-        cloudinaryImageUrl: _imageUrlController.text,
+        cloudinaryImageUrl: allImages.isNotEmpty ? allImages.first : '',
+        imageUrls: allImages,
         latitude: double.parse(_latController.text),
         longitude: double.parse(_lngController.text),
         entryRadiusM: double.parse(_radiusController.text),
@@ -146,8 +190,173 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     }
   }
 
+  Widget _buildPhotoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Existing Cloudinary images — read-only chips with a remove badge.
+        if (_existingImages.isNotEmpty) ...[
+          SizedBox(
+            height: 110,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _existingImages.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: CachedNetworkImage(
+                          imageUrl: _existingImages[index],
+                          width: 110,
+                          height: 110,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => Container(
+                            width: 110,
+                            height: 110,
+                            color: AppColors.surfaceDark,
+                          ),
+                          errorWidget: (_, __, ___) => Container(
+                            width: 110,
+                            height: 110,
+                            color: AppColors.surfaceDark,
+                            child: const Icon(Icons.broken_image, color: AppColors.textHint),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => _removeExisting(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, color: Colors.white, size: 16),
+                          ),
+                        ),
+                      ),
+                      if (index == 0)
+                        Positioned(
+                          bottom: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Cover',
+                              style: TextStyle(color: Colors.white, fontSize: 10),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        // Newly picked images — show local File previews.
+        if (_selectedImages.isNotEmpty) ...[
+          SizedBox(
+            height: 110,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedImages.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          File(_selectedImages[index].path),
+                          width: 110,
+                          height: 110,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => _removeSelected(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, color: Colors.white, size: 16),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 4,
+                        left: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'New',
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        InkWell(
+          onTap: _pickImages,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.add_photo_alternate, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text(
+                  'Add More Photos',
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Touch the localization cubit so any language change re-renders the
+    // tooltips (e.g. delete-user label).
+    final _ = context.watch<LocalizationCubit>().state;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -159,7 +368,10 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionTitle(title: 'Basic Info'),
+            const _SectionTitle(title: 'Photos'),
+            _buildPhotoSection(),
+            const SizedBox(height: 24),
+            const _SectionTitle(title: 'Basic Info'),
             _TextField(
               controller: _nameEnController,
               label: 'Name (English)',
@@ -183,7 +395,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               onChanged: (v) => setState(() => _selectedCategory = v!),
             ),
             const SizedBox(height: 24),
-            _SectionTitle(title: 'Descriptions'),
+            const _SectionTitle(title: 'Descriptions'),
             _TextField(controller: _descEnController, label: 'Description (English)', maxLines: 3),
             _TextField(controller: _descSwController, label: 'Description (Swahili)', maxLines: 3),
             _TextField(controller: _descFrController, label: 'Description (French)', maxLines: 3),
@@ -192,13 +404,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
             _TextField(controller: _descItController, label: 'Description (Italian)', maxLines: 3),
             _TextField(controller: _descEsController, label: 'Description (Spanish)', maxLines: 3),
             const SizedBox(height: 24),
-            _SectionTitle(title: 'Location'),
-            _TextField(
-              controller: _imageUrlController,
-              label: 'Image URL (Cloudinary)',
-              validator: (v) => v?.isEmpty == true ? 'Required' : null,
-            ),
-            const SizedBox(height: 12),
+            const _SectionTitle(title: 'Location'),
             Container(
               height: 400,
               decoration: BoxDecoration(
@@ -210,8 +416,12 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                 initialLat: widget.site.latitude,
                 initialLng: widget.site.longitude,
                 onLocationPicked: (pickedLat, pickedLng) {
-                  _latController.text = pickedLat.toStringAsFixed(6);
-                  _lngController.text = pickedLng.toStringAsFixed(6);
+                  // setState keeps the lat/lng fields in sync visually
+                  // with the map marker.
+                  setState(() {
+                    _latController.text = pickedLat.toStringAsFixed(6);
+                    _lngController.text = pickedLng.toStringAsFixed(6);
+                  });
                 },
               ),
             ),
