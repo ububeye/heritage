@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../../core/constants/colors.dart';
 import '../../data/models/site_model.dart';
 import '../../data/services/location_service.dart';
+import '../../data/services/tile_cache_service.dart';
 
 /// Wraps `flutter_map` (OpenStreetMap tiles) with the project's color theme.
 ///
@@ -145,6 +146,7 @@ class _HeritageMapState extends State<HeritageMap> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.stone_town_heritage_vt_guide',
               maxNativeZoom: 19,
+              tileProvider: TileCacheService.instance.tileProvider(),
             ),
             MarkerLayer(markers: markers),
             if (isPicker && widget.sites.isEmpty)

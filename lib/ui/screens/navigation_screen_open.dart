@@ -14,6 +14,7 @@ import '../../core/constants/colors.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
 import '../../data/models/site_model.dart';
 import '../../data/services/routing_service.dart';
+import '../../data/services/tile_cache_service.dart';
 import '../widgets/arrival_overlay.dart';
 
 /// Open-source live-navigation screen.
@@ -40,6 +41,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
   final RoutingService _routingService = RoutingService();
   bool _showArrivalOverlay = false;
 
+  /// Cached at [didChangeDependencies] time. We must not call
+  /// `context.read<NavigationCubit>()` from [dispose] because by then the
+  /// element tree is deactivated and Flutter will throw
+  /// "Looking up a deactivated widget's ancestor is unsafe."
+  NavigationCubit? _navigationCubit;
+
   /// Current route polyline. Two points (start/end) when in fallback mode.
   List<LatLng> _routePoints = const [];
 
@@ -52,14 +59,32 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
 
   String? _routeError;
 
+  /// Stone Town / Zanzibar City centre (Unguja, Tanzania). Used as a
+  /// hard-clamped default origin when the user's GPS fix isn't available
+  /// yet — keeps OSRM from snapping "nearest road" to a highway thousands
+  /// of kilometres away.
+  ///
+  /// Roughly the Forodhani Gardens waterfront — a known, well-mapped
+  /// pedestrian area in Stone Town.
+  static const LatLng _stoneTownFallbackOrigin = LatLng(-6.1619, 39.1936);
+
   @override
   void initState() {
     super.initState();
     _startNavigation();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cache the cubit reference while the inherited-widget tree is still
+    // mounted. [dispose] is called *after* the element is deactivated, so
+    // `context.read` from there is unsafe — the cached reference is.
+    _navigationCubit = context.read<NavigationCubit>();
+  }
+
   void _startNavigation() {
-    context.read<NavigationCubit>().startNavigation(
+    _navigationCubit?.startNavigation(
           siteId: widget.site.id,
           siteLat: widget.site.latitude,
           siteLng: widget.site.longitude,
@@ -74,11 +99,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
 
     // First start: no user position yet — use a Stone Town centre offset so
     // we still get *some* reasonable road geometry.
-    final effectiveOrigin = origin ??
-        LatLng(
-          widget.site.latitude + 0.003,
-          widget.site.longitude + 0.003,
-        );
+    //
+    // OSRM is a global router — if we hand it an origin that's somewhere
+    // outside the OSM coverage for this region, it'll happily snap the
+    // "nearest road" to a highway in another country. Hard-clamp the
+    // default origin to a known Stone Town anchor so the demo server
+    // resolves to a footpath on Unguja, not a trunk road across the Indian
+    // Ocean.
+    final effectiveOrigin = origin ?? _stoneTownFallbackOrigin;
 
     final result = await _routingService.getRoute(
       from: effectiveOrigin,
@@ -108,7 +136,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
 
   @override
   void dispose() {
-    context.read<NavigationCubit>().stopNavigation();
+    // Use the cached reference — `context` is deactivated here, so
+    // `context.read` would throw "Looking up a deactivated widget's
+    // ancestor is unsafe." The cubit was resolved in
+    // [didChangeDependencies], while the tree was still live.
+    _navigationCubit?.stopNavigation();
     _routingService.dispose();
     super.dispose();
   }
@@ -177,6 +209,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
                     userAgentPackageName:
                         'com.example.stone_town_heritage_vt_guide',
                     maxNativeZoom: 19,
+                    tileProvider: TileCacheService.instance.tileProvider(),
                   ),
                   if (_routePoints.length >= 2)
                     PolylineLayer(
@@ -213,11 +246,18 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
                         ),
                     ],
                   ),
-                  const RichAttributionWidget(
+                  RichAttributionWidget(
                     alignment: AttributionAlignment.bottomLeft,
                     attributions: [
-                      TextSourceAttribution('© OpenStreetMap contributors'),
-                      TextSourceAttribution('Routing by OSRM'),
+                      const TextSourceAttribution('© OpenStreetMap contributors'),
+                      TextSourceAttribution(
+                        // The actual provider depends on whether an
+                        // ORS key was configured at build time and
+                        // which one responded. See routing_service.dart.
+                        AppConstants.orsApiKey.isNotEmpty
+                            ? 'Routing by OpenRouteService / OSRM'
+                            : 'Routing by OSRM',
+                      ),
                     ],
                   ),
                 ],

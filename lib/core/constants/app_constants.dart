@@ -40,6 +40,40 @@ class AppConstants {
   static const double markerZoom = 17.0;
   static const double routePolylineWidth = 4.0;
 
+  // Routing providers. Defaults can be overridden at build time via
+  // --dart-define so secrets (API keys) never have to live in source
+  // control. Both URLs are open-source endpoints that work without
+  // billing accounts.
+  //
+  //   flutter run --dart-define=ORS_API_KEY=<your key>
+  //
+  // When ORS_API_KEY is empty (the default), the routing service falls
+  // back to the public OSRM demo and adds `radiuses=25;25` so the
+  // "nearest road" snap is bounded — this is what fixed the
+  // cross-country routing bug.
+  static const String orsBaseUrl = String.fromEnvironment(
+    'ORS_BASE_URL',
+    defaultValue:
+        'https://api.openrouteservice.org/v2/directions/foot-walking/geojson',
+  );
+  static const String orsApiKey =
+      String.fromEnvironment('ORS_API_KEY', defaultValue: '');
+  static const String osrmBaseUrl = String.fromEnvironment(
+    'OSRM_BASE_URL',
+    defaultValue: 'https://router.project-osrm.org',
+  );
+
+  /// Max plausible walking distance (meters) for a *single* route inside
+  /// Stone Town. Anything longer gets clipped to a straight line so we
+  /// never render a transcontinental polyline — the routing engine
+  /// sometimes returns long-distance geometry when the origin can't be
+  /// resolved cleanly (no GPS yet, OSRM demo rate limit, etc.).
+  static const double maxRouteDistanceMeters = 8000;
+
+  /// Tile-cache age (days). Tiles older than this on disk are
+  /// re-fetched on next miss. We don't proactively evict.
+  static const int tileCacheMaxAgeDays = 30;
+
   /// Set this to a real Google Maps API key in production builds to enable
   /// the live-navigation screen. When null, the "Navigate" buttons in the
   /// app show a friendly snackbar instead of opening NavigationScreen
