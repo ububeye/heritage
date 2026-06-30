@@ -2,26 +2,60 @@ rules_version = '2';
 
 // Firestore security rules for Stone Town Heritage VT-Guide.
 //
-// This is a development / demo project, so we use a coarse time-based
-// rule that grants full read+write access to anyone until 2026-09-18
-// (3 months from project start). After that, the database rejects all
-// reads and writes until the deadline is bumped.
+// Model:
+//   - sites:    world-readable, admin-writable.
+//   - users:    each user can read/write their own profile; admins can
+//               read all users (needed for the Admin User Management
+//               screen) and delete any user.
+//   - roles:    the canonical role store. Each user has one document at
+//               roles/{uid} with `{ role: 'free' | 'premium' | 'admin',
+//               updated_at }`. New users default to `free`; only an
+//               existing admin can write here.
+//   - everything else: default-deny.
 //
-// IMPORTANT:
-//   1. The rule applies to ALL collections (sites, users, etc).
-//   2. When promoting this to a real production app, replace this with
-//      proper auth-based rules:
-//        - sites:    allow read: if true;
-//                    allow write: if request.auth != null;
-//        - users:    allow read, write: if request.auth != null
-//                                     && request.auth.uid == userId;
-//   3. The "now < timestamp" gate will lock you out if you forget to
-//      update it. Set a calendar reminder for early September 2026.
+// Deploy with `firebase deploy --only firestore:rules` or via the
+// Firebase console editor. The `isAdmin()` helper reads the caller's
+// roles/{uid} doc on every admin-gated request — fine for demo traffic,
+// production should switch to custom claims via Cloud Functions.
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper: is the request from an admin? Reads the user's role doc.
+    function isAdmin() {
+      return request.auth != null
+          && exists(/databases/$(database)/documents/roles/$(request.auth.uid))
+          && get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // sites: world-readable, admin-writable.
+    match /sites/{siteId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // users/{uid}: owner read/write; admin can read/delete any user.
+    match /users/{userId} {
+      allow read: if request.auth != null
+                  && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null
+                   && request.auth.uid == userId;
+      allow delete: if request.auth != null
+                    && (request.auth.uid == userId || isAdmin());
+    }
+
+    // roles/{uid}: only writable by an existing admin.
+    // Reads allowed for the owner and admins (so the Admin User
+    // Management screen can display every user's role).
+    match /roles/{userId} {
+      allow read: if request.auth != null
+                  && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Default-deny everything else.
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 9, 18);
+      allow read, write: if false;
     }
   }
 }

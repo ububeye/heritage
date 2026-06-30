@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase per-developer configs (see google-services.json.example).
+# Each developer copies google-services.json.example to
+# android/app/google-services.json and fills in their own keys.
+/android/app/google-services.json
+/android/app/firebase-debug.log
+/ios/Runner/GoogleService-Info.plist

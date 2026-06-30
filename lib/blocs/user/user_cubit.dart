@@ -12,13 +12,21 @@ class UserCubit extends Cubit<UserState> {
 
     try {
       final users = await _firestoreService.getAllUsers();
-      final total = users.length;
-      final premium = users.where((u) => u.role == UserRole.premium).length;
-      final admins = users.where((u) => u.role == UserRole.admin).length;
+      // Roles live in roles/{uid}, not on the user profile. Enrich each
+      // user with the canonical role for display in the admin table.
+      final roles = await _firestoreService
+          .bulkGetRoles(users.map((u) => u.id));
+      final enriched = users.map((u) {
+        final r = roles[u.id];
+        return r == null ? u : u.copyWith(role: r);
+      }).toList();
+      final total = enriched.length;
+      final premium = enriched.where((u) => u.role == UserRole.premium).length;
+      final admins = enriched.where((u) => u.role == UserRole.admin).length;
 
       emit(state.copyWith(
         status: UserStatus.loaded,
-        users: users,
+        users: enriched,
         totalUsers: total,
         premiumUsers: premium,
         adminUsers: admins,
@@ -33,7 +41,7 @@ class UserCubit extends Cubit<UserState> {
 
   Future<void> updateUserRole(String userId, UserRole newRole) async {
     try {
-      await _firestoreService.updateUserRole(userId, newRole);
+      await _firestoreService.setUserRole(userId, newRole);
       await loadUsers();
     } catch (e) {
       emit(state.copyWith(error: e.toString()));

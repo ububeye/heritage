@@ -20,21 +20,33 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(status: AuthStatus.loading));
 
     try {
-      final userModel = _authService.getCurrentUserModel();
+      final userModel = await _authService.getCurrentUserModel();
       if (userModel != null) {
-        // Trust the role persisted in Firestore, not the email-prefix heuristic.
-        // This prevents an admin demotion from being silently undone on the
-        // next app launch.
-        final firestoreUser = await _firestoreService.getUserById(userModel.id);
-        final resolvedUser = firestoreUser ?? userModel;
+        // Authoritative role source: roles/{uid}.
+        // Legacy fallback: users/{uid}.role for users created before the
+        // roles collection existed.
+        // TODO(phase-3+): remove the users/{uid}.role fallback once a Cloud
+        // Function has backfilled roles/{uid} for every legacy user.
+        UserModel resolved = userModel;
+        final roleFromRoles =
+            await _firestoreService.getUserRole(userModel.id);
+        if (roleFromRoles != null) {
+          resolved = resolved.copyWith(role: roleFromRoles);
+        } else {
+          final firestoreUser =
+              await _firestoreService.getUserById(userModel.id);
+          if (firestoreUser != null) {
+            resolved = resolved.copyWith(role: firestoreUser.role);
+          }
+        }
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
-          userId: resolvedUser.id,
-          userRole: resolvedUser.role.name,
+          userId: resolved.id,
+          userRole: resolved.role.name,
         );
         emit(state.copyWith(
           status: AuthStatus.authenticated,
-          user: resolvedUser,
+          user: resolved,
         ));
       } else {
         emit(state.copyWith(status: AuthStatus.unauthenticated));
@@ -53,17 +65,23 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final user = await _authService.signInWithEmail(email, password);
       if (user != null) {
-        // Save to SharedPreferences for auto-login
+        // Refresh from Firebase Auth (claims, etc.) then re-resolve role
+        // from roles/{uid} so first sign-in lands with the canonical role.
+        final refreshedUser = await _authService.reloadUser();
+        final base = refreshedUser ?? user;
+        final liveRole =
+            await _firestoreService.getUserRole(base.id);
+        final resolved = liveRole == null
+            ? base
+            : base.copyWith(role: liveRole);
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
-          userId: user.id,
-          userRole: user.role.name,
+          userId: resolved.id,
+          userRole: resolved.role.name,
         );
-        // Reload to ensure latest user data/claims
-        final refreshedUser = await _authService.reloadUser();
         emit(state.copyWith(
           status: AuthStatus.authenticated,
-          user: refreshedUser ?? user,
+          user: resolved,
         ));
       } else {
         emit(state.copyWith(
@@ -85,15 +103,21 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final user = await _authService.signUpWithEmail(email, password);
       if (user != null) {
-        // Save to SharedPreferences for auto-login
+        // Resolve the canonical role from roles/{uid}. A brand-new user has
+        // no roles/{uid} doc yet, so this falls through and we keep the
+        // service's default (`free`).
+        final liveRole = await _firestoreService.getUserRole(user.id);
+        final resolved = liveRole == null
+            ? user
+            : user.copyWith(role: liveRole);
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
-          userId: user.id,
-          userRole: user.role.name,
+          userId: resolved.id,
+          userRole: resolved.role.name,
         );
         emit(state.copyWith(
           status: AuthStatus.authenticated,
-          user: user,
+          user: resolved,
         ));
       } else {
         emit(state.copyWith(
@@ -115,15 +139,18 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final user = await _authService.signInWithGoogle();
       if (user != null) {
-        // Save to SharedPreferences for auto-login
+        final liveRole = await _firestoreService.getUserRole(user.id);
+        final resolved = liveRole == null
+            ? user
+            : user.copyWith(role: liveRole);
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
-          userId: user.id,
-          userRole: user.role.name,
+          userId: resolved.id,
+          userRole: resolved.role.name,
         );
         emit(state.copyWith(
           status: AuthStatus.authenticated,
-          user: user,
+          user: resolved,
         ));
       } else {
         emit(state.copyWith(status: AuthStatus.unauthenticated));
@@ -173,9 +200,9 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         user: state.user!.copyWith(role: role),
       ));
-      // Persist to Firestore. Failure surfaces as an error state but the
+      // Persist to roles/{uid}. Failure surfaces as an error state but the
       // optimistic update is left in place so the admin can retry.
-      await _firestoreService.updateUserRole(state.user!.id, role);
+      await _firestoreService.setUserRole(state.user!.id, role);
       await SharedPrefsService.instance.setUserLoggedIn(
         true,
         userId: state.user!.id,

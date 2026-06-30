@@ -69,6 +69,7 @@ class AppConstants {
   // Firestore Collections
   static const String sitesCollection = 'sites';
   static const String usersCollection = 'users';
+  static const String rolesCollection = 'roles';
 
   // Site Categories
   static const List<String> siteCategories = [

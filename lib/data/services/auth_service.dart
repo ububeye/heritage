@@ -6,14 +6,17 @@ import 'firestore_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: const ['email']);
   final FirestoreService _firestoreService = FirestoreService();
 
   User? get currentUser => _auth.currentUser;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  UserModel? getCurrentUserModel() {
+  /// Read the current Firebase Auth user and resolve their [UserModel].
+  /// Async because role resolution now hits Firestore (roles/{uid} →
+  /// fallback users/{uid}.role for legacy users).
+  Future<UserModel?> getCurrentUserModel() async {
     final user = _auth.currentUser;
     if (user == null) return null;
     return _createUserModel(user);
@@ -26,7 +29,7 @@ class AuthService {
         password: password,
       );
       if (credential.user == null) return null;
-      final userModel = _createUserModel(credential.user!);
+      final userModel = await _createUserModel(credential.user!);
       await _syncUserToFirestore(userModel);
       return userModel;
     } on FirebaseAuthException catch (e) {
@@ -41,7 +44,7 @@ class AuthService {
         password: password,
       );
       if (credential.user == null) return null;
-      final userModel = _createUserModel(credential.user!);
+      final userModel = await _createUserModel(credential.user!);
       await _syncUserToFirestore(userModel);
       return userModel;
     } on FirebaseAuthException catch (e) {
@@ -62,7 +65,7 @@ class AuthService {
 
       final firebaseUser = await _auth.signInWithCredential(credential);
       if (firebaseUser.user == null) return null;
-      final userModel = _createUserModel(firebaseUser.user!);
+      final userModel = await _createUserModel(firebaseUser.user!);
       await _syncUserToFirestore(userModel);
       return userModel;
     } catch (e) {
@@ -75,9 +78,11 @@ class AuthService {
       final existingUser = await _firestoreService.getUserById(user.id);
       if (existingUser == null) {
         await _firestoreService.createUser(user);
-      } else {
-        await _firestoreService.updateUserRole(user.id, user.role);
       }
+      // Do NOT overwrite role here. roles/{uid} is the source of truth;
+      // the previous behaviour of calling updateUserRole() on every login
+      // would silently undo admin demotions and re-promote anyone whose
+      // email happened to start with "admin" or "premium".
     } catch (e) {
       // Don't fail auth if Firestore sync fails
       debugPrint('Failed to sync user to Firestore: $e');
@@ -133,32 +138,33 @@ class AuthService {
     return getCurrentUserModel();
   }
 
-  UserModel _createUserModel(User user) {
+  /// Build a [UserModel] from a Firebase Auth [User], resolving the
+  /// canonical role from `roles/{uid}`. New signups default to `free`.
+  ///
+  /// TODO(phase-3+): drop the `users/{uid}.role` fallback once a Cloud
+  /// Function has backfilled `roles/{uid}` for every legacy user.
+  Future<UserModel> _createUserModel(User user) async {
+    UserRole role = UserRole.free;
+    try {
+      final fromRoles = await _firestoreService.getUserRole(user.uid);
+      if (fromRoles != null) {
+        role = fromRoles;
+      } else {
+        // Legacy fallback: pre-Phase-3 users have role on users/{uid}.
+        final profile = await _firestoreService.getUserById(user.uid);
+        if (profile != null) role = profile.role;
+      }
+    } catch (_) {
+      // Don't fail auth if Firestore is unreachable; default stays free.
+    }
     return UserModel(
       id: user.uid,
       email: user.email ?? '',
       displayName: user.displayName,
       photoUrl: user.photoURL,
-      role: _determineUserRole(user),
+      role: role,
       createdAt: user.metadata.creationTime,
     );
-  }
-
-  UserRole _determineUserRole(User user) {
-    final email = user.email?.toLowerCase() ?? '';
-    final emailLocalPart = email.split('@').first; // get part before @
-
-    // Check for admin - any email starting with "admin" (e.g., admin@gmail.com, admin@mydomain.com)
-    if (emailLocalPart.toLowerCase().startsWith('admin')) {
-      return UserRole.admin;
-    }
-
-    // Check for premium - any email starting with "premium"
-    if (emailLocalPart.toLowerCase().startsWith('premium')) {
-      return UserRole.premium;
-    }
-
-    return UserRole.free;
   }
 
   String _handleAuthError(FirebaseAuthException e) {

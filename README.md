@@ -102,7 +102,9 @@ lib/
 1. Create a Firebase project
 2. Enable Authentication (Email/Password + Google)
 3. Create Firestore database
-4. Download `google-services.json` → `android/app/`
+4. Copy `android/app/google-services.json.example` → `android/app/google-services.json` and fill in the real keys from your Firebase console (project number, app id, oauth client ids, API key). On iOS, download `GoogleService-Info.plist` from the Firebase console and place it at `ios/Runner/GoogleService-Info.plist`. **Neither file is committed to source control** — see [Security rules](#security-rules) below.
+
+### 2. Cloudinary Setup
 
 ### 2. Cloudinary Setup
 1. Create Cloudinary account
@@ -115,6 +117,36 @@ lib/
 flutter pub get
 flutter run
 ```
+
+## Security rules
+
+Firestore security rules live in [firestore.rules](firestore.rules). They enforce:
+
+- **`sites`** — world-readable, admin-only writes.
+- **`users/{uid}`** — owner can read/write their own profile; admins can read all users (needed for the Admin → User Management screen).
+- **`roles/{uid}`** — only writable by an existing admin. Reads allowed for the owner and admins.
+- **Everything else** — default-deny.
+
+Deploy after every change:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+Or paste the file into the Firebase console editor. The rules are loaded by Firestore at request time, not bundled with the app, so a deploy is required.
+
+## Roles model
+
+User roles live in the Firestore `roles/{uid}` collection with the shape:
+
+```json
+{ "role": "free" | "premium" | "admin", "updated_at": <server timestamp> }
+```
+
+- New users default to `free`. No `roles/{uid}` doc is created on signup — `UserRole.free` is implicit.
+- Promotion / demotion is performed from the Admin → User Management screen, which writes `roles/{uid}` directly.
+- A future Cloud Functions phase will move promotion behind a trusted-server boundary and switch the rules' admin check to custom claims.
+- For pre-Phase-3 legacy users, the client still falls back to reading `users/{uid}.role` if no `roles/{uid}` doc exists. This fallback is TODO-marked in `AuthService._createUserModel` and `AuthCubit.checkAuthStatus` for removal.
 
 ## Maps
 

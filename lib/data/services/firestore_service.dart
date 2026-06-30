@@ -17,6 +17,12 @@ class FirestoreService {
   CollectionReference get _usersCollection =>
       _firestore.collection(AppConstants.usersCollection);
 
+  // Roles Collection — canonical role store. Each user has at most one
+  // document at roles/{uid} with `{ role: 'free' | 'premium' | 'admin',
+  // updated_at }`. Only admins can write; users and admins can read.
+  CollectionReference get _rolesCollection =>
+      _firestore.collection(AppConstants.rolesCollection);
+
   Future<List<SiteModel>> getAllSites() async {
     try {
       final snapshot = await _sitesCollection.get();
@@ -164,17 +170,81 @@ class FirestoreService {
 
   Future<void> createUser(UserModel user) async {
     try {
-      await _usersCollection.doc(user.id).set(user.toMap()..remove('id'));
+      // Role lives in roles/{uid}, not on the user profile. Strip it here so
+      // a future code change can't accidentally re-introduce role into
+      // users/{uid} and bypass the roles collection.
+      await _usersCollection
+          .doc(user.id)
+          .set((user.toMap()..remove('role'))..remove('id'));
     } catch (e) {
       throw Exception('Failed to create user: $e');
     }
   }
 
-  Future<void> updateUserRole(String userId, UserRole role) async {
+  /// Read the user's role from roles/{uid}. Returns null if no document
+  /// exists (e.g. a brand-new user who hasn't been promoted yet).
+  Future<UserRole?> getUserRole(String uid) async {
     try {
-      await _usersCollection.doc(userId).update({'role': role.name});
+      final doc = await _rolesCollection.doc(uid).get();
+      if (!doc.exists) return null;
+      final data = doc.data() as Map<String, dynamic>?;
+      return _parseRoleString(data?['role'] as String?);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Write roles/{uid} with the authoritative role. Only admins should
+  /// reach this path (see firestore.rules); non-admin writes will be
+  /// rejected by the security rules.
+  Future<void> setUserRole(String uid, UserRole role) async {
+    try {
+      await _rolesCollection.doc(uid).set({
+        'role': role.name,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      throw Exception('Failed to update user role: $e');
+      throw Exception('Failed to set user role: $e');
+    }
+  }
+
+  /// Backwards-compatible shim — preserves the updateUserRole() call site
+  /// at lib/blocs/user/user_cubit.dart:34 while the implementation routes
+  /// through the new roles collection.
+  Future<void> updateUserRole(String userId, UserRole role) =>
+      setUserRole(userId, role);
+
+  /// Bulk-fetch roles for the admin User Management table. Returns a
+  /// uid -> UserRole map; users without a roles/{uid} doc are absent from
+  /// the map (callers fall back to the value already on users/{uid}).
+  Future<Map<String, UserRole>> bulkGetRoles(Iterable<String> uids) async {
+    final ids = uids.toList();
+    if (ids.isEmpty) return {};
+    try {
+      final snaps =
+          await Future.wait(ids.map((id) => _rolesCollection.doc(id).get()));
+      final out = <String, UserRole>{};
+      for (var i = 0; i < ids.length; i++) {
+        if (!snaps[i].exists) continue;
+        final data = snaps[i].data() as Map<String, dynamic>?;
+        out[ids[i]] = _parseRoleString(data?['role'] as String?);
+      }
+      return out;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Local mirror of UserModel._parseRole — kept private so we don't widen
+  /// the model's API surface.
+  static UserRole _parseRoleString(String? role) {
+    switch (role) {
+      case 'premium':
+        return UserRole.premium;
+      case 'admin':
+        return UserRole.admin;
+      default:
+        return UserRole.free;
     }
   }
 
@@ -192,6 +262,10 @@ class FirestoreService {
     } catch (e) {
       throw Exception('Failed to delete user: $e');
     }
+    // Best-effort role cleanup; missing doc is not an error.
+    try {
+      await _rolesCollection.doc(userId).delete();
+    } catch (_) {}
   }
 
   Stream<List<UserModel>> watchUsers() {
@@ -215,9 +289,9 @@ class FirestoreService {
 
   Future<int> getPremiumUserCount() async {
     try {
-      final snapshot = await _usersCollection
-          .where('role', isEqualTo: 'premium')
-          .get();
+      // Roles live in the roles collection, not on the user profile.
+      final snapshot =
+          await _rolesCollection.where('role', isEqualTo: 'premium').get();
       return snapshot.size;
     } catch (e) {
       return 0;
