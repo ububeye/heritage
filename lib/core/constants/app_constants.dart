@@ -56,8 +56,15 @@ class AppConstants {
   static const String keyAudioLanguage = 'audio_language';
   static const String keyItinerary = 'itinerary';
   static const String keyShowPremiumOffer = 'show_premium_offer';
+  static const String keyIsPremiumDemo = 'is_premium_demo';
   static const String keyUserId = 'user_id';
   static const String keyFavorites = 'favorites';
+  static const String keyMapProvider = 'map_provider'; // 'open' | 'google'
+
+  // Map providers
+  /// Map provider identifiers. 'open' is the default key-free path.
+  static const String mapProviderOpen = 'open';
+  static const String mapProviderGoogle = 'google';
 
   // Firestore Collections
   static const String sitesCollection = 'sites';

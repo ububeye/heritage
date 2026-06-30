@@ -3,16 +3,31 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/nav_guard.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../data/services/shared_prefs_service.dart';
 import 'login_screen.dart';
 import 'upgrade_screen.dart';
 import 'user_profile_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String _currentMapProvider() {
+    try {
+      return SharedPrefsService.instance.mapProvider;
+    } catch (_) {
+      return AppConstants.mapProviderOpen;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +81,35 @@ class SettingsScreen extends StatelessWidget {
                           } else if (!authState.isPremium) {
                             _showUpgradeDialog(context, locState);
                           }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _SectionTitle(title: 'Map provider'),
+                  _SettingsCard(
+                    children: [
+                      _MapProviderTile(
+                        current: _currentMapProvider(),
+                        googleKeyConfigured: isGoogleMapsEnabled,
+                        onChanged: (value) async {
+                          if (value == null) return;
+                          await SharedPrefsService.instance
+                              .setMapProvider(value);
+                          if (!context.mounted) return;
+                          setState(() {});
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                value == AppConstants.mapProviderOpen
+                                    ? 'Switched to OpenStreetMap. Works without an API key.'
+                                    : (isGoogleMapsEnabled
+                                        ? 'Switched to Google Maps.'
+                                        : 'Google Maps selected, but no API key is configured. Using the open-source map until one is set.'),
+                              ),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
                         },
                       ),
                     ],
@@ -328,6 +372,55 @@ class _DropdownTile extends StatelessWidget {
             onChanged: enabled ? onChanged : null,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Map provider" tile — switches between the open-source path (default)
+/// and the Google Maps path. The Google option is greyed out when no API
+/// key has been configured in `app_constants.dart`.
+class _MapProviderTile extends StatelessWidget {
+  final String current;
+  final bool googleKeyConfigured;
+  final ValueChanged<String?> onChanged;
+
+  const _MapProviderTile({
+    required this.current,
+    required this.googleKeyConfigured,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <String>[
+      AppConstants.mapProviderOpen,
+      if (googleKeyConfigured) AppConstants.mapProviderGoogle,
+    ];
+    final labels = <String>[
+      'OpenStreetMap (recommended)',
+      if (googleKeyConfigured) 'Google Maps',
+    ];
+
+    return ListTile(
+      leading: const Icon(Icons.map, color: AppColors.primary),
+      title: const Text('Map provider'),
+      subtitle: Text(
+        googleKeyConfigured
+            ? 'OpenStreetMap is free and works without an API key.'
+            : 'Google Maps requires an API key in app_constants.dart.\nNot configured — using the open-source map.',
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+      ),
+      trailing: DropdownButton<String>(
+        value: items.contains(current) ? current : items.first,
+        underline: const SizedBox(),
+        items: items.asMap().entries.map((e) {
+          return DropdownMenuItem<String>(
+            value: e.value,
+            child: Text(labels[e.key]),
+          );
+        }).toList(),
+        onChanged: onChanged,
       ),
     );
   }

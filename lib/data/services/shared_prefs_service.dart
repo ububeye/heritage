@@ -85,6 +85,14 @@ class SharedPrefsService {
     await _preferences.setBool(AppConstants.keyShowPremiumOffer, show);
   }
 
+  // Premium status (demo only — no real billing integration).
+  bool get isPremiumDemo =>
+      _preferences.getBool(AppConstants.keyIsPremiumDemo) ?? false;
+
+  Future<void> setPremiumDemo(bool value) async {
+    await _preferences.setBool(AppConstants.keyIsPremiumDemo, value);
+  }
+
   // User ID
   String? get userId => _preferences.getString(AppConstants.keyUserId);
 
@@ -139,6 +147,16 @@ class SharedPrefsService {
   }
 
   bool isFavorite(String siteId) => favorites.contains(siteId);
+
+  // Map provider ('open' | 'google'). Defaults to 'open' since the demo
+  // build has no Google Maps API key.
+  String get mapProvider =>
+      _preferences.getString(AppConstants.keyMapProvider) ??
+      AppConstants.mapProviderOpen;
+
+  Future<void> setMapProvider(String provider) async {
+    await _preferences.setString(AppConstants.keyMapProvider, provider);
+  }
 
   // Clear all
   Future<void> clearAll() async {
