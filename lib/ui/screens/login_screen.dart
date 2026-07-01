@@ -34,9 +34,10 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
   }
 
@@ -51,9 +52,9 @@ class _LoginScreenState extends State<LoginScreen>
   void _onLogin() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthCubit>().signInWithEmail(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
     }
   }
 
@@ -85,7 +86,8 @@ class _LoginScreenState extends State<LoginScreen>
               MaterialPageRoute(builder: (_) => const HomeScreen()),
             );
           }
-        } else if (state.status == AuthStatus.error && state.errorMessage != null) {
+        } else if (state.status == AuthStatus.error &&
+            state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
@@ -108,11 +110,11 @@ class _LoginScreenState extends State<LoginScreen>
                       const SizedBox(height: 20),
                       // Logo
                       Container(
-                        width: 100,
-                        height: 100,
+                        width: 150,
+                        height: 150,
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(35),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withAlpha(26),
@@ -121,10 +123,12 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.account_balance,
-                          size: 50,
-                          color: Theme.of(context).colorScheme.primary,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(35),
+                          child: Image.asset(
+                            'assets/images/logo.jpeg',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -133,7 +137,8 @@ class _LoginScreenState extends State<LoginScreen>
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).textTheme.displayLarge?.color,
+                          color:
+                              Theme.of(context).textTheme.displayLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -141,150 +146,174 @@ class _LoginScreenState extends State<LoginScreen>
                         _tr(locState, 'welcome_subtitle'),
                         style: TextStyle(
                           fontSize: 16,
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                         ),
                       ),
                       const SizedBox(height: 40),
                       // Form Card
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(26),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(26),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildTextField(
+                                controller: _emailController,
+                                label: _tr(locState, 'email'),
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return _tr(locState, 'error_invalid_email');
+                                  }
+                                  if (!value.contains('@')) {
+                                    return _tr(locState, 'error_invalid_email');
+                                  }
+                                  return null;
+                                },
                               ),
-                            ],
-                          ),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildTextField(
-                                  controller: _emailController,
-                                  label: _tr(locState, 'email'),
-                                  icon: Icons.email_outlined,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return _tr(locState, 'error_invalid_email');
-                                    }
-                                    if (!value.contains('@')) {
-                                      return _tr(locState, 'error_invalid_email');
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                _buildTextField(
-                                  controller: _passwordController,
-                                  label: _tr(locState, 'password'),
-                                  icon: Icons.lock_outlined,
-                                  obscureText: _obscurePassword,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    onPressed: () {
-                                      setState(() => _obscurePassword = !_obscurePassword);
-                                    },
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                controller: _passwordController,
+                                label: _tr(locState, 'password'),
+                                icon: Icons.lock_outlined,
+                                obscureText: _obscurePassword,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: AppColors.textSecondary,
                                   ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return _tr(locState, 'error_weak_password');
-                                    }
-                                    return null;
+                                  onPressed: () {
+                                    setState(
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
+                                    );
                                   },
                                 ),
-                                const SizedBox(height: 24),
-                                BlocBuilder<AuthCubit, AuthState>(
-                                  builder: (context, authState) {
-                                    return SizedBox(
-                                      height: 56,
-                                      child: ElevatedButton(
-                                        onPressed: authState.status == AuthStatus.loading
-                                            ? null
-                                            : _onLogin,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return _tr(locState, 'error_weak_password');
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              BlocBuilder<AuthCubit, AuthState>(
+                                builder: (context, authState) {
+                                  return SizedBox(
+                                    height: 56,
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          authState.status == AuthStatus.loading
+                                              ? null
+                                              : _onLogin,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
                                           ),
-                                          elevation: 0,
                                         ),
-                                        child: authState.status == AuthStatus.loading
-                                            ? const SizedBox(
+                                        elevation: 0,
+                                      ),
+                                      child:
+                                          authState.status == AuthStatus.loading
+                                              ? const SizedBox(
                                                 width: 24,
                                                 height: 24,
-                                                child: CircularProgressIndicator(
-                                                  color: Colors.white,
-                                                  strokeWidth: 2,
-                                                ),
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                      strokeWidth: 2,
+                                                    ),
                                               )
-                                            : Text(
+                                              : Text(
                                                 _tr(locState, 'login'),
                                                 style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(child: Divider(color: AppColors.border)),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      child: Text(
-                                        'or',
-                                        style: TextStyle(color: AppColors.textSecondary),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Divider(color: AppColors.border),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: Text(
+                                      'or',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
-                                    Expanded(child: Divider(color: AppColors.border)),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                _buildGoogleButton(),
-                              ],
-                            ),
+                                  ),
+                                  Expanded(
+                                    child: Divider(color: AppColors.border),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _buildGoogleButton(),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _tr(locState, 'no_account'),
-                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _tr(locState, 'no_account'),
+                            style: TextStyle(
+                              color:
+                                  Theme.of(context).textTheme.bodyMedium?.color,
                             ),
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                              ),
-                              child: Text(
-                                _tr(locState, 'register'),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
+                          ),
+                          TextButton(
+                            onPressed:
+                                () => Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (_) => const RegisterScreen(),
+                                  ),
                                 ),
+                            child: Text(
+                              _tr(locState, 'register'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
             ),

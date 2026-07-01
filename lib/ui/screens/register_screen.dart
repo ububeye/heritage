@@ -110,11 +110,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                     children: [
                       const SizedBox(height: 20),
                       Container(
-                        width: 100,
-                        height: 100,
+                        width: 150,
+                        height: 150,
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(35),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withAlpha(26),
@@ -123,10 +123,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.account_balance,
-                          size: 50,
-                          color: Theme.of(context).colorScheme.primary,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(35),
+                          child: Image.asset(
+                            'assets/images/logo.jpeg',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 32),

@@ -155,10 +155,12 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ],
                             ),
-                            child: Icon(
-                              Icons.account_balance,
-                              size: 70,
-                              color: Theme.of(context).colorScheme.primary,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(35),
+                              child: Image.asset(
+                                'assets/images/logo.jpeg',
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),

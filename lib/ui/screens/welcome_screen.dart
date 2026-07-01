@@ -186,10 +186,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 ),
                               ],
                             ),
-                            child: Icon(
-                              Icons.account_balance,
-                              size: 80,
-                              color: Theme.of(context).colorScheme.primary,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(40),
+                              child: Image.asset(
+                                'assets/images/logo.jpeg',
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
