@@ -3,14 +3,6 @@ import 'package:equatable/equatable.dart';
 enum UserRole { free, premium, admin }
 
 class UserModel extends Equatable {
-  final String id;
-  final String email;
-  final String? displayName;
-  final String? photoUrl;
-  final UserRole role;
-  final DateTime? createdAt;
-  final DateTime? subscriptionExpiry;
-  final bool disabled;
 
   const UserModel({
     required this.id,
@@ -22,6 +14,31 @@ class UserModel extends Equatable {
     this.subscriptionExpiry,
     this.disabled = false,
   });
+
+  factory UserModel.fromMap(Map<String, dynamic> map) {
+    return UserModel(
+      id: map['id'] ?? '',
+      email: map['email'] ?? '',
+      displayName: map['display_name'],
+      photoUrl: map['photo_url'],
+      role: _parseRole(map['role']),
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'])
+          : null,
+      subscriptionExpiry: map['subscription_expiry'] != null
+          ? DateTime.tryParse(map['subscription_expiry'])
+          : null,
+      disabled: map['disabled'] ?? false,
+    );
+  }
+  final String id;
+  final String email;
+  final String? displayName;
+  final String? photoUrl;
+  final UserRole role;
+  final DateTime? createdAt;
+  final DateTime? subscriptionExpiry;
+  final bool disabled;
 
   bool get isPremium => role == UserRole.premium || role == UserRole.admin;
   bool get isAdmin => role == UserRole.admin;
@@ -59,23 +76,6 @@ class UserModel extends Equatable {
       'subscription_expiry': subscriptionExpiry?.toIso8601String(),
       'disabled': disabled,
     };
-  }
-
-  factory UserModel.fromMap(Map<String, dynamic> map) {
-    return UserModel(
-      id: map['id'] ?? '',
-      email: map['email'] ?? '',
-      displayName: map['display_name'],
-      photoUrl: map['photo_url'],
-      role: _parseRole(map['role']),
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'])
-          : null,
-      subscriptionExpiry: map['subscription_expiry'] != null
-          ? DateTime.tryParse(map['subscription_expiry'])
-          : null,
-      disabled: map['disabled'] ?? false,
-    );
   }
 
   static UserRole _parseRole(String? role) {

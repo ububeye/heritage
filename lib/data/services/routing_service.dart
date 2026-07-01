@@ -9,6 +9,15 @@ import '../../core/constants/app_constants.dart';
 
 /// Result of a routing request.
 class RouteResult {
+
+  const RouteResult({
+    required this.points,
+    required this.distanceMeters,
+    this.durationSeconds,
+    this.isFallback = false,
+    this.errorMessage,
+    this.provider = 'none',
+  });
   /// Ordered list of coordinates forming the route polyline.
   final List<LatLng> points;
 
@@ -30,15 +39,6 @@ class RouteResult {
   /// Which provider actually produced this result. Useful in logs and in
   /// the on-screen banner to tell the user *why* a fallback is showing.
   final String provider;
-
-  const RouteResult({
-    required this.points,
-    required this.distanceMeters,
-    this.durationSeconds,
-    this.isFallback = false,
-    this.errorMessage,
-    this.provider = 'none',
-  });
 
   static RouteResult fallback({
     required LatLng from,
@@ -81,6 +81,11 @@ enum _RoutingProvider {
 /// Both providers return GeoJSON LineString geometry of the same shape,
 /// so a single parser handles both responses.
 class RoutingService {
+
+  RoutingService({
+    http.Client? client,
+    this.timeout = const Duration(seconds: 6),
+  }) : _client = client ?? http.Client();
   final http.Client _client;
   final Duration timeout;
 
@@ -94,11 +99,6 @@ class RoutingService {
   /// In-memory cache. LatLngs are rounded to 5 decimals (~1.1 m at the
   /// equator) so micro-GPS jitter doesn't bust the entry.
   final Map<String, _CacheEntry> _cache = {};
-
-  RoutingService({
-    http.Client? client,
-    this.timeout = const Duration(seconds: 6),
-  }) : _client = client ?? http.Client();
 
   /// Fetch a walking route from [from] to [to].
   ///
@@ -425,7 +425,7 @@ class RoutingService {
 }
 
 class _CacheEntry {
+  _CacheEntry(this.result, this.at);
   final RouteResult result;
   final DateTime at;
-  _CacheEntry(this.result, this.at);
 }

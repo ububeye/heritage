@@ -5,11 +5,6 @@ import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
 
 class FeaturedSiteCard extends StatelessWidget {
-  final SiteModel site;
-  final String uiLanguage;
-  final VoidCallback onTap;
-  final VoidCallback onViewMap;
-  final VoidCallback onStartAudio;
 
   const FeaturedSiteCard({
     super.key,
@@ -19,6 +14,11 @@ class FeaturedSiteCard extends StatelessWidget {
     required this.onViewMap,
     required this.onStartAudio,
   });
+  final SiteModel site;
+  final String uiLanguage;
+  final VoidCallback onTap;
+  final VoidCallback onViewMap;
+  final VoidCallback onStartAudio;
 
   @override
   Widget build(BuildContext context) {

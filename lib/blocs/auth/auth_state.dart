@@ -4,15 +4,15 @@ import '../../data/models/user_model.dart';
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 class AuthState extends Equatable {
-  final AuthStatus status;
-  final UserModel? user;
-  final String? errorMessage;
 
   const AuthState({
     this.status = AuthStatus.initial,
     this.user,
     this.errorMessage,
   });
+  final AuthStatus status;
+  final UserModel? user;
+  final String? errorMessage;
 
   bool get isAuthenticated => status == AuthStatus.authenticated && user != null;
   bool get isPremium => user?.isPremium ?? false;

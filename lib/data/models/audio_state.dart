@@ -1,13 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 class AudioState extends Equatable {
-  final bool isPlaying;
-  final bool isPaused;
-  final Duration position;
-  final Duration duration;
-  final String languageCode;
-  final bool isLoading;
-  final String? errorMessage;
 
   const AudioState({
     this.isPlaying = false,
@@ -18,6 +11,13 @@ class AudioState extends Equatable {
     this.isLoading = false,
     this.errorMessage,
   });
+  final bool isPlaying;
+  final bool isPaused;
+  final Duration position;
+  final Duration duration;
+  final String languageCode;
+  final bool isLoading;
+  final String? errorMessage;
 
   double get progress {
     if (duration.inMilliseconds == 0) return 0;

@@ -463,9 +463,9 @@ class UserProfileScreen extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  final String title;
 
   const _SectionTitle({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -484,9 +484,9 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _SettingsCard extends StatelessWidget {
-  final List<Widget> children;
 
   const _SettingsCard({required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -502,12 +502,6 @@ class _SettingsCard extends StatelessWidget {
 }
 
 class _ProfileMenuItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final Color? iconColor;
-  final VoidCallback onTap;
 
   const _ProfileMenuItem({
     required this.icon,
@@ -517,6 +511,12 @@ class _ProfileMenuItem extends StatelessWidget {
     this.iconColor,
     required this.onTap,
   });
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final Color? iconColor;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {

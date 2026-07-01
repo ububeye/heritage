@@ -7,14 +7,6 @@ import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 
 class SiteCard extends StatelessWidget {
-  final SiteModel site;
-  final String uiLanguage;
-  final VoidCallback onTap;
-  final VoidCallback? onNavigate;
-  final bool isInItinerary;
-  final VoidCallback? onToggleItinerary;
-  final bool isFavorite;
-  final VoidCallback? onToggleFavorite;
 
   const SiteCard({
     super.key,
@@ -27,6 +19,14 @@ class SiteCard extends StatelessWidget {
     this.isFavorite = false,
     this.onToggleFavorite,
   });
+  final SiteModel site;
+  final String uiLanguage;
+  final VoidCallback onTap;
+  final VoidCallback? onNavigate;
+  final bool isInItinerary;
+  final VoidCallback? onToggleItinerary;
+  final bool isFavorite;
+  final VoidCallback? onToggleFavorite;
 
   @override
   Widget build(BuildContext context) {

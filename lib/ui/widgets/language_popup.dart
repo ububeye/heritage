@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import '../../core/constants/colors.dart';
 
 class LanguagePopup extends StatelessWidget {
-  final Function(String) onSelect;
 
   const LanguagePopup({
     super.key,
     required this.onSelect,
   });
+  final Function(String) onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -73,15 +73,15 @@ class LanguagePopup extends StatelessWidget {
 }
 
 class _LanguageButton extends StatelessWidget {
-  final String flag;
-  final String label;
-  final VoidCallback onTap;
 
   const _LanguageButton({
     required this.flag,
     required this.label,
     required this.onTap,
   });
+  final String flag;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {

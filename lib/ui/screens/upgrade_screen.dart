@@ -148,13 +148,13 @@ class UpgradeScreen extends StatelessWidget {
 }
 
 class _BenefitItem extends StatelessWidget {
-  final IconData icon;
-  final String text;
 
   const _BenefitItem({
     required this.icon,
     required this.text,
   });
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {

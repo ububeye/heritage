@@ -10,12 +10,6 @@ enum NavigationStatus {
 }
 
 class NavigationState extends Equatable {
-  final NavigationStatus status;
-  final Position? currentPosition;
-  final double? distanceToSite;
-  final Duration? estimatedTime;
-  final bool hasArrived;
-  final String? errorMessage;
 
   const NavigationState({
     this.status = NavigationStatus.idle,
@@ -25,6 +19,12 @@ class NavigationState extends Equatable {
     this.hasArrived = false,
     this.errorMessage,
   });
+  final NavigationStatus status;
+  final Position? currentPosition;
+  final double? distanceToSite;
+  final Duration? estimatedTime;
+  final bool hasArrived;
+  final String? errorMessage;
 
   NavigationState copyWith({
     NavigationStatus? status,

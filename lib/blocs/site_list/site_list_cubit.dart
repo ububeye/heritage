@@ -7,9 +7,6 @@ import '../../data/services/firestore_service.dart';
 import 'site_list_state.dart';
 
 class SiteListCubit extends Cubit<SiteListState> {
-  final SiteRepository _siteRepository;
-  StreamSubscription<List<SiteModel>>? _sitesSubscription;
-  bool _hasReceivedFirstSnapshot = false;
 
   SiteListCubit({SiteRepository? siteRepository})
       : _siteRepository = siteRepository ?? SiteRepository(),
@@ -37,20 +34,25 @@ class SiteListCubit extends Cubit<SiteListState> {
                 state.selectedCategory,
               );
         _hasReceivedFirstSnapshot = true;
+        final sitesById = { for (var s in sites) s.id: s };
         emit(state.copyWith(
           status: SiteListStatus.loaded,
           sites: sites,
+          sitesById: sitesById,
           filteredSites: filtered,
-        ));
+        ),);
       },
       onError: (e) {
         emit(state.copyWith(
           status: SiteListStatus.error,
           errorMessage: e.toString(),
-        ));
+        ),);
       },
     );
   }
+  final SiteRepository _siteRepository;
+  StreamSubscription<List<SiteModel>>? _sitesSubscription;
+  bool _hasReceivedFirstSnapshot = false;
 
   /// One-shot fetch (used by pull-to-refresh and admin screens).
   Future<void> loadSites() async {
@@ -60,16 +62,18 @@ class SiteListCubit extends Cubit<SiteListState> {
       final sites = await _siteRepository.getAllSites();
       final filtered = _applyFilters(sites, state.searchQuery, state.selectedCategory);
       _hasReceivedFirstSnapshot = true;
+      final sitesById = { for (var s in sites) s.id: s };
       emit(state.copyWith(
         status: SiteListStatus.loaded,
         sites: sites,
+        sitesById: sitesById,
         filteredSites: filtered,
-      ));
+      ),);
     } catch (e) {
       emit(state.copyWith(
         status: SiteListStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -91,7 +95,7 @@ class SiteListCubit extends Cubit<SiteListState> {
       emit(state.copyWith(
         selectedCategory: null,
         filteredSites: filtered,
-      ));
+      ),);
     } else {
       final byCategory = state.sites.where((site) => site.category == category).toList();
       final filtered = state.searchQuery.isEmpty
@@ -100,7 +104,7 @@ class SiteListCubit extends Cubit<SiteListState> {
       emit(state.copyWith(
         selectedCategory: category,
         filteredSites: filtered,
-      ));
+      ),);
     }
   }
 
@@ -112,7 +116,7 @@ class SiteListCubit extends Cubit<SiteListState> {
     emit(state.copyWith(
       searchQuery: query,
       filteredSites: filtered,
-    ));
+    ),);
   }
 
   void clearFilters() {
@@ -120,7 +124,7 @@ class SiteListCubit extends Cubit<SiteListState> {
       searchQuery: '',
       selectedCategory: null,
       filteredSites: state.sites,
-    ));
+    ),);
   }
 
   /// Flip the `featured` flag on the site with [siteId]. Only one site is

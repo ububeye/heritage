@@ -4,10 +4,6 @@ import '../../core/constants/colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
 
 class CategoryChips extends StatelessWidget {
-  final List<String> categories;
-  final String? selectedCategory;
-  final Function(String?) onSelected;
-  final LocalizationState? locState;
 
   const CategoryChips({
     super.key,
@@ -16,6 +12,10 @@ class CategoryChips extends StatelessWidget {
     required this.onSelected,
     this.locState,
   });
+  final List<String> categories;
+  final String? selectedCategory;
+  final Function(String?) onSelected;
+  final LocalizationState? locState;
 
   String _tr(LocalizationState state, String key) {
     return state.translations[key] ?? key;

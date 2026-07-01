@@ -4,10 +4,6 @@ import '../../core/constants/colors.dart';
 import '../../data/models/site_model.dart';
 
 class ArrivalOverlay extends StatefulWidget {
-  final SiteModel site;
-  final String uiLanguage;
-  final VoidCallback onPlayAudio;
-  final VoidCallback onClose;
 
   const ArrivalOverlay({
     super.key,
@@ -16,6 +12,10 @@ class ArrivalOverlay extends StatefulWidget {
     required this.onPlayAudio,
     required this.onClose,
   });
+  final SiteModel site;
+  final String uiLanguage;
+  final VoidCallback onPlayAudio;
+  final VoidCallback onClose;
 
   @override
   State<ArrivalOverlay> createState() => _ArrivalOverlayState();

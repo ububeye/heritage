@@ -1,6 +1,78 @@
 import 'package:equatable/equatable.dart';
 
 class SiteModel extends Equatable {
+
+  const SiteModel({
+    required this.id,
+    required this.nameEn,
+    required this.nameSw,
+    this.nameFr = '',
+    this.nameDe = '',
+    this.nameAr = '',
+    this.nameIt = '',
+    this.nameEs = '',
+    required this.descriptionEn,
+    required this.descriptionSw,
+    required this.descriptionFr,
+    required this.descriptionDe,
+    required this.descriptionAr,
+    required this.descriptionIt,
+    required this.descriptionEs,
+    required this.cloudinaryImageUrl,
+    this.imageUrls = const [],
+    required this.latitude,
+    required this.longitude,
+    this.entryRadiusM = 50.0,
+    this.address,
+    this.rating,
+    this.category,
+    this.createdAt,
+    this.updatedAt,
+    this.featured = false,
+  });
+
+  factory SiteModel.fromMap(Map<String, dynamic> map) {
+    // Handle both single image and multiple images
+    List<String> parseImageUrls(dynamic value) {
+      if (value == null) return [];
+      if (value is List) return value.cast<String>();
+      if (value is String && value.isNotEmpty) return [value];
+      return [];
+    }
+
+    return SiteModel(
+      id: map['id'] ?? '',
+      nameEn: map['name_en'] ?? '',
+      nameSw: map['name_sw'] ?? '',
+      nameFr: map['name_fr'] ?? '',
+      nameDe: map['name_de'] ?? '',
+      nameAr: map['name_ar'] ?? '',
+      nameIt: map['name_it'] ?? '',
+      nameEs: map['name_es'] ?? '',
+      descriptionEn: map['description_en'] ?? '',
+      descriptionSw: map['description_sw'] ?? '',
+      descriptionFr: map['description_fr'] ?? '',
+      descriptionDe: map['description_de'] ?? '',
+      descriptionAr: map['description_ar'] ?? '',
+      descriptionIt: map['description_it'] ?? '',
+      descriptionEs: map['description_es'] ?? '',
+      cloudinaryImageUrl: map['cloudinary_image_url'] ?? '',
+      imageUrls: parseImageUrls(map['image_urls']),
+      latitude: (map['latitude'] ?? 0.0).toDouble(),
+      longitude: (map['longitude'] ?? 0.0).toDouble(),
+      entryRadiusM: (map['entry_radius_m'] ?? 50.0).toDouble(),
+      address: map['address'],
+      rating: map['rating']?.toDouble(),
+      category: map['category'],
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'])
+          : null,
+      updatedAt: map['updated_at'] != null
+          ? DateTime.tryParse(map['updated_at'])
+          : null,
+      featured: map['featured'] == true,
+    );
+  }
   final String id;
 
   // Names (7 languages)
@@ -41,35 +113,6 @@ class SiteModel extends Equatable {
 
   // Curation
   final bool featured;
-
-  const SiteModel({
-    required this.id,
-    required this.nameEn,
-    required this.nameSw,
-    this.nameFr = '',
-    this.nameDe = '',
-    this.nameAr = '',
-    this.nameIt = '',
-    this.nameEs = '',
-    required this.descriptionEn,
-    required this.descriptionSw,
-    required this.descriptionFr,
-    required this.descriptionDe,
-    required this.descriptionAr,
-    required this.descriptionIt,
-    required this.descriptionEs,
-    required this.cloudinaryImageUrl,
-    this.imageUrls = const [],
-    required this.latitude,
-    required this.longitude,
-    this.entryRadiusM = 50.0,
-    this.address,
-    this.rating,
-    this.category,
-    this.createdAt,
-    this.updatedAt,
-    this.featured = false,
-  });
 
   // Get primary image (first in list, or fallback to single image)
   String get primaryImage {
@@ -237,49 +280,6 @@ class SiteModel extends Equatable {
       'updated_at': updatedAt?.toIso8601String(),
       'featured': featured,
     };
-  }
-
-  factory SiteModel.fromMap(Map<String, dynamic> map) {
-    // Handle both single image and multiple images
-    List<String> parseImageUrls(dynamic value) {
-      if (value == null) return [];
-      if (value is List) return value.cast<String>();
-      if (value is String && value.isNotEmpty) return [value];
-      return [];
-    }
-
-    return SiteModel(
-      id: map['id'] ?? '',
-      nameEn: map['name_en'] ?? '',
-      nameSw: map['name_sw'] ?? '',
-      nameFr: map['name_fr'] ?? '',
-      nameDe: map['name_de'] ?? '',
-      nameAr: map['name_ar'] ?? '',
-      nameIt: map['name_it'] ?? '',
-      nameEs: map['name_es'] ?? '',
-      descriptionEn: map['description_en'] ?? '',
-      descriptionSw: map['description_sw'] ?? '',
-      descriptionFr: map['description_fr'] ?? '',
-      descriptionDe: map['description_de'] ?? '',
-      descriptionAr: map['description_ar'] ?? '',
-      descriptionIt: map['description_it'] ?? '',
-      descriptionEs: map['description_es'] ?? '',
-      cloudinaryImageUrl: map['cloudinary_image_url'] ?? '',
-      imageUrls: parseImageUrls(map['image_urls']),
-      latitude: (map['latitude'] ?? 0.0).toDouble(),
-      longitude: (map['longitude'] ?? 0.0).toDouble(),
-      entryRadiusM: (map['entry_radius_m'] ?? 50.0).toDouble(),
-      address: map['address'],
-      rating: map['rating']?.toDouble(),
-      category: map['category'],
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'])
-          : null,
-      updatedAt: map['updated_at'] != null
-          ? DateTime.tryParse(map['updated_at'])
-          : null,
-      featured: map['featured'] == true,
-    );
   }
 
   @override

@@ -211,9 +211,9 @@ class AdminSettingsScreen extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  final String title;
 
   const _SectionTitle({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -232,9 +232,9 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _SettingsCard extends StatelessWidget {
-  final List<Widget> children;
 
   const _SettingsCard({required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -250,12 +250,6 @@ class _SettingsCard extends StatelessWidget {
 }
 
 class _DropdownTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final List<String> items;
-  final List<String> labels;
-  final Function(String?) onChanged;
 
   const _DropdownTile({
     required this.icon,
@@ -265,6 +259,12 @@ class _DropdownTile extends StatelessWidget {
     required this.labels,
     required this.onChanged,
   });
+  final IconData icon;
+  final String title;
+  final String value;
+  final List<String> items;
+  final List<String> labels;
+  final Function(String?) onChanged;
 
   @override
   Widget build(BuildContext context) {

@@ -7,6 +7,10 @@ import '../../core/utils/distance_calculator.dart';
 import 'navigation_state.dart';
 
 class NavigationCubit extends Cubit<NavigationCubitState> {
+
+  NavigationCubit({LocationService? locationService})
+      : _locationService = locationService ?? LocationService(),
+        super(const NavigationCubitState());
   final LocationService _locationService;
   StreamSubscription<Position>? _positionSubscription;
 
@@ -14,10 +18,6 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
   double? _siteLng;
   double _entryRadiusM = 30.0;
   bool _hasArrived = false;
-
-  NavigationCubit({LocationService? locationService})
-      : _locationService = locationService ?? LocationService(),
-        super(const NavigationCubitState());
 
   Future<void> startNavigation({
     required String siteId,
@@ -34,7 +34,7 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
       currentSiteId: siteId,
       isNavigating: true,
       navigationState: const NavigationState(status: NavigationStatus.navigating),
-    ));
+    ),);
 
     final hasPermission = await _locationService.checkPermission();
     if (!hasPermission) {
@@ -43,7 +43,7 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
           status: NavigationStatus.error,
           errorMessage: 'Location permission required',
         ),
-      ));
+      ),);
       return;
     }
 
@@ -82,7 +82,7 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
           estimatedTime: eta,
           hasArrived: true,
         ),
-      ));
+      ),);
     } else {
       emit(state.copyWith(
         navigationState: NavigationState(
@@ -92,7 +92,7 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
           estimatedTime: eta,
           hasArrived: false,
         ),
-      ));
+      ),);
     }
   }
 

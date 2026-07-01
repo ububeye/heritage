@@ -43,10 +43,6 @@ class ExploreCubit extends Cubit<ExploreState> {
 }
 
 class ExploreState {
-  final bool isMapView;
-  final List<String> itinerary;
-  final SiteModel? selectedSite;
-  final SiteModel? featuredSite;
 
   const ExploreState({
     this.isMapView = false,
@@ -54,6 +50,10 @@ class ExploreState {
     this.selectedSite,
     this.featuredSite,
   });
+  final bool isMapView;
+  final List<String> itinerary;
+  final SiteModel? selectedSite;
+  final SiteModel? featuredSite;
 
   ExploreState copyWith({
     bool? isMapView,

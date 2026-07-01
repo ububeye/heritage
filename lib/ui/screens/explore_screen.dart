@@ -118,16 +118,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       builder: (context, exploreState) {
                         final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
 
-                        if (exploreState.isMapView) {
-                          return _MapView(
-                            sites: sites,
-                            uiLanguage: uiLanguage,
-                            onSiteTap: (site) => _navigateToDetail(site),
-                            onNavigate: (site) => _navigateToNav(site),
-                            locState: locState,
-                          );
-                        }
-
                         // Featured site pinning (B-08): prefer sites explicitly
                         // marked `featured: true` in Firestore, fall back to
                         // the first item in the list.
@@ -140,15 +130,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           }
                         }
 
-                        return _ListView(
-                          sites: sites,
-                          uiLanguage: uiLanguage,
-                          featuredSite: featuredSite,
-                          onSiteTap: (site) => _navigateToDetail(site),
-                          onNavigate: (site) => _navigateToNav(site),
-                          onFeaturedNavigate: (site) => _navigateToNav(site),
-                          onFeaturedAudio: (site) => _navigateToDetail(site),
-                          locState: locState,
+                        return IndexedStack(
+                          index: exploreState.isMapView ? 0 : 1,
+                          children: [
+                            _MapView(
+                              sites: sites,
+                              uiLanguage: uiLanguage,
+                              onSiteTap: (site) => _navigateToDetail(site),
+                              onNavigate: (site) => _navigateToNav(site),
+                              locState: locState,
+                            ),
+                            _ListView(
+                              sites: sites,
+                              uiLanguage: uiLanguage,
+                              featuredSite: featuredSite,
+                              onSiteTap: (site) => _navigateToDetail(site),
+                              onNavigate: (site) => _navigateToNav(site),
+                              onFeaturedNavigate: (site) => _navigateToNav(site),
+                              onFeaturedAudio: (site) => _navigateToDetail(site),
+                              locState: locState,
+                            ),
+                          ],
                         );
                       },
                     );
@@ -178,14 +180,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
 }
 
 class _ListView extends StatelessWidget {
-  final List<SiteModel> sites;
-  final String uiLanguage;
-  final SiteModel? featuredSite;
-  final Function(SiteModel) onSiteTap;
-  final Function(SiteModel) onNavigate;
-  final Function(SiteModel) onFeaturedNavigate;
-  final Function(SiteModel) onFeaturedAudio;
-  final LocalizationState locState;
 
   const _ListView({
     required this.sites,
@@ -197,6 +191,14 @@ class _ListView extends StatelessWidget {
     required this.onFeaturedAudio,
     required this.locState,
   });
+  final List<SiteModel> sites;
+  final String uiLanguage;
+  final SiteModel? featuredSite;
+  final Function(SiteModel) onSiteTap;
+  final Function(SiteModel) onNavigate;
+  final Function(SiteModel) onFeaturedNavigate;
+  final Function(SiteModel) onFeaturedAudio;
+  final LocalizationState locState;
 
   String _tr(LocalizationState state, String key) {
     return state.translations[key] ?? key;
@@ -269,12 +271,6 @@ class _ListView extends StatelessWidget {
 }
 
 class _SiteCardWithItinerary extends StatelessWidget {
-  final SiteModel site;
-  final String uiLanguage;
-  final bool isInItinerary;
-  final VoidCallback onTap;
-  final VoidCallback onNavigate;
-  final VoidCallback onToggleItinerary;
 
   const _SiteCardWithItinerary({
     required this.site,
@@ -284,6 +280,12 @@ class _SiteCardWithItinerary extends StatelessWidget {
     required this.onNavigate,
     required this.onToggleItinerary,
   });
+  final SiteModel site;
+  final String uiLanguage;
+  final bool isInItinerary;
+  final VoidCallback onTap;
+  final VoidCallback onNavigate;
+  final VoidCallback onToggleItinerary;
 
   @override
   Widget build(BuildContext context) {
@@ -299,11 +301,6 @@ class _SiteCardWithItinerary extends StatelessWidget {
 }
 
 class _MapView extends StatelessWidget {
-  final List<SiteModel> sites;
-  final String uiLanguage;
-  final Function(SiteModel) onSiteTap;
-  final Function(SiteModel) onNavigate;
-  final LocalizationState locState;
 
   const _MapView({
     required this.sites,
@@ -312,6 +309,11 @@ class _MapView extends StatelessWidget {
     required this.onNavigate,
     required this.locState,
   });
+  final List<SiteModel> sites;
+  final String uiLanguage;
+  final Function(SiteModel) onSiteTap;
+  final Function(SiteModel) onNavigate;
+  final LocalizationState locState;
 
   String _tr(LocalizationState state, String key) {
     return state.translations[key] ?? key;

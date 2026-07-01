@@ -5,13 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class CloudinaryService {
-  final String cloudName;
-  final String uploadPreset;
 
   CloudinaryService({
     this.cloudName = 'dpmcnfbpb',
     this.uploadPreset = 'stone_town_unsigned',
   });
+  final String cloudName;
+  final String uploadPreset;
 
   /// Pick single image from gallery
   Future<XFile?> pickSingleImage({ImageSource source = ImageSource.gallery}) async {
@@ -52,16 +52,9 @@ class CloudinaryService {
 
   /// Upload multiple images to Cloudinary
   Future<List<String>> uploadImages(List<XFile> imageFiles) async {
-    final urls = <String>[];
-
-    for (final file in imageFiles) {
-      final url = await uploadImage(file);
-      if (url != null) {
-        urls.add(url);
-      }
-    }
-
-    return urls;
+    final futures = imageFiles.map((file) => uploadImage(file));
+    final results = await Future.wait(futures);
+    return results.whereType<String>().toList();
   }
 
   /// Upload image from file path (for network URLs or local files)

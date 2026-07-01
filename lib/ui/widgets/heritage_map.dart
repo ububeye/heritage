@@ -15,14 +15,6 @@ import '../../data/services/tile_cache_service.dart';
 /// Both variants hide the underlying `flutter_map` + `latlong2` details so the
 /// rest of the app stays decoupled from the map library.
 class HeritageMap extends StatefulWidget {
-  final List<SiteModel> sites;
-  final void Function(SiteModel site)? onSiteTap;
-  final double initialLat;
-  final double initialLng;
-  final double initialZoom;
-  final void Function(double lat, double lng)? onLocationPicked;
-  final bool showLocateButton;
-  final bool draggableMarker;
 
   const HeritageMap.browse({
     super.key,
@@ -57,6 +49,14 @@ class HeritageMap extends StatefulWidget {
         initialLng = 39.1835,
         showLocateButton = false,
         draggableMarker = false;
+  final List<SiteModel> sites;
+  final void Function(SiteModel site)? onSiteTap;
+  final double initialLat;
+  final double initialLng;
+  final double initialZoom;
+  final void Function(double lat, double lng)? onLocationPicked;
+  final bool showLocateButton;
+  final bool draggableMarker;
 
   @override
   State<HeritageMap> createState() => _HeritageMapState();
@@ -184,7 +184,7 @@ class _HeritageMapState extends State<HeritageMap> {
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                          )),
+                          ),),
                     ],
                   ),
                 ),
@@ -230,8 +230,8 @@ class _HeritageMapState extends State<HeritageMap> {
 }
 
 class _PinMarker extends StatelessWidget {
-  final String? label;
   const _PinMarker({required this.label});
+  final String? label;
 
   @override
   Widget build(BuildContext context) {

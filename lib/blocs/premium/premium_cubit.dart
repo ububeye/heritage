@@ -12,7 +12,7 @@ class PremiumCubit extends Cubit<PremiumState> {
     emit(state.copyWith(
       showPremiumOffer: prefs.showPremiumOffer,
       isPremium: prefs.isPremiumDemo,
-    ));
+    ),);
   }
 
   Future<void> subscribe() async {
@@ -24,7 +24,7 @@ class PremiumCubit extends Cubit<PremiumState> {
       isLoading: false,
       isPremium: true,
       showPremiumOffer: false,
-    ));
+    ),);
   }
 
   Future<void> skipPremiumOffer() async {
@@ -39,15 +39,15 @@ class PremiumCubit extends Cubit<PremiumState> {
 }
 
 class PremiumState {
-  final bool isPremium;
-  final bool isLoading;
-  final bool showPremiumOffer;
 
   const PremiumState({
     this.isPremium = false,
     this.isLoading = false,
     this.showPremiumOffer = true,
   });
+  final bool isPremium;
+  final bool isLoading;
+  final bool showPremiumOffer;
 
   PremiumState copyWith({
     bool? isPremium,

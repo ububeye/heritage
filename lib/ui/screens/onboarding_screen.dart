@@ -6,9 +6,9 @@ import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  final bool isFirstLaunch;
 
   const OnboardingScreen({super.key, this.isFirstLaunch = false});
+  final bool isFirstLaunch;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -169,9 +169,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _OnboardingPageWidget extends StatelessWidget {
-  final OnboardingPage page;
 
   const _OnboardingPageWidget({required this.page});
+  final OnboardingPage page;
 
   @override
   Widget build(BuildContext context) {
@@ -289,10 +289,6 @@ class _LanguageSelector extends StatelessWidget {
 }
 
 class OnboardingPage {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
 
   const OnboardingPage({
     required this.icon,
@@ -300,4 +296,8 @@ class OnboardingPage {
     required this.subtitle,
     required this.color,
   });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
 }

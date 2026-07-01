@@ -14,9 +14,9 @@ import '../../data/models/navigation_state.dart' as nav_model;
 import '../widgets/arrival_overlay.dart';
 
 class NavigationScreen extends StatefulWidget {
-  final SiteModel site;
 
   const NavigationScreen({super.key, required this.site});
+  final SiteModel site;
 
   @override
   State<NavigationScreen> createState() => _NavigationScreenState();

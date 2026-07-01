@@ -3,9 +3,6 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class RatingStars extends StatelessWidget {
-  final double rating;
-  final double size;
-  final bool showValue;
 
   const RatingStars({
     super.key,
@@ -13,6 +10,9 @@ class RatingStars extends StatelessWidget {
     this.size = 16,
     this.showValue = true,
   });
+  final double rating;
+  final double size;
+  final bool showValue;
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +54,14 @@ class RatingStars extends StatelessWidget {
 }
 
 class RatingBadge extends StatelessWidget {
-  final double rating;
-  final String? label;
 
   const RatingBadge({
     super.key,
     required this.rating,
     this.label,
   });
+  final double rating;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {

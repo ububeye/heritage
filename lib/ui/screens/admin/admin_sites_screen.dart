@@ -11,9 +11,9 @@ import 'admin_add_site_screen.dart';
 import 'admin_edit_site_screen.dart';
 
 class AdminSitesScreen extends StatefulWidget {
-  final bool addNew;
 
   const AdminSitesScreen({super.key, this.addNew = false});
+  final bool addNew;
 
   @override
   State<AdminSitesScreen> createState() => _AdminSitesScreenState();
@@ -243,15 +243,15 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
 }
 
 class _SiteCard extends StatelessWidget {
-  final SiteModel site;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const _SiteCard({
     required this.site,
     required this.onEdit,
     required this.onDelete,
   });
+  final SiteModel site;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {

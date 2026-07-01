@@ -2,10 +2,10 @@ import '../models/site_model.dart';
 import '../services/firestore_service.dart';
 
 class SiteRepository {
-  final FirestoreService _firestoreService;
 
   SiteRepository({FirestoreService? firestoreService})
       : _firestoreService = firestoreService ?? FirestoreService();
+  final FirestoreService _firestoreService;
 
   Future<List<SiteModel>> getAllSites() => _firestoreService.getAllSites();
 

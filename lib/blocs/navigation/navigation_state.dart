@@ -2,15 +2,15 @@ import 'package:equatable/equatable.dart';
 import '../../data/models/navigation_state.dart';
 
 class NavigationCubitState extends Equatable {
-  final NavigationState navigationState;
-  final String? currentSiteId;
-  final bool isNavigating;
 
   const NavigationCubitState({
     this.navigationState = const NavigationState(),
     this.currentSiteId,
     this.isNavigating = false,
   });
+  final NavigationState navigationState;
+  final String? currentSiteId;
+  final bool isNavigating;
 
   NavigationCubitState copyWith({
     NavigationState? navigationState,

@@ -16,9 +16,9 @@ import 'upgrade_screen.dart';
 import '../../blocs/localization/localization_cubit.dart';
 
 class DetailScreen extends StatefulWidget {
-  final String siteId;
 
   const DetailScreen({super.key, required this.siteId});
+  final String siteId;
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
@@ -662,15 +662,15 @@ class _DetailScreenState extends State<DetailScreen> {
 /// When [onTap] is null the button renders disabled. [semanticsLabel] is
 /// read aloud by TalkBack / VoiceOver.
 class _GalleryArrow extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-  final String semanticsLabel;
 
   const _GalleryArrow({
     required this.icon,
     required this.semanticsLabel,
     this.onTap,
   });
+  final IconData icon;
+  final VoidCallback? onTap;
+  final String semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -703,15 +703,15 @@ class _GalleryArrow extends StatelessWidget {
 /// Tapping invokes [onTap]. Used as the audio-language chip on the
 /// bottom-sheet player.
 class _AudioLanguageChip extends StatelessWidget {
-  final String code;
-  final String name;
-  final VoidCallback onTap;
 
   const _AudioLanguageChip({
     required this.code,
     required this.name,
     required this.onTap,
   });
+  final String code;
+  final String name;
+  final VoidCallback onTap;
 
   String get _flag {
     switch (code) {

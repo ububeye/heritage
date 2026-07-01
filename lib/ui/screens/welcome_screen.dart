@@ -297,11 +297,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 }
 
 class _LanguageOption extends StatelessWidget {
-  final String languageCode;
-  final String languageName;
-  final String flagEmoji;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _LanguageOption({
     required this.languageCode,
@@ -310,6 +305,11 @@ class _LanguageOption extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
   });
+  final String languageCode;
+  final String languageName;
+  final String flagEmoji;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {

@@ -75,9 +75,10 @@ class FavoritesScreen extends StatelessWidget {
                 );
               }
 
-              // Filter sites that are in favorites
-              final favoriteSites = siteState.sites
-                  .where((site) => favState.favoriteIds.contains(site.id))
+              // Use O(1) lookups to build the favorites list
+              final favoriteSites = favState.favoriteIds
+                  .map((id) => siteState.sitesById[id])
+                  .whereType<SiteModel>()
                   .toList();
 
               if (favoriteSites.isEmpty) {
@@ -170,10 +171,6 @@ class FavoritesScreen extends StatelessWidget {
 }
 
 class _FavoriteSiteCard extends StatelessWidget {
-  final SiteModel site;
-  final String uiLanguage;
-  final VoidCallback onTap;
-  final VoidCallback onRemove;
 
   const _FavoriteSiteCard({
     required this.site,
@@ -181,6 +178,10 @@ class _FavoriteSiteCard extends StatelessWidget {
     required this.onTap,
     required this.onRemove,
   });
+  final SiteModel site;
+  final String uiLanguage;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {

@@ -28,9 +28,9 @@ import '../widgets/arrival_overlay.dart';
 /// layer silently falls back to a straight line between the user and the
 /// destination, so navigation still works.
 class NavigationScreenOpen extends StatefulWidget {
-  final SiteModel site;
 
   const NavigationScreenOpen({super.key, required this.site});
+  final SiteModel site;
 
   @override
   State<NavigationScreenOpen> createState() => _NavigationScreenOpenState();
@@ -285,7 +285,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
                     child: Container(
                       margin: const EdgeInsets.only(top: 64),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                          horizontal: 12, vertical: 8,),
                       decoration: BoxDecoration(
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(8),
@@ -409,7 +409,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                                  horizontal: 16, vertical: 8,),
                               decoration: BoxDecoration(
                                 color: AppColors.accent,
                                 borderRadius: BorderRadius.circular(20),

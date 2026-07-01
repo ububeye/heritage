@@ -46,9 +46,9 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 }
 
 class FavoritesState {
-  final List<String> favoriteIds;
 
   const FavoritesState({this.favoriteIds = const []});
+  final List<String> favoriteIds;
 
   FavoritesState copyWith({List<String>? favoriteIds}) {
     return FavoritesState(

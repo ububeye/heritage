@@ -3,14 +3,14 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class UpgradeBanner extends StatelessWidget {
-  final VoidCallback onUpgrade;
-  final String? message;
 
   const UpgradeBanner({
     super.key,
     required this.onUpgrade,
     this.message,
   });
+  final VoidCallback onUpgrade;
+  final String? message;
 
   @override
   Widget build(BuildContext context) {

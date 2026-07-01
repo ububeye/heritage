@@ -282,9 +282,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 class _SectionTitle extends StatelessWidget {
-  final String title;
 
   const _SectionTitle({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -303,9 +303,9 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _SettingsCard extends StatelessWidget {
-  final List<Widget> children;
 
   const _SettingsCard({required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -321,14 +321,6 @@ class _SettingsCard extends StatelessWidget {
 }
 
 class _DropdownTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final String value;
-  final List<String> items;
-  final List<String> labels;
-  final bool enabled;
-  final Function(String?) onChanged;
 
   const _DropdownTile({
     required this.icon,
@@ -340,6 +332,14 @@ class _DropdownTile extends StatelessWidget {
     this.enabled = true,
     required this.onChanged,
   });
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final String value;
+  final List<String> items;
+  final List<String> labels;
+  final bool enabled;
+  final Function(String?) onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -381,15 +381,15 @@ class _DropdownTile extends StatelessWidget {
 /// and the Google Maps path. The Google option is greyed out when no API
 /// key has been configured in `app_constants.dart`.
 class _MapProviderTile extends StatelessWidget {
-  final String current;
-  final bool googleKeyConfigured;
-  final ValueChanged<String?> onChanged;
 
   const _MapProviderTile({
     required this.current,
     required this.googleKeyConfigured,
     required this.onChanged,
   });
+  final String current;
+  final bool googleKeyConfigured;
+  final ValueChanged<String?> onChanged;
 
   @override
   Widget build(BuildContext context) {

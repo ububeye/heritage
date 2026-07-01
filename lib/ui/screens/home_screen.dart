@@ -23,23 +23,43 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, locState) {
         return Scaffold(
-          body: IndexedStack(
-            index: _currentIndex,
+          body: PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            onPageChanged: (index) {
+              setState(() => _currentIndex = index);
+            },
             children: [
-              _HomeContent(onNavigate: _navigateToSite, locState: locState),
-              const ExploreScreen(),
-              const SettingsScreen(),
+              KeepAlivePage(child: _HomeContent(onNavigate: _navigateToSite, locState: locState)),
+              const KeepAlivePage(child: ExploreScreen()),
+              const KeepAlivePage(child: SettingsScreen()),
             ],
           ),
           bottomNavigationBar: BottomNavigationBar(
             currentIndex: _currentIndex,
-            onTap: (index) => setState(() => _currentIndex = index),
+            onTap: (index) {
+              setState(() => _currentIndex = index);
+              _pageController.jumpToPage(index);
+            },
             items: [
               BottomNavigationBarItem(
                 icon: const Icon(Icons.home_outlined),
@@ -73,10 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomeContent extends StatelessWidget {
-  final Function(SiteModel) onNavigate;
-  final LocalizationState locState;
 
   const _HomeContent({required this.onNavigate, required this.locState});
+  final Function(SiteModel) onNavigate;
+  final LocalizationState locState;
 
   @override
   Widget build(BuildContext context) {
@@ -190,5 +210,24 @@ class _HomeContent extends StatelessWidget {
 
   String _tr(LocalizationState state, String key) {
     return state.translations[key] ?? key;
+  }
+}
+
+class KeepAlivePage extends StatefulWidget {
+  const KeepAlivePage({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<KeepAlivePage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

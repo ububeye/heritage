@@ -162,16 +162,32 @@ The app uses two map libraries, chosen for their respective strengths:
 
 `flutter_map` fetches tiles from `https://tile.openstreetmap.org/`. The OpenStreetMap Foundation's [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) allows light use with a descriptive `User-Agent` (we set `com.example.stone_town_heritage_vt_guide`) but prohibits heavy production traffic. For a final-year demo this is well within limits. For production deployment, switch to a paid tile provider (Stadia Maps, Mapbox, etc.) — only [lib/ui/widgets/heritage_map.dart](lib/ui/widgets/heritage_map.dart) would need to change.
 
+## Architecture
+
+The application follows a clean layered architecture using `flutter_bloc`:
+
+- **core/**: Theme definitions, constants, colors, and global utils.
+- **data/**: Data Models (`SiteModel`), Services (`AuthService`, `FirestoreService`, `CloudinaryService`), Repositories.
+- **blocs/**: Business logic using Cubits. Separated by feature (e.g., `SiteListCubit`, `AuthCubit`, `ExploreCubit`).
+- **ui/**: Screens and reusable Widgets.
+
+## Troubleshooting
+
+### Maps Troubleshooting
+- **Google Maps API Key**: If you intend to use the Google Maps provider for live navigation, ensure that `googleMapsApiKey` in `lib/core/constants/app_constants.dart` is populated with a valid key and that your package name/bundle ID is whitelisted.
+- **OpenStreetMap Policy**: The OpenStreetMap tiles are provided for demo/development purposes. For production, please switch to a paid tile provider (such as Mapbox or Stadia Maps) by changing the tile URL in `HeritageMap` to comply with OSM's usage policy.
+- **Emulators & Google Maps**: `google_maps_flutter` may crash on emulators without Google Play Services. To mitigate this, the app detects if the API key is null and gracefully degrades to an OpenStreetMap-based fallback.
+
 ## Screenshots
 
-- Welcome Screen with language selector
-- Home with site grid
-- Explore with search and filters
-- Site detail with gallery and audio
-- Navigation with distance/ETA
-- Admin Dashboard with stats
-- Admin Site Management
-- Admin User Management
+*Admin Dashboard & Site Management*
+> [Placeholder: Add screenshots of the admin panel here]
+
+*Explore & Heritage Map*
+> [Placeholder: Add screenshots of the Explore screen and Heritage Map here]
+
+*Site Detail & Audio Player*
+> [Placeholder: Add screenshots of the Site Detail screen and Bottom Audio Player here]
 
 ## License
 

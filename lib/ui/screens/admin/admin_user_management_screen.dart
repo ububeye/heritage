@@ -234,15 +234,15 @@ class _UserManagementContent extends StatelessWidget {
 }
 
 class _UserCard extends StatelessWidget {
-  final UserModel user;
-  final Function(UserRole) onRoleChange;
-  final VoidCallback onDelete;
 
   const _UserCard({
     required this.user,
     required this.onRoleChange,
     required this.onDelete,
   });
+  final UserModel user;
+  final Function(UserRole) onRoleChange;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {

@@ -77,8 +77,8 @@ class AdminAnalyticsScreen extends StatelessWidget {
 }
 
 class _StatsRow extends StatelessWidget {
-  final LocalizationState loc;
   const _StatsRow({required this.loc});
+  final LocalizationState loc;
 
   @override
   Widget build(BuildContext context) {
@@ -124,10 +124,6 @@ class _StatsRow extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
 
   const _StatTile({
     required this.icon,
@@ -135,6 +131,10 @@ class _StatTile extends StatelessWidget {
     required this.label,
     required this.color,
   });
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -189,8 +189,8 @@ class _StatTile extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String title;
   const _SectionHeader({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -206,10 +206,10 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _CategoryBreakdown extends StatelessWidget {
-  final List<SiteModel> sites;
-  final LocalizationState loc;
 
   const _CategoryBreakdown({required this.sites, required this.loc});
+  final List<SiteModel> sites;
+  final LocalizationState loc;
 
   @override
   Widget build(BuildContext context) {
@@ -256,15 +256,15 @@ class _CategoryBreakdown extends StatelessWidget {
 }
 
 class _CategoryBar extends StatelessWidget {
-  final String label;
-  final int count;
-  final int maxValue;
 
   const _CategoryBar({
     required this.label,
     required this.count,
     required this.maxValue,
   });
+  final String label;
+  final int count;
+  final int maxValue;
 
   @override
   Widget build(BuildContext context) {
@@ -310,10 +310,10 @@ class _CategoryBar extends StatelessWidget {
 }
 
 class _TopRatedList extends StatelessWidget {
-  final List<SiteModel> sites;
-  final LocalizationState loc;
 
   const _TopRatedList({required this.sites, required this.loc});
+  final List<SiteModel> sites;
+  final LocalizationState loc;
 
   @override
   Widget build(BuildContext context) {
@@ -377,8 +377,8 @@ class _TopRatedList extends StatelessWidget {
 }
 
 class _EmptyBlock extends StatelessWidget {
-  final String text;
   const _EmptyBlock({required this.text});
+  final String text;
 
   @override
   Widget build(BuildContext context) {

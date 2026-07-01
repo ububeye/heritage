@@ -14,9 +14,9 @@ import '../../../data/services/cloudinary_service.dart';
 import '../../widgets/heritage_map.dart';
 
 class AdminEditSiteScreen extends StatefulWidget {
-  final SiteModel site;
 
   const AdminEditSiteScreen({super.key, required this.site});
+  final SiteModel site;
 
   @override
   State<AdminEditSiteScreen> createState() => _AdminEditSiteScreenState();
@@ -477,8 +477,8 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
 }
 
 class _SectionTitle extends StatelessWidget {
-  final String title;
   const _SectionTitle({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -493,11 +493,6 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _TextField extends StatelessWidget {
-  final TextEditingController controller;
-  final String label;
-  final int maxLines;
-  final TextInputType keyboardType;
-  final String? Function(String?)? validator;
 
   const _TextField({
     required this.controller,
@@ -506,6 +501,11 @@ class _TextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.validator,
   });
+  final TextEditingController controller;
+  final String label;
+  final int maxLines;
+  final TextInputType keyboardType;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -523,12 +523,12 @@ class _TextField extends StatelessWidget {
 }
 
 class _DropdownField extends StatelessWidget {
+
+  const _DropdownField({required this.label, required this.value, required this.items, required this.onChanged});
   final String label;
   final String value;
   final List<String> items;
   final void Function(String?) onChanged;
-
-  const _DropdownField({required this.label, required this.value, required this.items, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {

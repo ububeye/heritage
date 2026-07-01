@@ -10,9 +10,9 @@ import '../../core/utils/nav_guard.dart';
 /// on an OpenStreetMap tile layer, with a Navigate FAB that pushes the
 /// live-navigation screen.
 class SiteMapScreen extends StatelessWidget {
-  final SiteModel site;
 
   const SiteMapScreen({super.key, required this.site});
+  final SiteModel site;
 
   @override
   Widget build(BuildContext context) {

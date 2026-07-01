@@ -18,7 +18,7 @@ class LocalizationCubit extends Cubit<LocalizationState> {
         status: LocalizationStatus.loaded,
         currentLanguage: languageCode,
         translations: translations,
-      ));
+      ),);
     } catch (e) {
       emit(state.copyWith(status: LocalizationStatus.error));
     }
@@ -32,14 +32,14 @@ class LocalizationCubit extends Cubit<LocalizationState> {
       emit(state.copyWith(
         currentLanguage: languageCode,
         translations: translations,
-      ));
+      ),);
     } catch (e) {
       // Fallback to English
       final translations = await _loadJsonFile('en');
       emit(state.copyWith(
         currentLanguage: 'en',
         translations: translations,
-      ));
+      ),);
     }
   }
 
@@ -59,15 +59,15 @@ class LocalizationCubit extends Cubit<LocalizationState> {
 }
 
 class LocalizationState {
-  final LocalizationStatus status;
-  final String currentLanguage;
-  final Map<String, String> translations;
 
   const LocalizationState({
     this.status = LocalizationStatus.initial,
     this.currentLanguage = 'en',
     this.translations = const {},
   });
+  final LocalizationStatus status;
+  final String currentLanguage;
+  final Map<String, String> translations;
 
   LocalizationState copyWith({
     LocalizationStatus? status,

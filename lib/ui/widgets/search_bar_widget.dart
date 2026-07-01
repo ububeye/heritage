@@ -8,9 +8,6 @@ import '../../core/utils/debouncer.dart';
 /// immediately when the user types — previously the button only updated
 /// when something else rebuilt the parent.
 class SearchBarWidget extends StatefulWidget {
-  final TextEditingController controller;
-  final Function(String) onChanged;
-  final String hintText;
 
   const SearchBarWidget({
     super.key,
@@ -18,6 +15,9 @@ class SearchBarWidget extends StatefulWidget {
     required this.onChanged,
     this.hintText = 'Search places...',
   });
+  final TextEditingController controller;
+  final Function(String) onChanged;
+  final String hintText;
 
   @override
   State<SearchBarWidget> createState() => _SearchBarWidgetState();

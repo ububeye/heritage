@@ -3,9 +3,9 @@ import '../../data/models/user_model.dart';
 import '../../data/services/firestore_service.dart';
 
 class UserCubit extends Cubit<UserState> {
-  final FirestoreService _firestoreService = FirestoreService();
 
   UserCubit() : super(const UserState());
+  final FirestoreService _firestoreService = FirestoreService();
 
   Future<void> loadUsers() async {
     emit(state.copyWith(status: UserStatus.loading, error: null));
@@ -30,12 +30,12 @@ class UserCubit extends Cubit<UserState> {
         totalUsers: total,
         premiumUsers: premium,
         adminUsers: admins,
-      ));
+      ),);
     } catch (e) {
       emit(state.copyWith(
         status: UserStatus.error,
         error: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -63,13 +63,6 @@ class UserCubit extends Cubit<UserState> {
 }
 
 class UserState {
-  final UserStatus status;
-  final List<UserModel> users;
-  final String searchQuery;
-  final String? error;
-  final int totalUsers;
-  final int premiumUsers;
-  final int adminUsers;
 
   const UserState({
     this.status = UserStatus.initial,
@@ -80,6 +73,13 @@ class UserState {
     this.premiumUsers = 0,
     this.adminUsers = 0,
   });
+  final UserStatus status;
+  final List<UserModel> users;
+  final String searchQuery;
+  final String? error;
+  final int totalUsers;
+  final int premiumUsers;
+  final int adminUsers;
 
   UserState copyWith({
     UserStatus? status,

@@ -31,6 +31,8 @@ import '../../core/constants/app_constants.dart';
 ///   several screens. This service keeps the cache layer local to the
 ///   app and pairs with whatever `flutter_map` version the project is on.
 class TileCacheService {
+
+  TileCacheService._();
   static TileCacheService? _instance;
 
   /// Singleton accessor — mirrors `SharedPrefsService` so callers read
@@ -72,8 +74,6 @@ class TileCacheService {
   /// can return a `MemoryImage` immediately when the tile is hot, and
   /// only fall back to a `NetworkImage` when we have to.
   Uint8List? peekHot(int z, int x, int y) => _hot['$z/$x/$y'];
-
-  TileCacheService._();
 
   /// Static bootstrap that creates the singleton if needed and kicks
   /// off the directory init. Safe to call from `main()` before the
@@ -237,8 +237,8 @@ class TileCacheService {
 /// the bytes are resolved. Falls back to the network layer when the
 /// cache isn't ready or the disk lookup fails.
 class _CachedTileProvider extends TileProvider {
-  final TileCacheService _service;
   _CachedTileProvider(this._service);
+  final TileCacheService _service;
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
@@ -279,7 +279,7 @@ class _CachedTileProvider extends TileProvider {
       x: coordinates.x,
       y: coordinates.y,
       urlTemplate: template,
-    ));
+    ),);
     return NetworkImage(
       url,
       headers: const {

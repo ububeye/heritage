@@ -2,10 +2,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 
 class SharedPrefsService {
-  static SharedPrefsService? _instance;
-  static SharedPreferences? _prefs;
 
   SharedPrefsService._();
+  static SharedPrefsService? _instance;
+  static SharedPreferences? _prefs;
 
   static Future<SharedPrefsService> getInstance() async {
     if (_instance == null) {

@@ -101,11 +101,6 @@ class _AdminShellState extends State<AdminShell> {
 }
 
 class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _NavItem({
     required this.icon,
@@ -114,6 +109,11 @@ class _NavItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
   });
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -154,10 +154,10 @@ class _NavItem extends StatelessWidget {
 }
 
 class _AdminDashboard extends StatelessWidget {
-  final LocalizationState locState;
-  final String Function(LocalizationState, String) tr;
 
   const _AdminDashboard({required this.locState, required this.tr});
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
 
   @override
   Widget build(BuildContext context) {
@@ -198,10 +198,10 @@ class _AdminDashboard extends StatelessWidget {
 }
 
 class _WelcomeCard extends StatelessWidget {
-  final LocalizationState locState;
-  final String Function(LocalizationState, String) tr;
 
   const _WelcomeCard({required this.locState, required this.tr});
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
 
   @override
   Widget build(BuildContext context) {
@@ -270,10 +270,10 @@ class _WelcomeCard extends StatelessWidget {
 }
 
 class _StatsSection extends StatelessWidget {
-  final LocalizationState locState;
-  final String Function(LocalizationState, String) tr;
 
   const _StatsSection({required this.locState, required this.tr});
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
 
   @override
   Widget build(BuildContext context) {
@@ -323,10 +323,6 @@ class _StatsSection extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
 
   const _StatCard({
     required this.icon,
@@ -334,6 +330,10 @@ class _StatCard extends StatelessWidget {
     required this.label,
     required this.color,
   });
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -385,10 +385,10 @@ class _StatCard extends StatelessWidget {
 }
 
 class _MenuSection extends StatelessWidget {
-  final LocalizationState locState;
-  final String Function(LocalizationState, String) tr;
 
   const _MenuSection({required this.locState, required this.tr});
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
 
   @override
   Widget build(BuildContext context) {
@@ -422,9 +422,9 @@ class _MenuSection extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String title;
 
   const _SectionHeader({required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -440,11 +440,6 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _MenuCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final VoidCallback onTap;
 
   const _MenuCard({
     required this.icon,
@@ -453,6 +448,11 @@ class _MenuCard extends StatelessWidget {
     required this.color,
     required this.onTap,
   });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -516,10 +516,10 @@ class _MenuCard extends StatelessWidget {
 }
 
 class _QuickActionsSection extends StatelessWidget {
-  final LocalizationState locState;
-  final String Function(LocalizationState, String) tr;
 
   const _QuickActionsSection({required this.locState, required this.tr});
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
 
   @override
   Widget build(BuildContext context) {
@@ -559,10 +559,6 @@ class _QuickActionsSection extends StatelessWidget {
 }
 
 class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
 
   const _QuickActionButton({
     required this.icon,
@@ -570,6 +566,10 @@ class _QuickActionButton extends StatelessWidget {
     required this.color,
     required this.onTap,
   });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {

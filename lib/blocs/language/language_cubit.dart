@@ -12,7 +12,7 @@ class LanguageCubit extends Cubit<LanguageState> {
     emit(state.copyWith(
       uiLanguage: uiLanguage,
       audioLanguage: audioLanguage,
-    ));
+    ),);
   }
 
   Future<void> setUiLanguage(String languageCode) async {
@@ -27,13 +27,13 @@ class LanguageCubit extends Cubit<LanguageState> {
 }
 
 class LanguageState {
-  final String uiLanguage;
-  final String audioLanguage;
 
   const LanguageState({
     this.uiLanguage = 'en',
     this.audioLanguage = 'en',
   });
+  final String uiLanguage;
+  final String audioLanguage;
 
   LanguageState copyWith({
     String? uiLanguage,

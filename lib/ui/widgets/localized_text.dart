@@ -3,9 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/localization/localization_cubit.dart';
 
 class LocalizedText extends StatelessWidget {
-  final String translationKey;
-  final TextStyle? style;
-  final TextAlign? textAlign;
 
   const LocalizedText(
     this.translationKey, {
@@ -13,6 +10,9 @@ class LocalizedText extends StatelessWidget {
     this.style,
     this.textAlign,
   });
+  final String translationKey;
+  final TextStyle? style;
+  final TextAlign? textAlign;
 
   @override
   Widget build(BuildContext context) {
@@ -36,11 +36,6 @@ String tr(BuildContext context, String key) {
 
 // Localized version of common widgets
 class LocalizedListTile extends StatelessWidget {
-  final IconData? leadingIcon;
-  final String titleKey;
-  final String? subtitleKey;
-  final Widget? trailing;
-  final VoidCallback? onTap;
 
   const LocalizedListTile({
     super.key,
@@ -50,6 +45,11 @@ class LocalizedListTile extends StatelessWidget {
     this.trailing,
     this.onTap,
   });
+  final IconData? leadingIcon;
+  final String titleKey;
+  final String? subtitleKey;
+  final Widget? trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -66,10 +66,6 @@ class LocalizedListTile extends StatelessWidget {
 }
 
 class LocalizedButton extends StatelessWidget {
-  final String labelKey;
-  final VoidCallback? onPressed;
-  final ButtonStyle? style;
-  final bool isLoading;
 
   const LocalizedButton({
     super.key,
@@ -78,6 +74,10 @@ class LocalizedButton extends StatelessWidget {
     this.style,
     this.isLoading = false,
   });
+  final String labelKey;
+  final VoidCallback? onPressed;
+  final ButtonStyle? style;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -96,10 +96,6 @@ class LocalizedButton extends StatelessWidget {
 }
 
 class LocalizedAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String titleKey;
-  final List<Widget>? actions;
-  final Widget? leading;
-  final bool automaticallyImplyLeading;
 
   const LocalizedAppBar({
     super.key,
@@ -108,6 +104,10 @@ class LocalizedAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.leading,
     this.automaticallyImplyLeading = false,
   });
+  final String titleKey;
+  final List<Widget>? actions;
+  final Widget? leading;
+  final bool automaticallyImplyLeading;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);

@@ -6,8 +6,6 @@ import '../../data/services/shared_prefs_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  final AuthService _authService;
-  final FirestoreService _firestoreService;
 
   AuthCubit({
     AuthService? authService,
@@ -15,6 +13,8 @@ class AuthCubit extends Cubit<AuthState> {
   })  : _authService = authService ?? AuthService(),
         _firestoreService = firestoreService ?? FirestoreService(),
         super(const AuthState());
+  final AuthService _authService;
+  final FirestoreService _firestoreService;
 
   Future<void> checkAuthStatus() async {
     emit(state.copyWith(status: AuthStatus.loading));
@@ -47,7 +47,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           user: resolved,
-        ));
+        ),);
       } else {
         emit(state.copyWith(status: AuthStatus.unauthenticated));
       }
@@ -55,7 +55,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -82,18 +82,18 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           user: resolved,
-        ));
+        ),);
       } else {
         emit(state.copyWith(
           status: AuthStatus.error,
           errorMessage: 'Sign in failed',
-        ));
+        ),);
       }
     } catch (e) {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -118,18 +118,18 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           user: resolved,
-        ));
+        ),);
       } else {
         emit(state.copyWith(
           status: AuthStatus.error,
           errorMessage: 'Sign up failed',
-        ));
+        ),);
       }
     } catch (e) {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -151,7 +151,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(state.copyWith(
           status: AuthStatus.authenticated,
           user: resolved,
-        ));
+        ),);
       } else {
         emit(state.copyWith(status: AuthStatus.unauthenticated));
       }
@@ -159,7 +159,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -175,7 +175,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -189,7 +189,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -199,7 +199,7 @@ class AuthCubit extends Cubit<AuthState> {
       // Optimistic local update so the UI reflects the change instantly.
       emit(state.copyWith(
         user: state.user!.copyWith(role: role),
-      ));
+      ),);
       // Persist to roles/{uid}. Failure surfaces as an error state but the
       // optimistic update is left in place so the admin can retry.
       await _firestoreService.setUserRole(state.user!.id, role);
@@ -212,7 +212,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: 'Failed to update role: $e',
-      ));
+      ),);
     }
   }
 
@@ -227,12 +227,12 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         status: AuthStatus.authenticated,
         user: refreshed ?? state.user!.copyWith(displayName: displayName),
-      ));
+      ),);
     } catch (e) {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -255,7 +255,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 }

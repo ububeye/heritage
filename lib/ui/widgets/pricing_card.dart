@@ -3,11 +3,6 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class PricingCard extends StatelessWidget {
-  final String title;
-  final double price;
-  final String? subtitle;
-  final bool isPopular;
-  final VoidCallback onTap;
 
   const PricingCard({
     super.key,
@@ -17,6 +12,11 @@ class PricingCard extends StatelessWidget {
     this.isPopular = false,
     required this.onTap,
   });
+  final String title;
+  final double price;
+  final String? subtitle;
+  final bool isPopular;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {

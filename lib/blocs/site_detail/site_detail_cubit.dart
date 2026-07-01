@@ -7,6 +7,13 @@ import '../../data/services/tts_service.dart';
 import 'site_detail_state.dart';
 
 class SiteDetailCubit extends Cubit<SiteDetailState> {
+
+  SiteDetailCubit({
+    SiteRepository? siteRepository,
+    TtsService? ttsService,
+  })  : _siteRepository = siteRepository ?? SiteRepository(),
+        _ttsService = ttsService ?? TtsService(),
+        super(const SiteDetailState());
   final SiteRepository _siteRepository;
   final TtsService _ttsService;
 
@@ -19,13 +26,6 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   /// without burning CPU.
   static const Duration _progressTick = Duration(milliseconds: 250);
 
-  SiteDetailCubit({
-    SiteRepository? siteRepository,
-    TtsService? ttsService,
-  })  : _siteRepository = siteRepository ?? SiteRepository(),
-        _ttsService = ttsService ?? TtsService(),
-        super(const SiteDetailState());
-
   Future<void> loadSite(String siteId) async {
     emit(state.copyWith(status: SiteDetailStatus.loading));
 
@@ -35,18 +35,18 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         emit(state.copyWith(
           status: SiteDetailStatus.loaded,
           site: site,
-        ));
+        ),);
       } else {
         emit(state.copyWith(
           status: SiteDetailStatus.error,
           errorMessage: 'Site not found',
-        ));
+        ),);
       }
     } catch (e) {
       emit(state.copyWith(
         status: SiteDetailStatus.error,
         errorMessage: e.toString(),
-      ));
+      ),);
     }
   }
 
@@ -77,12 +77,12 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
             position: current.duration,
             isPlaying: false,
           ),
-        ));
+        ),);
         return;
       }
       emit(state.copyWith(
         audioState: current.copyWith(position: next),
-      ));
+      ),);
     });
   }
 
@@ -106,7 +106,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         languageCode: languageCode,
         duration: estimatedDuration,
       ),
-    ));
+    ),);
 
     try {
       _ttsService.setPremium(isPremium);
@@ -119,7 +119,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           position: Duration.zero,
           duration: estimatedDuration,
         ),
-      ));
+      ),);
 
       // Start ticking. If the user already paused/resumed before this
       // point, the timer won't run because isPlaying would be false.
@@ -131,7 +131,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           isLoading: false,
           errorMessage: 'Failed to play audio',
         ),
-      ));
+      ),);
     }
   }
 
@@ -143,7 +143,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         isPlaying: false,
         isPaused: true,
       ),
-    ));
+    ),);
   }
 
   Future<void> resumeAudio() async {
@@ -153,7 +153,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         isPlaying: true,
         isPaused: false,
       ),
-    ));
+    ),);
     _startProgressTimer(state.audioState.duration);
   }
 
@@ -162,7 +162,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     await _ttsService.stop();
     emit(state.copyWith(
       audioState: const AudioState(),
-    ));
+    ),);
   }
 
   @override

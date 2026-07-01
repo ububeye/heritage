@@ -4,10 +4,10 @@ import '../models/user_model.dart';
 import '../../core/constants/app_constants.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _firestore;
 
   FirestoreService({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore;
 
   // Sites Collection
   CollectionReference get _sitesCollection =>
@@ -96,7 +96,7 @@ class FirestoreService {
               matches(data, 'name_ar') ||
               matches(data, 'name_it') ||
               matches(data, 'name_es') ||
-              matches(data, 'address'))
+              matches(data, 'address'),)
           .map((data) => SiteModel.fromMap(data))
           .toList();
     } catch (e) {
