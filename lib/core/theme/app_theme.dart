@@ -291,8 +291,8 @@ class AppTheme {
         primary: AppColors.primaryLight,
         secondary: AppColors.accent,
         surface: darkSurface,
-        error: Color(0xFFCF6679),
-        onPrimary: AppColors.textOnPrimary,
+        error: const Color(0xFFCF6679),
+        onPrimary: const Color(0xFF3E2723), // Dark text on light brown primary
         onSecondary: AppColors.textOnAccent,
         onSurface: textPrimaryDark,
         onError: AppColors.textOnPrimary,

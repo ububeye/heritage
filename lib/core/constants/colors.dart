@@ -14,7 +14,7 @@ class AppColors {
 
   // Surface Colors
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFFFFFFFF);
+  static const Color surfaceDark = Color(0xFF1E1E1E);
   static const Color background = Color(0xFFFFFFFF);
 
   // Semantic Colors
@@ -28,7 +28,7 @@ class AppColors {
   static const Color textSecondary = Color(0xFF8D6E63);
   static const Color textHint = Color(0xFFBCAAA4);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
-  static const Color textOnAccent = Color(0xFFFFFFFF);
+  static const Color textOnAccent = Color(0xFF3E2723); // Changed from white to dark brown for contrast
 
   // Rating Colors
   static const Color rating = Color(0xFFFFB800);

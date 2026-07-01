@@ -22,10 +22,16 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper: is the request from an admin? Reads the user's role doc.
+    // Includes a legacy fallback to users/{uid} for admins created before Phase 3.
     function isAdmin() {
       return request.auth != null
-          && exists(/databases/$(database)/documents/roles/$(request.auth.uid))
-          && get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role == 'admin';
+          && (
+            (exists(/databases/$(database)/documents/roles/$(request.auth.uid))
+             && get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role == 'admin')
+            ||
+            (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+          );
     }
 
     // sites: world-readable, admin-writable.
@@ -38,8 +44,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null
                   && (request.auth.uid == userId || isAdmin());
+      // Prevent users from elevating themselves via the legacy role field.
       allow write: if request.auth != null
-                   && request.auth.uid == userId;
+                   && request.auth.uid == userId
+                   && (!request.resource.data.keys().hasAny(['role']) 
+                       || (resource != null && request.resource.data.role == resource.data.role));
       allow delete: if request.auth != null
                     && (request.auth.uid == userId || isAdmin());
     }
