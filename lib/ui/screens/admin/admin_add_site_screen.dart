@@ -161,7 +161,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Add Site'),
@@ -312,7 +312,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
@@ -321,7 +321,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -411,7 +411,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.primary, style: BorderStyle.solid),
             ),
@@ -433,7 +433,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   Widget _buildLocationSection() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -559,7 +559,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
@@ -607,7 +607,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),

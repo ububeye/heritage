@@ -40,8 +40,8 @@ class CloudinaryService {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['secure_url'] as String;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        return data['secure_url'] as String?;
       }
       return null;
     } catch (e) {
@@ -75,8 +75,8 @@ class CloudinaryService {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['secure_url'] as String;
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        return data['secure_url'] as String?;
       }
       return null;
     } catch (e) {

@@ -330,7 +330,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.primary),
             ),
@@ -358,7 +358,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     final _ = context.watch<LocalizationCubit>().state;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Edit Site'),

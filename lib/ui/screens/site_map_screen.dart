@@ -19,10 +19,10 @@ class SiteMapScreen extends StatelessWidget {
     final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(site.getName(uiLanguage)),
-        backgroundColor: AppColors.surface,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 1,
       ),
@@ -40,7 +40,7 @@ class SiteMapScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

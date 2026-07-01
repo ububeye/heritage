@@ -270,7 +270,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
                 child: FloatingActionButton.small(
                   heroTag: 'nav_back',
                   onPressed: () => Navigator.of(context).pop(),
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                   child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                 ),
               ),
@@ -332,7 +332,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(20),
                     ),

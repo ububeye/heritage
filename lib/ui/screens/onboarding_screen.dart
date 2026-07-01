@@ -77,7 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         final pages = _buildPages(loc);
         final isLast = _currentPage == pages.length - 1;
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: Column(
               children: [
@@ -231,7 +231,7 @@ class _LanguageSelector extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 24),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
           ),

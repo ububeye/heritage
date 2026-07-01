@@ -56,7 +56,7 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Manage Sites'),
@@ -88,7 +88,7 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
                   borderSide: BorderSide(color: AppColors.border),
                 ),
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: Theme.of(context).colorScheme.surface,
               ),
               onChanged: (value) => setState(() => _searchQuery = value),
             ),

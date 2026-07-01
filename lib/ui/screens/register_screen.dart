@@ -100,65 +100,53 @@ class _RegisterScreenState extends State<RegisterScreen>
       child: BlocBuilder<LocalizationCubit, LocalizationState>(
         builder: (context, locState) {
           return Scaffold(
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primaryDark,
-                    AppColors.primary,
-                    AppColors.background,
-                  ],
-                  stops: const [0.0, 0.3, 1.0],
-                ),
-              ),
-              child: SafeArea(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(26),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.account_balance,
-                            size: 50,
-                            color: AppColors.primary,
-                          ),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(25),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(26),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 32),
-                        Text(
-                          _tr(locState, 'register'),
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        child: Icon(
+                          Icons.account_balance,
+                          size: 50,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _tr(locState, 'welcome_subtitle'),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white.withAlpha(179),
-                          ),
+                      ),
+                      const SizedBox(height: 32),
+                      Text(
+                        _tr(locState, 'register'),
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).textTheme.displayLarge?.color,
                         ),
-                        const SizedBox(height: 40),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _tr(locState, 'welcome_subtitle'),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
@@ -306,7 +294,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           children: [
                             Text(
                               _tr(locState, 'have_account'),
-                              style: TextStyle(color: Colors.white.withAlpha(179)),
+                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(context).pushReplacement(
@@ -314,8 +302,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               child: Text(
                                 _tr(locState, 'login'),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -325,7 +313,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                         const SizedBox(height: 20),
                       ],
                     ),
-                  ),
                 ),
               ),
             ),
@@ -374,7 +361,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           borderSide: const BorderSide(color: AppColors.error),
         ),
         filled: true,
-        fillColor: AppColors.background,
+        fillColor: Theme.of(context).scaffoldBackgroundColor,
       ),
     );
   }

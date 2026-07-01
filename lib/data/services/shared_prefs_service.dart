@@ -162,4 +162,12 @@ class SharedPrefsService {
   Future<void> clearAll() async {
     await _preferences.clear();
   }
+
+  // Theme Mode ('light', 'dark', 'system'). Default to 'light'.
+  String get themeMode =>
+      _preferences.getString(AppConstants.keyThemeMode) ?? 'light';
+
+  Future<void> setThemeMode(String mode) async {
+    await _preferences.setString(AppConstants.keyThemeMode, mode);
+  }
 }

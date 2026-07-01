@@ -13,14 +13,12 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
+  // Enable edge-to-edge mode so the system navigation bar becomes transparent
+  // and follows the theme colors underneath.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // Let the OS and AppTheme handle system UI colors automatically
+  // (Removed hardcoded SystemUIOverlayStyle to support Dark Mode)
 
   await Firebase.initializeApp();
   await SharedPrefsService.getInstance();

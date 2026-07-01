@@ -37,7 +37,7 @@ class _UserManagementContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('User Management'),
@@ -73,7 +73,7 @@ class _UserManagementContent extends StatelessWidget {
                       borderSide: BorderSide(color: AppColors.border),
                     ),
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: Theme.of(context).colorScheme.surface,
                   ),
                   onChanged: (value) => context.read<UserCubit>().searchUsers(value),
                 );
@@ -96,7 +96,7 @@ class _UserManagementContent extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
           ),

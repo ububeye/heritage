@@ -104,7 +104,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 left: 16,
                 child: FloatingActionButton.small(
                   onPressed: () => Navigator.of(context).pop(),
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                   child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
                 ),
               ),
@@ -150,7 +150,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(20),
                     ),

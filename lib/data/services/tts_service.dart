@@ -41,7 +41,7 @@ class TtsService {
   }
 
   Future<void> _setDefaultLanguage() async {
-    final languages = await _flutterTts.getLanguages;
+    final languages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     if (languages.contains('en-US')) {
       await _flutterTts.setLanguage('en-US');
       _currentLanguage = 'en-US';
@@ -71,7 +71,7 @@ class TtsService {
     final ttsLanguage = languageMap[languageCode];
     if (ttsLanguage == null) return false;
 
-    final availableLanguages = await _flutterTts.getLanguages;
+    final availableLanguages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     if (!availableLanguages.contains(ttsLanguage)) {
       return false;
     }
@@ -82,7 +82,7 @@ class TtsService {
   }
 
   Future<List<String>> getAvailableLanguages() async {
-    final languages = await _flutterTts.getLanguages;
+    final languages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     final supported = <String>[];
 
     final languageMap = {

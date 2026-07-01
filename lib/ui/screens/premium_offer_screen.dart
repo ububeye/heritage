@@ -40,27 +40,15 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primaryDark,
-              AppColors.primary,
-              AppColors.background,
-            ],
-            stops: const [0.0, 0.3, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
                   Container(
                     width: 120,
                     height: 120,
@@ -82,12 +70,12 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
                     ),
                   ),
                   const SizedBox(height: 32),
-                  const Text(
+                  Text(
                     'Unlock Premium',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).textTheme.displayLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -96,7 +84,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white.withAlpha(179),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -195,11 +183,11 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
                     },
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Demo build — no real purchase required',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white70,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -210,7 +198,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
                       'Maybe Later',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withAlpha(179),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                       ),
                     ),
                   ),
@@ -220,8 +208,7 @@ class _PremiumOfferScreenState extends State<PremiumOfferScreen>
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildBenefitItem(IconData icon, String text) {

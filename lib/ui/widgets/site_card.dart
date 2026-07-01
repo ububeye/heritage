@@ -34,7 +34,7 @@ class SiteCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
           boxShadow: [
             BoxShadow(

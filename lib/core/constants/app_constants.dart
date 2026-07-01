@@ -94,6 +94,7 @@ class AppConstants {
   static const String keyUserId = 'user_id';
   static const String keyFavorites = 'favorites';
   static const String keyMapProvider = 'map_provider'; // 'open' | 'google'
+  static const String keyThemeMode = 'theme_mode'; // 'light' | 'dark' | 'system'
 
   // Map providers
   /// Map provider identifiers. 'open' is the default key-free path.

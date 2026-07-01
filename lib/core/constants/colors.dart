@@ -13,9 +13,9 @@ class AppColors {
   static const Color accentLight = Color(0xFFE8C9A0);
 
   // Surface Colors
-  static const Color surface = Color(0xFFFFF8F0);
-  static const Color surfaceDark = Color(0xFFF5EDE0);
-  static const Color background = Color(0xFFFDF5EC);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceDark = Color(0xFFFFFFFF);
+  static const Color background = Color(0xFFFFFFFF);
 
   // Semantic Colors
   static const Color error = Color(0xFFC0392B);

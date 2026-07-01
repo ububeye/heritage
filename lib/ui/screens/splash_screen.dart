@@ -124,20 +124,10 @@ class _SplashScreenState extends State<SplashScreen>
         }
       },
       child: Scaffold(
-        body: Container(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SizedBox(
           width: double.infinity,
           height: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primaryDark,
-                AppColors.primary,
-                AppColors.primary.withValues(alpha: 0.8),
-              ],
-            ),
-          ),
           child: SafeArea(
             child: AnimatedBuilder(
               animation: _controller,
@@ -155,32 +145,32 @@ class _SplashScreenState extends State<SplashScreen>
                             width: 140,
                             height: 140,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(35),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 30,
                                   offset: const Offset(0, 15),
                                 ),
                               ],
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.account_balance,
                               size: 70,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                         ),
                         const SizedBox(height: 40),
                         Transform.translate(
                           offset: Offset(0, _slideAnimation.value),
-                          child: const Text(
+                          child: Text(
                             'Stone Town Guide',
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Theme.of(context).textTheme.displayLarge?.color,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -192,7 +182,7 @@ class _SplashScreenState extends State<SplashScreen>
                             'Explore Zanzibar\'s Heritage',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -204,7 +194,7 @@ class _SplashScreenState extends State<SplashScreen>
                             width: 40,
                             height: 40,
                             child: CircularProgressIndicator(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.primary,
                               strokeWidth: 3,
                             ),
                           ),

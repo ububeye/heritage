@@ -58,11 +58,11 @@ class SiteModel extends Equatable {
       descriptionEs: map['description_es'] ?? '',
       cloudinaryImageUrl: map['cloudinary_image_url'] ?? '',
       imageUrls: parseImageUrls(map['image_urls']),
-      latitude: (map['latitude'] ?? 0.0).toDouble(),
-      longitude: (map['longitude'] ?? 0.0).toDouble(),
-      entryRadiusM: (map['entry_radius_m'] ?? 50.0).toDouble(),
-      address: map['address'],
-      rating: map['rating']?.toDouble(),
+      latitude: (map['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (map['longitude'] as num?)?.toDouble() ?? 0.0,
+      entryRadiusM: (map['entry_radius_m'] as num?)?.toDouble() ?? 50.0,
+      address: map['address'] as String?,
+      rating: (map['rating'] as num?)?.toDouble(),
       category: map['category'],
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'])

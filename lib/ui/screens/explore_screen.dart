@@ -37,7 +37,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, locState) {
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: Text(_tr(locState, 'explore')),
@@ -330,7 +330,7 @@ class _MapView extends StatelessWidget {
           ),
         ),
         Container(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SafeArea(
             top: false,

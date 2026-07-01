@@ -8,6 +8,7 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../blocs/theme/theme_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'login_screen.dart';
 import 'upgrade_screen.dart';
@@ -32,7 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: _buildLocalizedText('settings'),
@@ -109,6 +110,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               duration: const Duration(seconds: 3),
                             ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _SectionTitle(title: 'Appearance'),
+                  _SettingsCard(
+                    children: [
+                      BlocBuilder<ThemeCubit, ThemeMode>(
+                        builder: (context, themeMode) {
+                          return _DropdownTile(
+                            icon: Icons.palette,
+                            title: 'Theme',
+                            subtitle: 'Choose app color theme',
+                            value: themeMode.toString().split('.').last,
+                            items: const ['light', 'dark', 'system'],
+                            labels: const ['Light (White)', 'Dark', 'System Default'],
+                            onChanged: (value) {
+                              if (value != null) {
+                                ThemeMode newMode;
+                                switch (value) {
+                                  case 'dark':
+                                    newMode = ThemeMode.dark;
+                                    break;
+                                  case 'system':
+                                    newMode = ThemeMode.system;
+                                    break;
+                                  case 'light':
+                                  default:
+                                    newMode = ThemeMode.light;
+                                    break;
+                                }
+                                context.read<ThemeCubit>().setThemeMode(newMode);
+                              }
+                            },
                           );
                         },
                       ),
@@ -311,7 +348,7 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
         border: Border.all(color: AppColors.border),
       ),
@@ -402,25 +439,53 @@ class _MapProviderTile extends StatelessWidget {
       if (googleKeyConfigured) 'Google Maps',
     ];
 
-    return ListTile(
-      leading: const Icon(Icons.map, color: AppColors.primary),
-      title: const Text('Map provider'),
-      subtitle: Text(
-        googleKeyConfigured
-            ? 'OpenStreetMap is free and works without an API key.'
-            : 'Google Maps requires an API key in app_constants.dart.\nNot configured — using the open-source map.',
-        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-      ),
-      trailing: DropdownButton<String>(
-        value: items.contains(current) ? current : items.first,
-        underline: const SizedBox(),
-        items: items.asMap().entries.map((e) {
-          return DropdownMenuItem<String>(
-            value: e.value,
-            child: Text(labels[e.key]),
-          );
-        }).toList(),
-        onChanged: onChanged,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.map, color: AppColors.primary),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Text(
+                  'Map provider',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 40),
+            child: Text(
+              googleKeyConfigured
+                  ? 'OpenStreetMap is free and works without an API key.'
+                  : 'Google Maps requires an API key in app_constants.dart.\nNot configured — using the open-source map.',
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 40),
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: items.contains(current) ? current : items.first,
+              underline: Container(
+                height: 1,
+                color: AppColors.divider,
+              ),
+              items: items.asMap().entries.map((e) {
+                return DropdownMenuItem<String>(
+                  value: e.value,
+                  child: Text(labels[e.key], overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -5,6 +5,8 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import 'login_screen.dart';
 
+import '../../data/models/user_model.dart';
+
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
 
@@ -15,7 +17,7 @@ class UserProfileScreen extends StatelessWidget {
         final user = authState.user;
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Replaced AppColors.background
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: const Text('Profile'),
@@ -140,7 +142,7 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(user) {
+  Widget _buildProfileHeader(UserModel? user) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -492,7 +494,7 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),

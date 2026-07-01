@@ -12,6 +12,7 @@ import 'blocs/premium/premium_cubit.dart';
 import 'blocs/explore/explore_cubit.dart';
 import 'blocs/user/user_cubit.dart';
 import 'blocs/favorites/favorites_cubit.dart';
+import 'blocs/theme/theme_cubit.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/tts_service.dart';
 import 'ui/screens/splash_screen.dart';
@@ -32,56 +33,49 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<AuthCubit>(
           create: (_) => AuthCubit(authService: AuthService()),
         ),
-        BlocProvider<SiteListCubit>(
-          create: (_) => SiteListCubit(),
-        ),
+        BlocProvider<SiteListCubit>(create: (_) => SiteListCubit()),
         BlocProvider<SiteDetailCubit>(
           create: (_) => SiteDetailCubit(ttsService: ttsService),
         ),
-        BlocProvider<NavigationCubit>(
-          create: (_) => NavigationCubit(),
-        ),
-        BlocProvider<LanguageCubit>(
-          create: (_) => LanguageCubit(),
-        ),
+        BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
+        BlocProvider<LanguageCubit>(create: (_) => LanguageCubit()),
         BlocProvider<LocalizationCubit>(
           create: (_) => LocalizationCubit()..loadTranslations(),
         ),
-        BlocProvider<PremiumCubit>(
-          create: (_) => PremiumCubit(),
-        ),
-        BlocProvider<ExploreCubit>(
-          create: (_) => ExploreCubit(),
-        ),
-        BlocProvider<UserCubit>(
-          create: (_) => UserCubit(),
-        ),
-        BlocProvider<FavoritesCubit>(
-          create: (_) => FavoritesCubit(),
-        ),
+        BlocProvider<PremiumCubit>(create: (_) => PremiumCubit()),
+        BlocProvider<ExploreCubit>(create: (_) => ExploreCubit()),
+        BlocProvider<UserCubit>(create: (_) => UserCubit()),
+        BlocProvider<FavoritesCubit>(create: (_) => FavoritesCubit()),
+        BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       ],
       child: BlocBuilder<LocalizationCubit, LocalizationState>(
         builder: (context, locState) {
-          return MaterialApp(
-            title: 'Stone Town Guide',
-            theme: AppTheme.lightTheme,
-            debugShowCheckedModeBanner: false,
-            // Force RTL layout for Arabic (and any future RTL locale). The
-            // translations map is already language-specific; the locale-aware
-            // directionality wrapper makes alignment, scroll direction and
-            // icon mirroring behave correctly.
-            builder: (context, child) {
-              return Directionality(
-                textDirection: directionFor(locState.currentLanguage),
-                child: child ?? const SizedBox.shrink(),
+          return BlocBuilder<ThemeCubit, ThemeMode>(
+            builder: (context, themeMode) {
+              return MaterialApp(
+                title: 'Stone Town Guide',
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: themeMode,
+                debugShowCheckedModeBanner: false,
+                // Force RTL layout for Arabic (and any future RTL locale). The
+                // translations map is already language-specific; the locale-aware
+                // directionality wrapper makes alignment, scroll direction and
+                // icon mirroring behave correctly.
+                builder: (context, child) {
+                  return Directionality(
+                    textDirection: directionFor(locState.currentLanguage),
+                    child: child ?? const SizedBox.shrink(),
+                  );
+                },
+                home: const SplashScreen(),
+                routes: {
+                  '/welcome': (context) => const WelcomeScreen(),
+                  '/home': (context) => const HomeScreen(),
+                  '/favorites': (context) => const FavoritesScreen(),
+                  '/admin': (context) => const AdminShell(),
+                },
               );
-            },
-            home: const SplashScreen(),
-            routes: {
-              '/welcome': (context) => const WelcomeScreen(),
-              '/home': (context) => const HomeScreen(),
-              '/favorites': (context) => const FavoritesScreen(),
-              '/admin': (context) => const AdminShell(),
             },
           );
         },
