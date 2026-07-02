@@ -538,18 +538,21 @@ class _SettingsSecondaryRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final cubit = context.read<PremiumCubit>();
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         TextButton.icon(
           onPressed: () => cubit.restore(),
           icon: const Icon(Icons.restore, size: 18),
-          label: const Text('Restore purchases'),
+          label: const Text('Restore'),
         ),
-        Text(
-          'Cancel anytime · Manage subscription',
-          style: TextStyle(
-            fontSize: 12,
-            color: scheme.onSurface.withValues(alpha: 0.6),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'Cancel anytime · Manage subscription',
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 12,
+              color: scheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
         ),
       ],
