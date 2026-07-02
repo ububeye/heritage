@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui show Path;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,24 +15,20 @@ import '../../blocs/navigation/navigation_state.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/colors.dart';
+import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
 import '../../data/models/site_model.dart';
 import '../../data/services/routing_service.dart';
 import '../../data/services/tile_cache_service.dart';
 import '../widgets/arrival_overlay.dart';
 
-/// Open-source live-navigation screen.
+/// Stone Town live-navigation screen.
 ///
-/// No Google Maps SDK. No API key. Built on top of:
-///   • [FlutterMap] + OpenStreetMap raster tiles for the map
-///   • [RoutingService] (OSRM demo, foot profile) for routing geometry
-///   • [NavigationCubit] + [LocationService] for arrival detection
-///
-/// If routing fails (offline, demo endpoint down, bad coords) the route
-/// layer silently falls back to a straight line between the user and the
-/// destination, so navigation still works.
+/// Polished Google-Maps-style navigation on top of `flutter_map` + OpenStreetMap.
+/// Built for a 1.4 km × 1.7 km heritage peninsula — the camera is clamped to
+/// the Stone Town box, so the user can never pan out to see the rest of
+/// Unguja or empty ocean.
 class NavigationScreenOpen extends StatefulWidget {
-
   const NavigationScreenOpen({super.key, required this.site});
   final SiteModel site;
 
@@ -36,7 +36,8 @@ class NavigationScreenOpen extends StatefulWidget {
   State<NavigationScreenOpen> createState() => _NavigationScreenOpenState();
 }
 
-class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
+class _NavigationScreenOpenState extends State<NavigationScreenOpen>
+    with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   final RoutingService _routingService = RoutingService();
   bool _showArrivalOverlay = false;
@@ -47,26 +48,23 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
   /// "Looking up a deactivated widget's ancestor is unsafe."
   NavigationCubit? _navigationCubit;
 
-  /// Current route polyline. Two points (start/end) when in fallback mode.
+  /// Route polyline points. Two points (start/end) when in fallback mode.
   List<LatLng> _routePoints = const [];
-
-  /// True when no usable polyline is available yet (route still fetching).
   bool _routeLoading = true;
-
-  /// True when we ended up rendering a straight-line fallback. Surfaced as a
-  /// subtle banner so the user knows the line isn't road-snapped.
   bool _routeIsFallback = false;
-
   String? _routeError;
 
-  /// Stone Town / Zanzibar City centre (Unguja, Tanzania). Used as a
-  /// hard-clamped default origin when the user's GPS fix isn't available
-  /// yet — keeps OSRM from snapping "nearest road" to a highway thousands
-  /// of kilometres away.
-  ///
-  /// Roughly the Forodhani Gardens waterfront — a known, well-mapped
-  /// pedestrian area in Stone Town.
-  static const LatLng _stoneTownFallbackOrigin = LatLng(-6.1619, 39.1936);
+  /// Incremented on each `_fetchRoute` call so a late OSRM response from a
+  /// previous site can't overwrite the current one.
+  int _routeRequestId = 0;
+
+  /// Animation ticker that drives the smooth camera-follow.
+  Ticker? _cameraTicker;
+  LatLng? _cameraTickerStart;
+  LatLng? _cameraTickerEnd;
+  Duration? _cameraTickerStarted;
+  LatLng? _lastUserPosition;
+  bool _userInsideBox = true;
 
   @override
   void initState() {
@@ -77,43 +75,28 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Cache the cubit reference while the inherited-widget tree is still
-    // mounted. [dispose] is called *after* the element is deactivated, so
-    // `context.read` from there is unsafe — the cached reference is.
     _navigationCubit = context.read<NavigationCubit>();
   }
 
   void _startNavigation() {
     _navigationCubit?.startNavigation(
-          siteId: widget.site.id,
-          siteLat: widget.site.latitude,
-          siteLng: widget.site.longitude,
-          entryRadiusM: widget.site.entryRadiusM,
-        );
+      siteId: widget.site.id,
+      siteLat: widget.site.latitude,
+      siteLng: widget.site.longitude,
+      entryRadiusM: widget.site.entryRadiusM,
+    );
   }
 
-  /// Pull a foot route from OSRM between the user (or, if unknown, the
-  /// Stone Town centre) and the destination.
-  Future<void> _fetchRoute(LatLng? origin) async {
+  Future<void> _fetchRoute(LatLng origin) async {
     final destination = LatLng(widget.site.latitude, widget.site.longitude);
-
-    // First start: no user position yet — use a Stone Town centre offset so
-    // we still get *some* reasonable road geometry.
-    //
-    // OSRM is a global router — if we hand it an origin that's somewhere
-    // outside the OSM coverage for this region, it'll happily snap the
-    // "nearest road" to a highway in another country. Hard-clamp the
-    // default origin to a known Stone Town anchor so the demo server
-    // resolves to a footpath on Unguja, not a trunk road across the Indian
-    // Ocean.
-    final effectiveOrigin = origin ?? _stoneTownFallbackOrigin;
+    final myId = ++_routeRequestId;
 
     final result = await _routingService.getRoute(
-      from: effectiveOrigin,
+      from: origin,
       to: destination,
     );
 
-    if (!mounted) return;
+    if (!mounted || myId != _routeRequestId) return;
 
     setState(() {
       _routePoints = result.points;
@@ -123,23 +106,82 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
     });
   }
 
-  /// Compute bounding box that contains the user, the destination, and the
-  /// route. Used to fit the camera on first map ready.
-  List<LatLng> _allPoints(LatLng? user) {
+  /// Animate the camera from its current centre to [target] in
+  /// [AppConstants.navigationAnimationMs], preserving zoom and rotation.
+  void _animateCameraTo(LatLng target) {
+    final clamped = StoneTownBounds.contains(target)
+        ? target
+        : StoneTownBounds.centre;
+    if (_lastUserPosition != null &&
+        _lastUserPosition!.latitude == clamped.latitude &&
+        _lastUserPosition!.longitude == clamped.longitude) {
+      return;
+    }
+    _lastUserPosition = clamped;
+
+    final camera = _mapController.camera;
+    final start = camera.center;
+    if (start.latitude == clamped.latitude &&
+        start.longitude == clamped.longitude) {
+      return;
+    }
+
+    _cameraTicker?.dispose();
+    _cameraTicker = createTicker((_) {
+      final elapsed = (DateTime.now().millisecondsSinceEpoch -
+              _cameraTickerStarted!.inMilliseconds) /
+          AppConstants.navigationAnimationMs;
+      final t = elapsed.clamp(0.0, 1.0);
+      final eased = Curves.easeInOut.transform(t);
+      final lat = _lerp(_cameraTickerStart!.latitude,
+          _cameraTickerEnd!.latitude, eased,);
+      final lng = _lerp(_cameraTickerStart!.longitude,
+          _cameraTickerEnd!.longitude, eased,);
+      _mapController.move(LatLng(lat, lng), camera.zoom);
+
+      if (t >= 1.0) {
+        _cameraTicker?.stop();
+        _cameraTicker?.dispose();
+        _cameraTicker = null;
+      }
+    })
+      ..start();
+    _cameraTickerStart = start;
+    _cameraTickerEnd = clamped;
+    _cameraTickerStarted = Duration(
+      milliseconds: DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  double _lerp(double a, double b, double t) => a + (b - a) * t;
+
+  void _fitInitial(LatLng user) {
     final pts = <LatLng>[
       LatLng(widget.site.latitude, widget.site.longitude),
-      if (user != null) user,
+      user,
       ..._routePoints,
     ];
-    return pts;
+    if (pts.length < 2) {
+      _mapController.move(
+        StoneTownBounds.contains(user) ? user : StoneTownBounds.centre,
+        AppConstants.defaultZoom,
+      );
+      return;
+    }
+    final bounds = LatLngBounds.fromPoints(pts);
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.fromLTRB(60, 160, 60, 200),
+        maxZoom: AppConstants.markerZoom,
+        minZoom: AppConstants.stoneTownMinZoom,
+      ),
+    );
   }
 
   @override
   void dispose() {
-    // Use the cached reference — `context` is deactivated here, so
-    // `context.read` would throw "Looking up a deactivated widget's
-    // ancestor is unsafe." The cubit was resolved in
-    // [didChangeDependencies], while the tree was still live.
+    _cameraTicker?.dispose();
     _navigationCubit?.stopNavigation();
     _routingService.dispose();
     super.dispose();
@@ -149,22 +191,42 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
   Widget build(BuildContext context) {
     return BlocConsumer<NavigationCubit, NavigationCubitState>(
       listener: (context, state) {
-        // Show arrival overlay once.
-        if (state.navigationState.status == nav_model.NavigationStatus.arrived &&
+        final navState = state.navigationState;
+        final pos = navState.currentPosition;
+        final posLatLng = pos == null ? null : LatLng(pos.latitude, pos.longitude);
+
+        // 1. Pull a route once we know where the user is.
+        if (_routeLoading && posLatLng != null) {
+          _fetchRoute(
+            StoneTownBounds.contains(posLatLng)
+                ? posLatLng
+                : StoneTownBounds.centre,
+          );
+          _fitInitial(
+            StoneTownBounds.contains(posLatLng)
+                ? posLatLng
+                : StoneTownBounds.centre,
+          );
+        }
+
+        // 2. Camera follow on each subsequent update — animated.
+        if (posLatLng != null && !_routeLoading) {
+          _animateCameraTo(posLatLng);
+        }
+
+        // 3. Track whether the user is inside the box (drives a subtle
+        //    banner so they know GPS hasn't locked onto Stone Town yet).
+        if (posLatLng != null) {
+          final inside = StoneTownBounds.contains(posLatLng);
+          if (inside != _userInsideBox) {
+            setState(() => _userInsideBox = inside);
+          }
+        }
+
+        // 4. Show arrival overlay once.
+        if (navState.status == nav_model.NavigationStatus.arrived &&
             !_showArrivalOverlay) {
           setState(() => _showArrivalOverlay = true);
-        }
-
-        // Pull a route on the first known user position.
-        final pos = state.navigationState.currentPosition;
-        if (_routeLoading && pos != null) {
-          _fetchRoute(LatLng(pos.latitude, pos.longitude));
-        }
-
-        // Camera follow on subsequent updates.
-        if (pos != null) {
-          final user = LatLng(pos.latitude, pos.longitude);
-          _mapController.move(user, _mapController.camera.zoom);
         }
       },
       builder: (context, state) {
@@ -180,133 +242,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
         return Scaffold(
           body: Stack(
             children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: LatLng(
-                    widget.site.latitude,
-                    widget.site.longitude,
-                  ),
-                  initialZoom: AppConstants.defaultZoom,
-                  onMapReady: () {
-                    // Fit to route + site + user on first ready.
-                    final pts = _allPoints(userLatLng);
-                    if (pts.length > 1) {
-                      final bounds = LatLngBounds.fromPoints(pts);
-                      _mapController.fitCamera(
-                        CameraFit.bounds(
-                          bounds: bounds,
-                          padding: const EdgeInsets.all(60),
-                          maxZoom: 17,
-                        ),
-                      );
-                    }
-                  },
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName:
-                        'com.example.stone_town_heritage_vt_guide',
-                    maxNativeZoom: 19,
-                    tileProvider: TileCacheService.instance.tileProvider(),
-                  ),
-                  if (_routePoints.length >= 2)
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: _routePoints,
-                          color: AppColors.mapRoute,
-                          strokeWidth: AppConstants.routePolylineWidth,
-                          borderColor: Colors.white,
-                          borderStrokeWidth: 1,
-                        ),
-                      ],
-                    ),
-                  MarkerLayer(
-                    markers: [
-                      // Destination marker (red).
-                      Marker(
-                        point: LatLng(
-                          widget.site.latitude,
-                          widget.site.longitude,
-                        ),
-                        width: 40,
-                        height: 40,
-                        child: const _DestinationMarker(),
-                      ),
-                      // User marker (blue dot). Only render once we know
-                      // where the user is.
-                      if (userLatLng != null)
-                        Marker(
-                          point: userLatLng,
-                          width: 22,
-                          height: 22,
-                          child: const _UserMarker(),
-                        ),
-                    ],
-                  ),
-                  RichAttributionWidget(
-                    alignment: AttributionAlignment.bottomLeft,
-                    attributions: [
-                      const TextSourceAttribution('© OpenStreetMap contributors'),
-                      TextSourceAttribution(
-                        // The actual provider depends on whether an
-                        // ORS key was configured at build time and
-                        // which one responded. See routing_service.dart.
-                        AppConstants.orsApiKey.isNotEmpty
-                            ? 'Routing by OpenRouteService / OSRM'
-                            : 'Routing by OSRM',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-
-              // Back button.
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 8,
-                left: 16,
-                child: FloatingActionButton.small(
-                  heroTag: 'nav_back',
-                  onPressed: () => Navigator.of(context).pop(),
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  child: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                ),
-              ),
-
-              // Routing fallback / loading banner. Subtle, top-centre.
-              if (_routeLoading || _routeIsFallback)
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 64),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8,),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _routeLoading
-                            ? 'Fetching route…'
-                            : (_routeError != null
-                                ? 'Route unavailable — showing direct line.\n(${_routeError!})'
-                                : 'Showing direct line — road routing offline.'),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-              // Arrival overlay.
+              _buildMap(context, userLatLng),
+              _buildTopBar(context),
+              _buildBanner(context, navState),
+              _buildBottomCard(context, navState, uiLanguage),
               if (_showArrivalOverlay)
                 ArrivalOverlay(
                   site: widget.site,
@@ -323,122 +262,6 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
                   },
                   onClose: () => setState(() => _showArrivalOverlay = false),
                 ),
-
-              // Bottom info card.
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: CachedNetworkImage(
-                                imageUrl: widget.site.primaryImage,
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  width: 60,
-                                  height: 60,
-                                  color: AppColors.surfaceDark,
-                                  child: const Center(
-                                    child: SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.accent,
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) => Container(
-                                  width: 60,
-                                  height: 60,
-                                  color: AppColors.surfaceDark,
-                                  child: const Icon(
-                                    Icons.image_not_supported,
-                                    color: AppColors.textHint,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.site.getName(uiLanguage),
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  if (navState.distanceToSite != null)
-                                    Text(
-                                      'Distance: ${_formatDistance(navState.distanceToSite!)}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8,),
-                              decoration: BoxDecoration(
-                                color: AppColors.accent,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                'Navigating',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textOnAccent,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        if (navState.estimatedTime != null)
-                          Text(
-                            'ETA: ${_formatDuration(navState.estimatedTime!)}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         );
@@ -446,21 +269,373 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen> {
     );
   }
 
-  String _formatDistance(double meters) {
-    if (meters < 1000) {
-      return '${meters.round()} m';
+  Widget _buildMap(BuildContext context, LatLng? userLatLng) {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: StoneTownBounds.centre,
+        initialZoom: AppConstants.defaultZoom,
+        minZoom: AppConstants.stoneTownMinZoom,
+        maxZoom: AppConstants.stoneTownMaxZoom,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+        ),
+        cameraConstraint: CameraConstraint.contain(
+          bounds: StoneTownBounds.cameraBounds,
+        ),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.stone_town_heritage_vt_guide',
+          maxNativeZoom: AppConstants.stoneTownMaxZoom.toInt(),
+          tileProvider: TileCacheService.instance.tileProvider(),
+        ),
+        // Route polyline — drawn as two stacked layers for a crisp
+        // white-bordered look that matches Google Maps.
+        if (_routePoints.length >= 2)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: _routePoints,
+                color: Colors.white,
+                strokeWidth: AppConstants.routePolylineWidth + 4,
+              ),
+              Polyline(
+                points: _routePoints,
+                color: AppColors.mapRoute,
+                strokeWidth: AppConstants.routePolylineWidth,
+              ),
+            ],
+          ),
+        // Arrival-zone visualisation — translucent circle around the
+        // destination so the user sees how close they have to get.
+        CircleLayer(
+          circles: [
+            CircleMarker(
+              point: LatLng(widget.site.latitude, widget.site.longitude),
+              radius: widget.site.entryRadiusM,
+              useRadiusInMeter: true,
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderColor: AppColors.primary.withValues(alpha: 0.45),
+              borderStrokeWidth: 1.5,
+            ),
+          ],
+        ),
+        MarkerLayer(
+          markers: [
+            // Destination — drop-pin marker.
+            Marker(
+              point: LatLng(
+                widget.site.latitude,
+                widget.site.longitude,
+              ),
+              width: 44,
+              height: 44,
+              alignment: Alignment.topCenter,
+              child: const _DestinationMarker(),
+            ),
+            // User — pulsing blue dot. Only when GPS is fixed.
+            if (userLatLng != null && _userInsideBox)
+              Marker(
+                point: userLatLng,
+                width: 28,
+                height: 28,
+                child: _UserMarker(),
+              ),
+          ],
+        ),
+        RichAttributionWidget(
+          alignment: AttributionAlignment.bottomLeft,
+          attributions: [
+            const TextSourceAttribution('© OpenStreetMap contributors'),
+            TextSourceAttribution(
+              AppConstants.orsApiKey.isNotEmpty
+                  ? 'Routing by OpenRouteService / OSRM'
+                  : 'Routing by OSRM',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 8,
+      left: 12,
+      right: 12,
+      child: Row(
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'nav_back',
+            onPressed: () => Navigator.of(context).pop(),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            foregroundColor: AppColors.textPrimary,
+            elevation: 4,
+            child: const Icon(Icons.arrow_back),
+          ),
+          const Spacer(),
+          FloatingActionButton.small(
+            heroTag: 'nav_recenter',
+            onPressed: () => _recenter(),
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            foregroundColor: AppColors.textPrimary,
+            elevation: 4,
+            child: const Icon(Icons.my_location),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _recenter() {
+    final nav = _navigationCubit?.state.navigationState;
+    final pos = nav?.currentPosition;
+    final target = (pos != null)
+        ? LatLng(pos.latitude, pos.longitude)
+        : StoneTownBounds.centre;
+    _fitInitial(StoneTownBounds.contains(target) ? target : StoneTownBounds.centre);
+  }
+
+  /// Banner shown above the map while the route is loading or when the
+  /// engine fell back to a straight line.
+  Widget _buildBanner(BuildContext context, nav_model.NavigationState nav) {
+    final hasError = nav.status == nav_model.NavigationStatus.error;
+    if (!_routeLoading && !_routeIsFallback && !hasError) {
+      return const SizedBox.shrink();
     }
+    final color = hasError ? AppColors.error : Colors.black87;
+    final text = hasError
+        ? (nav.errorMessage ?? 'Navigation unavailable')
+        : _routeLoading
+            ? 'Fetching route…'
+            : (_routeError != null
+                ? 'Routing offline — direct line.\n${_routeError!}'
+                : 'Routing offline — direct line.');
+
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 64,
+      left: 16,
+      right: 16,
+      child: Center(
+        child: Material(
+          color: color,
+          elevation: 2,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomCard(
+    BuildContext context,
+    nav_model.NavigationState nav,
+    String uiLanguage,
+  ) {
+    final arrived = nav.status == nav_model.NavigationStatus.arrived;
+    final statusChip = arrived
+        ? _StatusChip(
+            label: 'Arrived',
+            color: AppColors.primary,
+            foreground: AppColors.textOnPrimary,
+            icon: Icons.check_circle,
+          )
+        : _StatusChip(
+            label: 'Navigating',
+            color: AppColors.primary,
+            foreground: AppColors.textOnPrimary,
+            icon: Icons.directions_walk,
+          );
+
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: widget.site.primaryImage,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(
+                          width: 56,
+                          height: 56,
+                          color: AppColors.surfaceDark,
+                          child: const Center(
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: AppColors.primary,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (_, __, ___) => Container(
+                          width: 56,
+                          height: 56,
+                          color: AppColors.surfaceDark,
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            color: AppColors.textHint,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.site.getName(uiLanguage),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.straighten,
+                                  size: 14, color: AppColors.textSecondary,),
+                              const SizedBox(width: 4),
+                              Text(
+                                nav.distanceToSite != null
+                                    ? _formatDistance(nav.distanceToSite!)
+                                    : '—',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Icon(Icons.access_time,
+                                  size: 14, color: AppColors.textSecondary,),
+                              const SizedBox(width: 4),
+                              Text(
+                                nav.estimatedTime != null
+                                    ? _formatDuration(nav.estimatedTime!)
+                                    : '—',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    statusChip,
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, size: 18),
+                        label: const Text('Stop'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDistance(double meters) {
+    if (meters < 1000) return '${meters.round()} m';
     final km = meters / 1000;
     return '${km.toStringAsFixed(1)} km';
   }
 
-  String _formatDuration(Duration duration) {
-    if (duration.inMinutes < 1) {
-      return '< 1 min';
-    } else if (duration.inHours < 1) {
-      return '${duration.inMinutes} min';
-    }
-    return '${duration.inHours} h ${duration.inMinutes % 60} min';
+  String _formatDuration(Duration d) {
+    if (d.inMinutes < 1) return '< 1 min';
+    if (d.inHours < 1) return '${d.inMinutes} min';
+    return '${d.inHours} h ${d.inMinutes % 60} min';
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.label,
+    required this.color,
+    required this.foreground,
+    required this.icon,
+  });
+  final String label;
+  final Color color;
+  final Color foreground;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: foreground),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: foreground,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -469,51 +644,108 @@ class _DestinationMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.mapMarker,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.location_on,
-        size: 20,
-        color: Colors.white,
-      ),
+    return CustomPaint(
+      painter: _PinPainter(),
     );
   }
 }
 
-class _UserMarker extends StatelessWidget {
-  const _UserMarker();
+class _PinPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Drop-pin shape: filled circle on top, tapered tail to a point.
+    final radius = size.width * 0.32;
+    final center = Offset(size.width / 2, radius + 4);
+    final tailBottom = Offset(size.width / 2, size.height - 2);
+
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawCircle(center + const Offset(0, 1), radius, shadowPaint);
+
+    final fill = Paint()..color = AppColors.mapMarker;
+    final stroke = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawCircle(center, radius, fill);
+    canvas.drawCircle(center, radius, stroke);
+
+    final tail = ui.Path()
+      ..moveTo(center.dx - radius * 0.55, center.dy + radius * 0.6)
+      ..lineTo(tailBottom.dx, tailBottom.dy)
+      ..lineTo(center.dx + radius * 0.55, center.dy + radius * 0.6)
+      ..close();
+    canvas.drawPath(tail, fill);
+    canvas.drawPath(tail, stroke);
+
+    // Inner dot
+    final inner = Paint()..color = Colors.white;
+    canvas.drawCircle(center, radius * 0.35, inner);
+  }
+
+  @override
+  bool shouldRepaint(_PinPainter oldDelegate) => false;
+}
+
+class _UserMarker extends StatefulWidget {
+  @override
+  State<_UserMarker> createState() => _UserMarkerState();
+}
+
+class _UserMarkerState extends State<_UserMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.mapUser,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.person,
-        size: 14,
-        color: Colors.white,
-      ),
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        final t = _ctrl.value;
+        final pulse = math.sin(t * math.pi); // 0..1..0 over the loop
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Expanding pulse ring.
+            Container(
+              width: 28 + pulse * 18,
+              height: 28 + pulse * 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.mapUser.withValues(alpha: 0.18 * (1 - pulse)),
+              ),
+            ),
+            // Solid dot.
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: AppColors.mapUser,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

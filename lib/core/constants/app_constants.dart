@@ -40,6 +40,30 @@ class AppConstants {
   static const double markerZoom = 17.0;
   static const double routePolylineWidth = 4.0;
 
+  // Stone Town core — the camera is clamped to this box. Everything outside
+  // is rejected by the routing service too, so the user never sees OSM tiles
+  // for the rest of Unguja or the Indian Ocean.
+  //
+  //   south-west: Mizingani Road / harbour (-6.1680, 39.1830)
+  //   north-east: Forodhani Gardens / Old Fort (-6.1570, 39.1980)
+  //
+  // Roughly a 1.4 km × 1.7 km box covering the UNESCO heritage peninsula.
+  static const double stoneTownMinLat = -6.1680;
+  static const double stoneTownMaxLat = -6.1570;
+  static const double stoneTownMinLng = 39.1830;
+  static const double stoneTownMaxLng = 39.1980;
+
+  // Default camera centre — Forodhani Gardens waterfront, well-mapped on OSM.
+  static const double stoneTownCentreLat = -6.1619;
+  static const double stoneTownCentreLng = 39.1936;
+
+  // Map zoom clamp.
+  static const double stoneTownMinZoom = 14.0;
+  static const double stoneTownMaxZoom = 19.0;
+
+  // Navigation camera animation duration (ms).
+  static const int navigationAnimationMs = 220;
+
   // Routing providers. Defaults can be overridden at build time via
   // --dart-define so secrets (API keys) never have to live in source
   // control. Both URLs are open-source endpoints that work without

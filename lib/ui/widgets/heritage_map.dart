@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/colors.dart';
+import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/site_model.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/tile_cache_service.dart';
@@ -20,11 +22,11 @@ class HeritageMap extends StatefulWidget {
     super.key,
     required this.sites,
     this.onSiteTap,
-    this.initialLat = -6.1621,
-    this.initialLng = 39.1835,
-    this.initialZoom = 14,
+    this.initialLat = -6.1619,
+    this.initialLng = 39.1936,
+    this.initialZoom = 15,
+    this.showLocateButton = true,
   })  : onLocationPicked = null,
-        showLocateButton = false,
         draggableMarker = false;
 
   const HeritageMap.picker({
@@ -45,8 +47,8 @@ class HeritageMap extends StatefulWidget {
     this.initialZoom = 17,
   })  : sites = [site],
         onLocationPicked = null,
-        initialLat = -6.1621,
-        initialLng = 39.1835,
+        initialLat = -6.1619,
+        initialLng = 39.1936,
         showLocateButton = false,
         draggableMarker = false;
   final List<SiteModel> sites;
@@ -97,7 +99,8 @@ class _HeritageMapState extends State<HeritageMap> {
         CameraFit.bounds(
           bounds: bounds,
           padding: const EdgeInsets.all(48),
-          maxZoom: 16,
+          maxZoom: AppConstants.markerZoom,
+          minZoom: AppConstants.stoneTownMinZoom,
         ),
       );
     } else if (widget.sites.length == 1) {
@@ -115,6 +118,32 @@ class _HeritageMapState extends State<HeritageMap> {
     setState(() => _pickedPoint = newPoint);
     _mapController.move(newPoint, 17);
     widget.onLocationPicked?.call(position.latitude, position.longitude);
+  }
+
+  /// Re-fit the camera to all sites (browse) or centre on the single site.
+  /// Used by the "Reset view" button on the explore map.
+  void _resetToAllSites() {
+    if (widget.sites.length > 1) {
+      final points = widget.sites
+          .map((s) => LatLng(s.latitude, s.longitude))
+          .toList();
+      final bounds = LatLngBounds.fromPoints(points);
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(48),
+          maxZoom: AppConstants.markerZoom,
+          minZoom: AppConstants.stoneTownMinZoom,
+        ),
+      );
+    } else if (widget.sites.length == 1) {
+      _mapController.move(
+        LatLng(widget.sites.first.latitude, widget.sites.first.longitude),
+        widget.initialZoom,
+      );
+    } else {
+      _mapController.move(StoneTownBounds.centre, widget.initialZoom);
+    }
   }
 
   void _onMapTap(TapPosition tapPosition, LatLng point) {
@@ -135,10 +164,15 @@ class _HeritageMapState extends State<HeritageMap> {
           options: MapOptions(
             initialCenter: _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng),
             initialZoom: widget.initialZoom,
+            minZoom: AppConstants.stoneTownMinZoom,
+            maxZoom: AppConstants.stoneTownMaxZoom,
             onTap: isPicker ? _onMapTap : null,
             onMapReady: _onMapReady,
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            ),
+            cameraConstraint: CameraConstraint.contain(
+              bounds: StoneTownBounds.cameraBounds,
             ),
           ),
           children: [
@@ -162,33 +196,47 @@ class _HeritageMapState extends State<HeritageMap> {
           Positioned(
             top: 8,
             right: 8,
-            child: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                onTap: _useCurrentLocation,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
+            child: Column(
+              children: [
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: widget.draggableMarker
+                        ? _useCurrentLocation
+                        : _resetToAllSites,
                     borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.my_location, size: 18, color: AppColors.primary),
-                      SizedBox(width: 6),
-                      Text('My location',
-                          style: TextStyle(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            widget.draggableMarker
+                                ? Icons.my_location
+                                : Icons.center_focus_strong,
+                            size: 18,
                             color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),),
-                    ],
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            widget.draggableMarker ? 'My location' : 'Reset view',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
       ],

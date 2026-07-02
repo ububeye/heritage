@@ -35,21 +35,11 @@ class LocationService {
           timeLimit: Duration(seconds: 10),
         ),
       );
-    } catch (e) {
+    } catch (_) {
+      // Permissions denied / GPS off / timeout all surface as null here.
+      // The cubit picks up null and falls back to the Stone Town centre.
       return null;
     }
-  }
-
-  Stream<Position> getPositionStream({
-    int distanceFilter = 5,
-    Duration? interval,
-  }) {
-    return Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: distanceFilter,
-      ),
-    );
   }
 
   void startListening({
@@ -65,8 +55,10 @@ class LocationService {
       (position) {
         _positionController.add(position);
       },
-      onError: (error) {
-        _positionController.addError(error);
+      onError: (error, stackTrace) {
+        // Surface GPS errors through the broadcast stream so the cubit can
+        // show a visible error state instead of silently swallowing them.
+        _positionController.addError(error, stackTrace);
       },
     );
   }

@@ -9,49 +9,51 @@ class AppTheme {
   static TextTheme _buildTextTheme(
     TextTheme base,
     Color primaryColor,
-    Color secondaryColor,
-  ) {
+    Color secondaryColor, {
+    Color? headlineColor,
+  }) {
+    final hColor = headlineColor ?? primaryColor;
     return base.copyWith(
       displayLarge: GoogleFonts.playfairDisplay(
         textStyle: base.displayLarge?.copyWith(
           fontSize: 32,
           fontWeight: FontWeight.bold,
-          color: primaryColor,
+          color: hColor,
         ),
       ),
       displayMedium: GoogleFonts.playfairDisplay(
         textStyle: base.displayMedium?.copyWith(
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: primaryColor,
+          color: hColor,
         ),
       ),
       displaySmall: GoogleFonts.playfairDisplay(
         textStyle: base.displaySmall?.copyWith(
           fontSize: 24,
           fontWeight: FontWeight.bold,
-          color: primaryColor,
+          color: hColor,
         ),
       ),
       headlineLarge: GoogleFonts.playfairDisplay(
         textStyle: base.headlineLarge?.copyWith(
           fontSize: 24,
           fontWeight: FontWeight.w600,
-          color: primaryColor,
+          color: hColor,
         ),
       ),
       headlineMedium: GoogleFonts.inter(
         textStyle: base.headlineMedium?.copyWith(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: primaryColor,
+          color: hColor,
         ),
       ),
       headlineSmall: GoogleFonts.inter(
         textStyle: base.headlineSmall?.copyWith(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: primaryColor,
+          color: hColor,
         ),
       ),
       titleLarge: GoogleFonts.inter(
@@ -169,8 +171,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accent,
-          foregroundColor: AppColors.textOnAccent,
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.textOnPrimary,
           elevation: AppConstants.elevationLow,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           minimumSize: const Size(
@@ -254,8 +256,8 @@ class AppTheme {
       ),
       iconTheme: const IconThemeData(color: AppColors.primary, size: 24),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.accent,
-        foregroundColor: AppColors.textOnAccent,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textOnPrimary,
         elevation: AppConstants.elevationMedium,
       ),
       dividerTheme: const DividerThemeData(
@@ -278,9 +280,10 @@ class AppTheme {
     final baseTheme = ThemeData.dark();
     const darkSurface = Color(0xFF1E1E1E);
     const darkBackground = Color(0xFF121212);
-    const textPrimaryDark = Color(0xFFE0E0E0);
-    const textSecondaryDark = Color(0xFFA0A0A0);
-    const borderDark = Color(0xFF333333);
+    const textPrimaryDark = Color(0xFFE8E1D6); // warm off-white body text
+    const textSecondaryDark = Color(0xFFB8A89A); // muted warm secondary
+    const headlineDark = Color(0xFFF5F0E8); // bright warm-white for headings
+    const borderDark = Color(0xFF2A2A2A);
 
     return ThemeData(
       useMaterial3: true,
@@ -291,9 +294,9 @@ class AppTheme {
         primary: AppColors.primaryLight,
         secondary: AppColors.accent,
         surface: darkSurface,
-        error: const Color(0xFFCF6679),
-        onPrimary: const Color(0xFF3E2723), // Dark text on light brown primary
-        onSecondary: AppColors.textOnAccent,
+        error: Color(0xFFCF6679),
+        onPrimary: AppColors.darkOnPrimary, // dark text on light-brown primary
+        onSecondary: AppColors.darkOnAccent, // dark text on tan accent
         onSurface: textPrimaryDark,
         onError: AppColors.textOnPrimary,
       ),
@@ -329,8 +332,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accent,
-          foregroundColor: AppColors.textOnAccent,
+          backgroundColor: AppColors.primaryLight,
+          foregroundColor: AppColors.darkOnPrimary,
           elevation: AppConstants.elevationLow,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           minimumSize: const Size(
@@ -408,11 +411,12 @@ class AppTheme {
         baseTheme.textTheme,
         textPrimaryDark,
         textSecondaryDark,
+        headlineColor: headlineDark,
       ),
       iconTheme: const IconThemeData(color: AppColors.primaryLight, size: 24),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.accent,
-        foregroundColor: AppColors.textOnAccent,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textOnPrimary,
         elevation: AppConstants.elevationMedium,
       ),
       dividerTheme: const DividerThemeData(
@@ -421,8 +425,8 @@ class AppTheme {
         space: 1,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: textPrimaryDark,
-        contentTextStyle: GoogleFonts.inter(color: darkBackground),
+        backgroundColor: darkSurface,
+        contentTextStyle: GoogleFonts.inter(color: textPrimaryDark),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),

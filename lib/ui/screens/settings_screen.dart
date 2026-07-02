@@ -22,14 +22,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  String _currentMapProvider() {
-    try {
-      return SharedPrefsService.instance.mapProvider;
-    } catch (_) {
-      return AppConstants.mapProviderOpen;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,29 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _SectionTitle(title: 'Map provider'),
                   _SettingsCard(
                     children: [
-                      _MapProviderTile(
-                        current: _currentMapProvider(),
-                        googleKeyConfigured: isGoogleMapsEnabled,
-                        onChanged: (value) async {
-                          if (value == null) return;
-                          await SharedPrefsService.instance
-                              .setMapProvider(value);
-                          if (!context.mounted) return;
-                          setState(() {});
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                value == AppConstants.mapProviderOpen
-                                    ? 'Switched to OpenStreetMap. Works without an API key.'
-                                    : (isGoogleMapsEnabled
-                                        ? 'Switched to Google Maps.'
-                                        : 'Google Maps selected, but no API key is configured. Using the open-source map until one is set.'),
-                              ),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        },
-                      ),
+                      _MapProviderTile(),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -419,26 +389,10 @@ class _DropdownTile extends StatelessWidget {
 /// key has been configured in `app_constants.dart`.
 class _MapProviderTile extends StatelessWidget {
 
-  const _MapProviderTile({
-    required this.current,
-    required this.googleKeyConfigured,
-    required this.onChanged,
-  });
-  final String current;
-  final bool googleKeyConfigured;
-  final ValueChanged<String?> onChanged;
+  const _MapProviderTile();
 
   @override
   Widget build(BuildContext context) {
-    final items = <String>[
-      AppConstants.mapProviderOpen,
-      if (googleKeyConfigured) AppConstants.mapProviderGoogle,
-    ];
-    final labels = <String>[
-      'OpenStreetMap (recommended)',
-      if (googleKeyConfigured) 'Google Maps',
-    ];
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -459,30 +413,9 @@ class _MapProviderTile extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 40),
-            child: Text(
-              googleKeyConfigured
-                  ? 'OpenStreetMap is free and works without an API key.'
-                  : 'Google Maps requires an API key in app_constants.dart.\nNot configured — using the open-source map.',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: items.contains(current) ? current : items.first,
-              underline: Container(
-                height: 1,
-                color: AppColors.divider,
-              ),
-              items: items.asMap().entries.map((e) {
-                return DropdownMenuItem<String>(
-                  value: e.value,
-                  child: Text(labels[e.key], overflow: TextOverflow.ellipsis),
-                );
-              }).toList(),
-              onChanged: onChanged,
+            child: const Text(
+              'OpenStreetMap — free and works without an API key.\nThe map covers Stone Town only.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ),
         ],

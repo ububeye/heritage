@@ -96,10 +96,12 @@ void main() {
 
     test('cache is keyed on coordinates — different routes are not cached',
         () async {
+      // Both pairs inside the Stone Town box so the new bounds check
+      // doesn't reject them up-front.
       const fromA = LatLng(-6.1620, 39.1900);
       const toA = LatLng(-6.1650, 39.1950);
-      const fromB = LatLng(-6.1700, 39.2000);
-      const toB = LatLng(-6.1750, 39.2050);
+      const fromB = LatLng(-6.1610, 39.1880);
+      const toB = LatLng(-6.1640, 39.1920);
       var callCount = 0;
       Future<http.Response> handler(http.Request req) async {
         callCount += 1;

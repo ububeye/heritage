@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/stone_town_bounds.dart';
 
 /// Result of a routing request.
 class RouteResult {
@@ -109,6 +110,28 @@ class RoutingService {
     required LatLng from,
     required LatLng to,
   }) async {
+    // 0. Stone Town only — reject anything outside the box up-front. The
+    //    app is a heritage guide for a single peninsula; we don't want to
+    //    burn network requests or render a route to a place we don't cover.
+    if (!StoneTownBounds.contains(to)) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: _haversineMeters(from, to),
+        provider: 'none',
+        errorMessage: 'Destination is outside Stone Town',
+      );
+    }
+    if (!StoneTownBounds.contains(from)) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: _haversineMeters(from, to),
+        provider: 'none',
+        errorMessage: 'Origin is outside Stone Town',
+      );
+    }
+
     // 1. Cached path.
     final cacheKey = _cacheKey(from, to);
     final cached = _cache[cacheKey];

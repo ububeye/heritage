@@ -46,6 +46,15 @@ class AppColors {
   static const Color border = Color(0xFFE0D6C8);
   static const Color divider = Color(0xFFD7CCC8);
 
+  // Dark Theme Tokens — used only by AppTheme.darkTheme for accessible
+  // foreground/background pairings on the warm brown surfaces used in dark mode.
+  static const Color darkOnPrimary = Color(0xFF1B1208); // dark text on light brown primary button
+  static const Color darkOnAccent = Color(0xFF1B1208); // dark text on tan accent button
+  static const Color darkError = Color(0xFFCF6679); // Material dark-mode error red
+  static const Color darkBody = Color(0xFFE8E1D6); // warm off-white body text (vs cold #E0E0E0)
+  static const Color darkMuted = Color(0xFFB8A89A); // muted secondary text on dark
+  static const Color darkBorder = Color(0xFF2A2A2A); // subtle border on dark surface
+
   // Gradient
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
