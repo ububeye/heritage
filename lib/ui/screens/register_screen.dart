@@ -92,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
-              backgroundColor: AppColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -152,11 +152,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(26),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -193,7 +193,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       _obscurePassword
                                           ? Icons.visibility_off
                                           : Icons.visibility,
-                                      color: AppColors.textSecondary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.7),
                                     ),
                                     onPressed: () {
                                       setState(() => _obscurePassword = !_obscurePassword);
@@ -220,7 +223,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       _obscureConfirmPassword
                                           ? Icons.visibility_off
                                           : Icons.visibility,
-                                      color: AppColors.textSecondary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.7),
                                     ),
                                     onPressed: () {
                                       setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
@@ -243,29 +249,21 @@ class _RegisterScreenState extends State<RegisterScreen>
                                             ? null
                                             : _onRegister,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
-                                          foregroundColor: Colors.white,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(16),
                                           ),
                                           elevation: 0,
                                         ),
                                         child: authState.status == AuthStatus.loading
-                                            ? const SizedBox(
+                                            ? SizedBox(
                                                 width: 24,
                                                 height: 24,
                                                 child: CircularProgressIndicator(
-                                                  color: Colors.white,
+                                                  color: Theme.of(context).colorScheme.onPrimary,
                                                   strokeWidth: 2,
                                                 ),
                                               )
-                                            : Text(
-                                                _tr(locState, 'register'),
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
+                                            : Text(_tr(locState, 'register')),
                                       ),
                                     );
                                   },
@@ -273,15 +271,20 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 const SizedBox(height: 16),
                                 Row(
                                   children: [
-                                    Expanded(child: Divider(color: AppColors.border)),
+                                    Expanded(child: Divider(color: Theme.of(context).dividerColor)),
                                     Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 16),
                                       child: Text(
                                         'or',
-                                        style: TextStyle(color: AppColors.textSecondary),
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.7),
+                                        ),
                                       ),
                                     ),
-                                    Expanded(child: Divider(color: AppColors.border)),
+                                    Expanded(child: Divider(color: Theme.of(context).dividerColor)),
                                   ],
                                 ),
                                 const SizedBox(height: 16),
@@ -344,26 +347,29 @@ class _RegisterScreenState extends State<RegisterScreen>
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.primary),
+        prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         ),
         filled: true,
-        fillColor: Theme.of(context).scaffoldBackgroundColor,
+        fillColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
@@ -377,7 +383,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         child: Container(
           height: 56,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -404,10 +410,10 @@ class _RegisterScreenState extends State<RegisterScreen>
               const SizedBox(width: 12),
               Text(
                 'Continue with Google',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],

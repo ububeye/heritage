@@ -48,6 +48,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   /// "Looking up a deactivated widget's ancestor is unsafe."
   NavigationCubit? _navigationCubit;
 
+  /// Guard so we only kick off the cubit once even if `didChangeDependencies`
+  /// runs again (locale change, MediaQuery update, etc.).
+  bool _started = false;
+
   /// Route polyline points. Two points (start/end) when in fallback mode.
   List<LatLng> _routePoints = const [];
   bool _routeLoading = true;
@@ -62,20 +66,17 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   Ticker? _cameraTicker;
   LatLng? _cameraTickerStart;
   LatLng? _cameraTickerEnd;
-  Duration? _cameraTickerStarted;
   LatLng? _lastUserPosition;
   bool _userInsideBox = true;
 
   @override
-  void initState() {
-    super.initState();
-    _startNavigation();
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _navigationCubit = context.read<NavigationCubit>();
+    _navigationCubit ??= context.read<NavigationCubit>();
+    if (!_started) {
+      _started = true;
+      _startNavigation();
+    }
   }
 
   void _startNavigation() {
@@ -127,16 +128,23 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     }
 
     _cameraTicker?.dispose();
-    _cameraTicker = createTicker((_) {
-      final elapsed = (DateTime.now().millisecondsSinceEpoch -
-              _cameraTickerStarted!.inMilliseconds) /
-          AppConstants.navigationAnimationMs;
-      final t = elapsed.clamp(0.0, 1.0);
+    _cameraTickerStart = start;
+    _cameraTickerEnd = clamped;
+    _cameraTicker = createTicker((elapsed) {
+      final t = (elapsed.inMicroseconds / 1000.0 /
+              AppConstants.navigationAnimationMs)
+          .clamp(0.0, 1.0);
       final eased = Curves.easeInOut.transform(t);
-      final lat = _lerp(_cameraTickerStart!.latitude,
-          _cameraTickerEnd!.latitude, eased,);
-      final lng = _lerp(_cameraTickerStart!.longitude,
-          _cameraTickerEnd!.longitude, eased,);
+      final lat = _lerp(
+        _cameraTickerStart!.latitude,
+        _cameraTickerEnd!.latitude,
+        eased,
+      );
+      final lng = _lerp(
+        _cameraTickerStart!.longitude,
+        _cameraTickerEnd!.longitude,
+        eased,
+      );
       _mapController.move(LatLng(lat, lng), camera.zoom);
 
       if (t >= 1.0) {
@@ -146,11 +154,6 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       }
     })
       ..start();
-    _cameraTickerStart = start;
-    _cameraTickerEnd = clamped;
-    _cameraTickerStarted = Duration(
-      milliseconds: DateTime.now().millisecondsSinceEpoch,
-    );
   }
 
   double _lerp(double a, double b, double t) => a + (b - a) * t;
@@ -190,6 +193,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<NavigationCubit, NavigationCubitState>(
+      listenWhen: (prev, next) =>
+          prev.navigationState.status != next.navigationState.status ||
+          prev.navigationState.currentPosition !=
+              next.navigationState.currentPosition,
       listener: (context, state) {
         final navState = state.navigationState;
         final pos = navState.currentPosition;
@@ -227,6 +234,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         if (navState.status == nav_model.NavigationStatus.arrived &&
             !_showArrivalOverlay) {
           setState(() => _showArrivalOverlay = true);
+        }
+
+        // 5. Error state → stop animating so the user can re-tap recenter.
+        if (navState.status == nav_model.NavigationStatus.error) {
+          _cameraTicker?.stop();
+          _cameraTicker?.dispose();
+          _cameraTicker = null;
         }
       },
       builder: (context, state) {
@@ -392,10 +406,19 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   void _recenter() {
     final nav = _navigationCubit?.state.navigationState;
     final pos = nav?.currentPosition;
-    final target = (pos != null)
+    final raw = (pos != null)
         ? LatLng(pos.latitude, pos.longitude)
         : StoneTownBounds.centre;
-    _fitInitial(StoneTownBounds.contains(target) ? target : StoneTownBounds.centre);
+    final target = StoneTownBounds.contains(raw) ? raw : StoneTownBounds.centre;
+
+    // _fitInitial drives the camera via the map controller; stop any
+    // in-flight animation so the two don't fight each other.
+    _cameraTicker?.stop();
+    _cameraTicker?.dispose();
+    _cameraTicker = null;
+    _lastUserPosition = null;
+
+    _fitInitial(target);
   }
 
   /// Banner shown above the map while the route is loading or when the
@@ -442,19 +465,27 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     String uiLanguage,
   ) {
     final arrived = nav.status == nav_model.NavigationStatus.arrived;
-    final statusChip = arrived
+    final hasError = nav.status == nav_model.NavigationStatus.error;
+    final statusChip = hasError
         ? _StatusChip(
-            label: 'Arrived',
-            color: AppColors.primary,
+            label: 'Error',
+            color: AppColors.error,
             foreground: AppColors.textOnPrimary,
-            icon: Icons.check_circle,
+            icon: Icons.error_outline,
           )
-        : _StatusChip(
-            label: 'Navigating',
-            color: AppColors.primary,
-            foreground: AppColors.textOnPrimary,
-            icon: Icons.directions_walk,
-          );
+        : arrived
+            ? _StatusChip(
+                label: 'Arrived',
+                color: AppColors.primary,
+                foreground: AppColors.textOnPrimary,
+                icon: Icons.check_circle,
+              )
+            : _StatusChip(
+                label: 'Navigating',
+                color: AppColors.primary,
+                foreground: AppColors.textOnPrimary,
+                icon: Icons.directions_walk,
+              );
 
     return Positioned(
       bottom: 0,

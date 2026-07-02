@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/constants/colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
@@ -99,187 +98,208 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        // Language selector at top
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Transform.translate(
-                            offset: Offset(0, _slideAnimation.value),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap:
-                                    () => _showLanguageSelector(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Use a scroll view when the viewport is too short to fit
+                // logo + two spacers + buttons. Two `Spacer`s in a fixed
+                // Column overflow on small / landscape phones.
+                final isCompact = constraints.maxHeight < 700;
+                final content = AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _fadeAnimation.value,
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            // Language selector at top
+                            Align(
+                              alignment: Alignment.topRight,
+                              child: Transform.translate(
+                                offset: Offset(0, _slideAnimation.value),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _showLanguageSelector(
                                       context,
                                       locState,
                                     ),
-                                borderRadius: BorderRadius.circular(30),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(color: AppColors.border),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.language,
-                                        color:
-                                            Theme.of(context).iconTheme.color,
-                                        size: 18,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 8,
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        locState.currentLanguage == 'en'
-                                            ? 'EN'
-                                            : 'SW',
-                                        style: TextStyle(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.color,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
+                                        borderRadius: BorderRadius.circular(30),
+                                        border: Border.all(
+                                          color: Theme.of(context).dividerColor,
                                         ),
                                       ),
-                                      Icon(
-                                        Icons.arrow_drop_down,
-                                        color: Theme.of(context).iconTheme.color
-                                            ?.withValues(alpha: 0.8),
-                                        size: 18,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.language,
+                                            color: Theme.of(context)
+                                                .iconTheme
+                                                .color,
+                                            size: 18,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            locState.currentLanguage == 'en'
+                                                ? 'EN'
+                                                : 'SW',
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.color,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.arrow_drop_down,
+                                            color: Theme.of(context)
+                                                .iconTheme
+                                                .color
+                                                ?.withValues(alpha: 0.8),
+                                            size: 18,
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Transform.translate(
-                          offset: Offset(0, _slideAnimation.value),
-                          child: Container(
-                            width: 160,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(40),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 15),
+                            if (!isCompact) const Spacer(),
+                            Transform.translate(
+                              offset: Offset(0, _slideAnimation.value),
+                              child: Container(
+                                width: 160,
+                                height: 160,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(40),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black
+                                          .withValues(alpha: 0.1),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 15),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(40),
-                              child: Image.asset(
-                                'assets/images/logo.jpeg',
-                                fit: BoxFit.cover,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(40),
+                                  child: Image.asset(
+                                    'assets/images/logo.jpeg',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 48),
-                        Transform.translate(
-                          offset: Offset(0, _slideAnimation.value),
-                          child: Text(
-                            _tr(locState, 'stone_town_guide'),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).textTheme.displayLarge?.color,
-                              letterSpacing: 1.2,
+                            const SizedBox(height: 48),
+                            Transform.translate(
+                              offset: Offset(0, _slideAnimation.value),
+                              child: Text(
+                                _tr(locState, 'stone_town_guide'),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .displayLarge
+                                      ?.color,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Transform.translate(
-                          offset: Offset(0, _slideAnimation.value),
-                          child: Text(
-                            _tr(locState, 'welcome_subtitle'),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.color
-                                  ?.withValues(alpha: 0.8),
-                              height: 1.5,
+                            const SizedBox(height: 16),
+                            Transform.translate(
+                              offset: Offset(0, _slideAnimation.value),
+                              child: Text(
+                                _tr(locState, 'welcome_subtitle'),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withValues(alpha: 0.8),
+                                  height: 1.5,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Transform.translate(
-                          offset: Offset(0, _slideAnimation.value),
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                width: double.infinity,
-                                height: 56,
-                                child: ElevatedButton(
-                                  onPressed:
-                                      () => Navigator.of(context).push(
+                            if (!isCompact) const Spacer() else
+                              const SizedBox(height: 32),
+                            Transform.translate(
+                              offset: Offset(0, _slideAnimation.value),
+                              child: Column(
+                                children: [
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 56,
+                                    child: ElevatedButton(
+                                      onPressed: () => Navigator.of(context)
+                                          .push(
                                         MaterialPageRoute(
                                           builder: (_) => const LoginScreen(),
                                         ),
                                       ),
-                                  style: ElevatedButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: Text(_tr(locState, 'login')),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 56,
-                                child: OutlinedButton(
-                                  onPressed:
-                                      () => Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => const RegisterScreen(),
+                                      style: ElevatedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
                                       ),
-                                  style: OutlinedButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
+                                      child: Text(_tr(locState, 'login')),
                                     ),
                                   ),
-                                  child: Text(_tr(locState, 'register')),
-                                ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 56,
+                                    child: OutlinedButton(
+                                      onPressed: () => Navigator.of(context)
+                                          .push(
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const RegisterScreen(),
+                                        ),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: Text(_tr(locState, 'register')),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 40),
+                          ],
                         ),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
+
+                return isCompact
+                    ? SingleChildScrollView(child: content)
+                    : content;
               },
             ),
           ),
@@ -315,13 +335,14 @@ class _LanguageOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppColors.primary.withValues(alpha: 26)
-                  : AppColors.surface,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).dividerColor,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -335,14 +356,16 @@ class _LanguageOption extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
             if (isSelected)
-              const Icon(
+              Icon(
                 Icons.check_circle,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),
           ],

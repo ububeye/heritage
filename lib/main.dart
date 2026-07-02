@@ -17,8 +17,10 @@ void main() async {
   // and follows the theme colors underneath.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  // Let the OS and AppTheme handle system UI colors automatically
-  // (Removed hardcoded SystemUIOverlayStyle to support Dark Mode)
+  // Per-screen system bar styling is applied in app.dart via AnnotatedRegion
+  // so the icons track Theme.of(context).brightness — light icons on dark
+  // surfaces, dark icons on light surfaces. A pinned style here would
+  // disappear in the opposite theme.
 
   await Firebase.initializeApp();
   await SharedPrefsService.getInstance();

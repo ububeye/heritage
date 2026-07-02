@@ -88,7 +88,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _skip,
                     child: Text(
                       loc.translations['onboarding_skip'] ?? 'Skip',
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.7),
+                      ),
                     ),
                   ),
                 ),
@@ -124,8 +129,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 8,
                             decoration: BoxDecoration(
                               color: _currentPage == index
-                                  ? AppColors.primary
-                                  : AppColors.border,
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).dividerColor,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -135,8 +140,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ElevatedButton(
                         onPressed: isLast ? _completeOnboarding : _nextPage,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 32,
                             vertical: 16,
@@ -198,10 +201,10 @@ class _OnboardingPageWidget extends StatelessWidget {
           // Title
           Text(
             page.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
@@ -209,9 +212,12 @@ class _OnboardingPageWidget extends StatelessWidget {
           // Subtitle
           Text(
             page.subtitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: AppColors.textSecondary,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.75),
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -233,16 +239,22 @@ class _LanguageSelector extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Row(
             children: [
-              const Icon(Icons.language, color: AppColors.primary),
+              Icon(
+                Icons.language,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Language:',
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
                   fontSize: 14,
                 ),
               ),

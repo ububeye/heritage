@@ -123,6 +123,8 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
 
   void _emitError(int session, String message) {
     if (session != _sessionId) return;
+    // Preserve the last known position / distance so the UI keeps showing
+    // something useful — only flip status + message.
     emit(state.copyWith(
       navigationState: state.navigationState.copyWith(
         status: NavigationStatus.error,
@@ -140,7 +142,16 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
     _siteLng = null;
     _hasArrived = false;
 
-    emit(const NavigationCubitState());
+    // Reset, but keep any terminal error message visible so a brief
+    // background → foreground cycle doesn't silently mask a permission
+    // failure or OSRM outage.
+    final lastError = state.navigationState.errorMessage;
+    emit(NavigationCubitState(
+      navigationState: NavigationState(
+        status: NavigationStatus.idle,
+        errorMessage: lastError,
+      ),
+    ),);
   }
 
   @override

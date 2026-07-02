@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/rtl.dart';
@@ -68,18 +69,51 @@ class StoneTownApp extends StatelessWidget {
                     child: child ?? const SizedBox.shrink(),
                   );
                 },
-                home: const SplashScreen(),
+                home: const _SystemBarsRoot(child: SplashScreen()),
                 routes: {
-                  '/welcome': (context) => const WelcomeScreen(),
-                  '/home': (context) => const HomeScreen(),
-                  '/favorites': (context) => const FavoritesScreen(),
-                  '/admin': (context) => const AdminShell(),
+                  '/welcome': (context) =>
+                      const _SystemBarsRoot(child: WelcomeScreen()),
+                  '/home': (context) =>
+                      const _SystemBarsRoot(child: HomeScreen()),
+                  '/favorites': (context) =>
+                      const _SystemBarsRoot(child: FavoritesScreen()),
+                  '/admin': (context) =>
+                      const _SystemBarsRoot(child: AdminShell()),
                 },
               );
             },
           );
         },
       ),
+    );
+  }
+}
+
+/// Wraps [child] in an [AnnotatedRegion] whose system-bar style matches
+/// the current [Theme.of] brightness. Light icons on dark surfaces, dark
+/// icons on light surfaces. The status-bar background is left transparent
+/// — edge-to-edge mode lets the scaffold paint behind it.
+class _SystemBarsRoot extends StatelessWidget {
+  const _SystemBarsRoot({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final overlay = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      // Android: dark icons when the theme is light, light icons when dark.
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      // iOS uses the inverse — `Brightness.dark` here means *dark* text.
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+    );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlay,
+      child: child,
     );
   }
 }
