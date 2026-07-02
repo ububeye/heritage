@@ -146,6 +146,16 @@ class _HeritageMapState extends State<HeritageMap> {
     }
   }
 
+  void _zoomIn() {
+    final zoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, zoom + 1);
+  }
+
+  void _zoomOut() {
+    final zoom = _mapController.camera.zoom;
+    _mapController.move(_mapController.camera.center, zoom - 1);
+  }
+
   void _onMapTap(TapPosition tapPosition, LatLng point) {
     if (!widget.draggableMarker) return;
     setState(() => _pickedPoint = point);
@@ -239,6 +249,44 @@ class _HeritageMapState extends State<HeritageMap> {
               ],
             ),
           ),
+        Positioned(
+          bottom: 16,
+          right: 8,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.add, color: AppColors.primary),
+                        onPressed: _zoomIn,
+                        tooltip: 'Zoom In',
+                      ),
+                      Container(
+                        height: 1,
+                        width: 32,
+                        color: AppColors.border,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.remove, color: AppColors.primary),
+                        onPressed: _zoomOut,
+                        tooltip: 'Zoom Out',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -250,12 +298,12 @@ class _HeritageMapState extends State<HeritageMap> {
       return [
         Marker(
           point: point,
-          width: 44,
-          height: 44,
+          width: 56,
+          height: 56,
           alignment: Alignment.topCenter,
           child: GestureDetector(
             onPanUpdate: (_) {},
-            child: const _PinMarker(label: null),
+            child: const _PinMarker(label: null, isPicker: true),
           ),
         ),
       ];
@@ -278,8 +326,9 @@ class _HeritageMapState extends State<HeritageMap> {
 }
 
 class _PinMarker extends StatelessWidget {
-  const _PinMarker({required this.label});
+  const _PinMarker({required this.label, this.isPicker = false});
   final String? label;
+  final bool isPicker;
 
   @override
   Widget build(BuildContext context) {
@@ -318,12 +367,12 @@ class _PinMarker extends StatelessWidget {
             ),
           ),
         Container(
-          width: 28,
-          height: 28,
+          width: isPicker ? 36 : 28,
+          height: isPicker ? 36 : 28,
           decoration: BoxDecoration(
             color: AppColors.primary,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
+            border: Border.all(color: Colors.white, width: isPicker ? 4 : 3),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.3),
@@ -332,9 +381,9 @@ class _PinMarker extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
+          child: Icon(
             Icons.location_on,
-            size: 14,
+            size: isPicker ? 20 : 14,
             color: Colors.white,
           ),
         ),
