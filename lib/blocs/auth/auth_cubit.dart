@@ -16,6 +16,23 @@ class AuthCubit extends Cubit<AuthState> {
   final AuthService _authService;
   final FirestoreService _firestoreService;
 
+  /// Re-fetch the current user from Firebase Auth + Firestore without
+  /// flipping the [AuthStatus] to loading. Used by flows that just
+  /// mutated an entitlement (e.g. billing) and want the user model to
+  /// pick up the change without flashing the splash / login screen.
+  Future<void> refreshUser() async {
+    try {
+      final refreshed = await _authService.reloadUser();
+      if (refreshed == null) return;
+      final liveRole = await _firestoreService.getUserRole(refreshed.id);
+      final resolved =
+          liveRole == null ? refreshed : refreshed.copyWith(role: liveRole);
+      emit(state.copyWith(user: resolved));
+    } catch (e) {
+      // Best-effort: keep the existing user model on failure.
+    }
+  }
+
   Future<void> checkAuthStatus() async {
     emit(state.copyWith(status: AuthStatus.loading));
 

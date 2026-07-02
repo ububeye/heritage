@@ -30,6 +30,17 @@ class AppConstants {
   static const double yearlyPrice = 29.99;
   static const int trialDays = 3;
 
+  /// Payment methods accepted via Google Play Billing — surfaced in the
+  /// upgrade screen FAQ. Order is intentional: mobile-money first for
+  /// the local audience, then card networks.
+  static const List<String> acceptedPaymentMethods = [
+    'M-Pesa',
+    'Tigo Pesa',
+    'Airtel Money',
+    'Visa',
+    'Mastercard',
+  ];
+
   // Animation Durations (ms)
   static const int animationFast = 200;
   static const int animationNormal = 300;

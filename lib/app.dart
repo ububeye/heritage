@@ -15,6 +15,8 @@ import 'blocs/user/user_cubit.dart';
 import 'blocs/favorites/favorites_cubit.dart';
 import 'blocs/theme/theme_cubit.dart';
 import 'data/services/auth_service.dart';
+import 'data/services/billing_provider.dart';
+import 'data/services/fake_billing_provider.dart';
 import 'data/services/tts_service.dart';
 import 'ui/screens/splash_screen.dart';
 import 'ui/screens/welcome_screen.dart';
@@ -28,6 +30,10 @@ class StoneTownApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ttsService = TtsService();
+
+    // Singleton for now; the real RevenueCat provider will own its own
+    // lifecycle. Switching providers is a one-line change here.
+    final BillingProvider billing = FakeBillingProvider();
 
     return MultiBlocProvider(
       providers: [
@@ -43,7 +49,16 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<LocalizationCubit>(
           create: (_) => LocalizationCubit()..loadTranslations(),
         ),
-        BlocProvider<PremiumCubit>(create: (_) => PremiumCubit()),
+        // PremiumCubit depends on AuthCubit for post-purchase user refresh
+        // and on the billing provider for store calls. Both are picked up
+        // lazily inside the create callback so the AuthCubit instance above
+        // is the same one used by the rest of the app.
+        BlocProvider<PremiumCubit>(
+          create: (ctx) => PremiumCubit(
+            billing: billing,
+            auth: ctx.read<AuthCubit>(),
+          )..initialize(),
+        ),
         BlocProvider<ExploreCubit>(create: (_) => ExploreCubit()),
         BlocProvider<UserCubit>(create: (_) => UserCubit()),
         BlocProvider<FavoritesCubit>(create: (_) => FavoritesCubit()),

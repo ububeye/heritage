@@ -1,40 +1,77 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
 
+/// Selection-aware pricing card. Used on the upgrade screen for both
+/// the monthly and yearly plan.
+///
+/// Visual states:
+///   - unselected / not popular  → subtle outlined card, neutral text
+///   - popular (recommended)     → primary-tinted border + soft glow
+///   - selected                  → thicker primary border + checkmark
+///                                 regardless of "popular"
 class PricingCard extends StatelessWidget {
-
   const PricingCard({
     super.key,
     required this.title,
     required this.price,
-    this.subtitle,
-    this.isPopular = false,
+    required this.priceSubtitle,
+    this.badge,
     required this.onTap,
+    this.selected = false,
+    this.secondaryLine,
   });
+
+  /// 'Monthly' / 'Yearly'
   final String title;
+
+  /// e.g. 4.99
   final double price;
-  final String? subtitle;
-  final bool isPopular;
+
+  /// e.g. '/month'
+  final String priceSubtitle;
+
+  /// Optional small badge — 'Popular' for the default recommended plan,
+  /// 'Best value' for yearly, etc.
+  final String? badge;
+
+  /// Secondary line under the price — for yearly we show
+  /// 'Just $2.49 / month'.
+  final String? secondaryLine;
+
+  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isPrimary = selected;
+    final bg = isPrimary
+        ? scheme.primary
+        : scheme.surface;
+    final fg = isPrimary ? scheme.onPrimary : scheme.onSurface;
+    final muted = isPrimary
+        ? scheme.onPrimary.withValues(alpha: 0.85)
+        : scheme.onSurface.withValues(alpha: 0.7);
+    final borderColor = isPrimary ? scheme.primary : theme.dividerColor;
+    final borderWidth = isPrimary ? 2.0 : 1.0;
+
+    return InkWell(
       onTap: onTap,
-      child: Container(
+      borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isPopular ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
-          border: Border.all(
-            color: isPopular ? AppColors.primary : AppColors.border,
-            width: isPopular ? 2 : 1,
-          ),
-          boxShadow: isPopular
+          color: bg,
+          borderRadius:
+              BorderRadius.circular(AppConstants.cardBorderRadius),
+          border: Border.all(color: borderColor, width: borderWidth),
+          boxShadow: isPrimary
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
+                    color: scheme.primary.withValues(alpha: 0.30),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -42,6 +79,8 @@ class PricingCard extends StatelessWidget {
               : null,
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -51,23 +90,26 @@ class PricingCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isPopular ? AppColors.textOnPrimary : AppColors.textPrimary,
+                    color: fg,
                   ),
                 ),
-                if (isPopular) ...[
+                if (badge != null) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.accent,
+                      color: scheme.secondary,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      'Popular',
+                    child: Text(
+                      badge!,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textOnAccent,
+                        color: scheme.onSecondary,
                       ),
                     ),
                   ),
@@ -84,37 +126,22 @@ class PricingCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isPopular ? AppColors.textOnPrimary : AppColors.textPrimary,
+                    color: fg,
                   ),
                 ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isPopular
-                          ? AppColors.textOnPrimary.withValues(alpha: 0.8)
-                          : AppColors.textSecondary,
-                    ),
-                  ),
+                const SizedBox(width: 2),
+                Text(
+                  priceSubtitle,
+                  style: TextStyle(fontSize: 14, color: muted),
+                ),
               ],
             ),
-            if (title == 'Yearly') ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'Save 50%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.success,
-                  ),
-                ),
+            if (secondaryLine != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                secondaryLine!,
+                style: TextStyle(fontSize: 12, color: muted),
+                textAlign: TextAlign.center,
               ),
             ],
           ],
