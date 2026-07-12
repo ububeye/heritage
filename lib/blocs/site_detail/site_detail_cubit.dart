@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/audio_state.dart';
 import '../../data/repositories/site_repository.dart';
@@ -24,15 +22,6 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   /// fallbacks discovered during playback through the same SnackBar
   /// channel as UI-language changes. May be null in unit tests.
   final LocalizationCubit? _localizationCubit;
-
-  /// Periodic timer used to advance the visible audio progress bar. The
-  /// `flutter_tts` plugin does not report playback position, so we drive the
-  /// bar from a local timer instead. See [AudioState.progress].
-  Timer? _progressTimer;
-
-  /// How often the progress bar advances. 250 ms gives smooth movement
-  /// without burning CPU.
-  static const Duration _progressTick = Duration(milliseconds: 250);
 
   Future<void> loadSite(String siteId) async {
     emit(state.copyWith(status: SiteDetailStatus.loading));
@@ -69,50 +58,10 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     return Duration(seconds: seconds);
   }
 
-  void _startProgressTimer(Duration total) {
-    _progressTimer?.cancel();
-    _progressTimer = Timer.periodic(_progressTick, (_) {
-      final current = state.audioState;
-      if (!current.isPlaying || current.duration == Duration.zero) return;
-      final next = current.position + _progressTick;
-      if (next >= current.duration) {
-        // Reached the end — snap to duration and stop the timer. The TTS
-        // completion handler will fire on its own; this is purely visual.
-        _progressTimer?.cancel();
-        _progressTimer = null;
-        emit(state.copyWith(
-          audioState: current.copyWith(
-            position: current.duration,
-            isPlaying: false,
-          ),
-        ),);
-        // For free-tier playback the timer hitting the cap means the
-        // sentence-bounded chunk just finished. Surface a "preview
-        // ended" signal so the root SnackBar listener can prompt the
-        // user to upgrade. Premium playback has no cap so this branch
-        // is unreachable there.
-        if (current.wasTruncated && current.maxDurationSeconds != null) {
-          _localizationCubit?.reportTtsPreviewEnded(
-            maxSeconds: current.maxDurationSeconds!,
-          );
-        }
-        return;
-      }
-      emit(state.copyWith(
-        audioState: current.copyWith(position: next),
-      ),);
-    });
-  }
-
-  void _stopProgressTimer() {
-    _progressTimer?.cancel();
-    _progressTimer = null;
-  }
-
   Future<void> playAudio(String languageCode, {bool isPremium = false}) async {
     if (state.site == null) return;
 
-    _stopProgressTimer();
+    _ttsService.stopReportingPosition();
 
     final text = state.site!.getDescription(languageCode);
     final maxSeconds = _ttsService.getMaxDuration();
@@ -139,9 +88,17 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           spokenCode: fallback,
         );
       }
+      // Compute the chunk ourselves so we can hand the same string to
+      // startReportingPosition — the engine's progress callback fires
+      // with char offsets into the *spoken* text, so the chunk we
+      // report against must equal the chunk the engine is saying.
+      // Premium playback passes the full text straight through; the
+      // chunk is identical for non-truncated cases.
+      final chunk = _ttsService.previewChunkFor(text);
       final speakResult =
           await _ttsService.speak(text, languageCode: languageCode);
 
+      if (isClosed) return;
       emit(state.copyWith(
         audioState: state.audioState.copyWith(
           isLoading: false,
@@ -154,11 +111,44 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         ),
       ),);
 
-      // Start ticking. If the user already paused/resumed before this
-      // point, the timer won't run because isPlaying would be false.
-      _startProgressTimer(estimatedDuration);
+      // Forward real engine progress into AudioState.position. The TTS
+      // service self-calibrates chars/sec from observed progress events;
+      // we just emit clamped positions and detect end-of-chunk via the
+      // existing duration gate (preview-ended SnackBar still fires here).
+      final budget = state.audioState.duration;
+      _ttsService.startReportingPosition(
+        chunk.text,
+        budget: budget,
+        onPosition: (pos) {
+          if (isClosed) return;
+          final current = state.audioState;
+          if (!current.isPlaying) return;
+          final clamped =
+              pos > current.duration ? current.duration : pos;
+          // Cheap guard against a freakishly large jump that would let
+          // the bar shoot to the end on a single noisy callback.
+          if ((clamped - current.position).inMilliseconds < 0) return;
+          emit(state.copyWith(
+            audioState: current.copyWith(position: clamped),
+          ),);
+          if (clamped >= current.duration) {
+            _ttsService.stopReportingPosition();
+            emit(state.copyWith(
+              audioState: current.copyWith(
+                position: current.duration,
+                isPlaying: false,
+              ),
+            ),);
+            if (current.wasTruncated && current.maxDurationSeconds != null) {
+              _localizationCubit?.reportTtsPreviewEnded(
+                maxSeconds: current.maxDurationSeconds!,
+              );
+            }
+          }
+        },
+      );
     } catch (e) {
-      _stopProgressTimer();
+      _ttsService.stopReportingPosition();
       emit(state.copyWith(
         audioState: state.audioState.copyWith(
           isLoading: false,
@@ -169,7 +159,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   }
 
   Future<void> pauseAudio() async {
-    _stopProgressTimer();
+    _ttsService.stopReportingPosition();
     await _ttsService.pause();
     emit(state.copyWith(
       audioState: state.audioState.copyWith(
@@ -187,11 +177,36 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         isPaused: false,
       ),
     ),);
-    _startProgressTimer(state.audioState.duration);
+    // Re-install the reporter — stopReportingPosition was called in
+    // pauseAudio, so we need a fresh calibration. We pass the same
+    // chunked text the engine is speaking so char offsets line up.
+    // The Android-pause-is-a-no-op bug is out of scope here; if it
+    // bites, the bar will drift until the next stop/play cycle.
+    if (state.site != null) {
+      final audioLang = state.audioState.languageCode;
+      final spoken = _ttsService.previewChunkFor(
+        state.site!.getDescription(audioLang),
+      );
+      _ttsService.startReportingPosition(
+        spoken.text,
+        budget: state.audioState.duration,
+        onPosition: (pos) {
+          if (isClosed) return;
+          final current = state.audioState;
+          if (!current.isPlaying) return;
+          final clamped =
+              pos > current.duration ? current.duration : pos;
+          if ((clamped - current.position).inMilliseconds < 0) return;
+          emit(state.copyWith(
+            audioState: current.copyWith(position: clamped),
+          ),);
+        },
+      );
+    }
   }
 
   Future<void> stopAudio() async {
-    _stopProgressTimer();
+    _ttsService.stopReportingPosition();
     await _ttsService.stop();
     emit(state.copyWith(
       audioState: const AudioState(),
@@ -200,7 +215,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
 
   @override
   Future<void> close() {
-    _stopProgressTimer();
+    _ttsService.stopReportingPosition();
     _ttsService.stop();
     return super.close();
   }

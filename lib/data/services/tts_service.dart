@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -32,6 +33,31 @@ class TtsService {
   bool get isPlaying => _state == TtsState.playing;
   bool get isPremium => _isPremium;
 
+  // --- Progress reporting (replaces the cubit's local Timer) ----------
+  //
+  // flutter_tts's setProgressHandler fires (text, start, end, word) as
+  // the native engine progresses. start/end are CHARACTER OFFSETS into
+  // the text we handed to speak() — not ms, not word indices. There is
+  // no per-call cancellation or "I'm done" event beyond the existing
+  // completion/cancel/error handlers; the cubit clamps against its own
+  // AudioState.duration to detect end-of-chunk.
+
+  /// Fingerprint of the chunk we last asked to report progress for. Used
+  /// to ignore stale callbacks that arrive after a stopAudio / speak()
+  /// cycle swap. Cheap to compute, good enough to disambiguate.
+  String? _activeFingerprint;
+  ValueChanged<Duration>? _activeOnPosition;
+
+  /// Self-calibrating chars-per-ms. Start at the population estimate
+  /// (12.5 chars/sec → 80 ms/char) and refine as real callbacks arrive.
+  double _msPerChar = 80;
+
+  /// (lastObservedCharOffset, timestampMs) — used to compute the running
+  /// chars/sec from observed engine progress. Reset on every
+  /// `startReportingPosition`.
+  int _lastObservedOffset = 0;
+  int _lastObservationMs = 0;
+
   Future<void> init({bool isPremium = false}) async {
     _isPremium = isPremium;
     _updateMaxDuration();
@@ -52,6 +78,10 @@ class TtsService {
     _flutterTts.setErrorHandler((msg) {
       _state = TtsState.stopped;
     });
+
+    // Install once; the handler routes through the *_active* fields
+    // which get swapped per-speak().
+    _flutterTts.setProgressHandler(_onProgress);
 
     await _setDefaultLanguage();
   }
@@ -253,6 +283,90 @@ class TtsService {
 
   int? getMaxDuration() {
     return _isPremium ? null : _maxDurationSeconds;
+  }
+
+  /// Sentence-bounded preview chunk for the active free-tier settings.
+  /// Exposed so [SiteDetailCubit] can hand the exact same string to
+  /// [startReportingPosition] (the engine's progress callback uses the
+  /// spoken text as its source of offsets, so the chunk we report
+  /// progress for must equal the chunk the engine is speaking).
+  TtsChunk previewChunkFor(String text) =>
+      _chunkForDuration(text, _maxDurationSeconds);
+
+  // --- Progress-reporting driver --------------------------------------
+
+  /// Begin forwarding TTS-engine progress into [onPosition]. [spokenText]
+  /// must be the exact string previously passed to [speak] — the handler
+  /// uses a fingerprint of it to ignore stale callbacks that arrive
+  /// after a quick stopAudio / playAudio cycle.
+  ///
+  /// [budget] is the chunk's expected total Duration; the cubit clamps
+  /// against its own AudioState.duration, so this is informational.
+  void startReportingPosition(
+    String spokenText, {
+    required ValueChanged<Duration> onPosition,
+    required Duration budget,
+  }) {
+    _activeFingerprint = _fingerprint(spokenText);
+    _activeOnPosition = onPosition;
+    _lastObservedOffset = 0;
+    _lastObservationMs = 0;
+    _msPerChar = 80; // 12.5 chars/sec seed until first callback refines it
+  }
+
+  /// Stop forwarding; safe to call multiple times or without a prior
+  /// `startReportingPosition`. Drops the active handler so any in-flight
+  /// native callbacks become no-ops.
+  void stopReportingPosition() {
+    _activeFingerprint = null;
+    _activeOnPosition = null;
+  }
+
+  /// Cheap fingerprint of the chunk — length + first/last 4 chars.
+  /// Stale-callback dedup doesn't need cryptographic strength; it just
+  /// needs to distinguish between two `speak()` calls in quick succession.
+  String _fingerprint(String text) {
+    final len = text.length;
+    final head = text.length <= 4 ? text : text.substring(0, 4);
+    final tail = text.length <= 4 ? '' : text.substring(text.length - 4);
+    return '$len|$head|$tail';
+  }
+
+  /// Native callback — wired once in init. See `setProgressHandler`.
+  /// Filters by fingerprint, then translates char-offset → Duration
+  /// via self-calibration.
+  void _onProgress(String text, int start, int end, String word) {
+    final fp = _fingerprint(text);
+    if (fp != _activeFingerprint) return; // stale callback from a previous speak()
+    if (end <= 0) return;
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final deltaOffset = end - _lastObservedOffset;
+    final deltaMs = nowMs - _lastObservationMs;
+    if (_lastObservedOffset == 0 || deltaOffset <= 0 || deltaMs <= 0) {
+      // First valid observation since startReportingPosition — just
+      // remember it and emit the seed position so the bar advances on
+      // the very first callback.
+      _lastObservedOffset = end;
+      _lastObservationMs = nowMs;
+      _activeOnPosition?.call(_offsetToDuration(end));
+      return;
+    }
+
+    // Rolling calibration: msPerChar = observed delta-ms / delta-offset.
+    // Mix with the running estimate so a single noisy sample doesn't
+    // swing the bar wildly.
+    final observedMsPerChar = deltaMs / deltaOffset;
+    _msPerChar = _msPerChar * 0.6 + observedMsPerChar * 0.4;
+    _lastObservedOffset = end;
+    _lastObservationMs = nowMs;
+    _activeOnPosition?.call(_offsetToDuration(end));
+  }
+
+  /// Char-offset → Duration using the current self-calibrated rate.
+  Duration _offsetToDuration(int charOffset) {
+    if (charOffset <= 0) return Duration.zero;
+    return Duration(milliseconds: (charOffset * _msPerChar).round());
   }
 
   void dispose() {
