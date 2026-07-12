@@ -31,5 +31,5 @@ void main() async {
   // ignore: unawaited_futures
   TileCacheService.bootstrap();
 
-  runApp(const StoneTownApp());
+  runApp(StoneTownApp());
 }

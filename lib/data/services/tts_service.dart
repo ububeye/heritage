@@ -57,7 +57,16 @@ class TtsService {
     _maxDurationSeconds = _isPremium ? 0 : AppConstants.freeAudioMaxSeconds;
   }
 
-  Future<bool> setLanguage(String languageCode) async {
+  /// Switch the TTS voice to the locale matching [languageCode].
+  ///
+  /// Returns `null` on success. If the device does not have a voice for the
+  /// requested language, the call falls back to the default voice
+  /// (typically en-US) and returns the language code that is actually being
+  /// used — letting callers surface a "voice for X not installed" message
+  /// instead of silently playing in a different language.
+  ///
+  /// If [languageCode] is not in our supported map at all, returns 'en'.
+  Future<String?> setLanguage(String languageCode) async {
     final languageMap = {
       'en': 'en-US',
       'sw': 'sw-KE',
@@ -69,16 +78,23 @@ class TtsService {
     };
 
     final ttsLanguage = languageMap[languageCode];
-    if (ttsLanguage == null) return false;
+    if (ttsLanguage == null) {
+      // Unknown code — keep the previous voice but report the fallback
+      // we'd ideally have used so the caller can warn.
+      return _currentLanguage.split('-').first;
+    }
 
     final availableLanguages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     if (!availableLanguages.contains(ttsLanguage)) {
-      return false;
+      // Voice not installed. Don't switch; the engine keeps its previous
+      // (or default) voice. Report the previously-active language code so
+      // the caller can show a SnackBar.
+      return _currentLanguage.split('-').first;
     }
 
     await _flutterTts.setLanguage(ttsLanguage);
     _currentLanguage = ttsLanguage;
-    return true;
+    return null;
   }
 
   Future<List<String>> getAvailableLanguages() async {

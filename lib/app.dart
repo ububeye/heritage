@@ -25,7 +25,13 @@ import 'ui/screens/favorites_screen.dart';
 import 'ui/screens/admin/admin_shell.dart';
 
 class StoneTownApp extends StatelessWidget {
-  const StoneTownApp({super.key});
+  StoneTownApp({super.key});
+
+  // Global messenger so the root BlocListener can surface a SnackBar when
+  // the TTS engine reports that a requested voice is missing — without
+  // having to thread a BuildContext through every screens's call site.
+  final GlobalKey<ScaffoldMessengerState> _messengerKey =
+      GlobalKey<ScaffoldMessengerState>();
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +53,8 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
         BlocProvider<LanguageCubit>(create: (_) => LanguageCubit()),
         BlocProvider<LocalizationCubit>(
-          create: (_) => LocalizationCubit()..loadTranslations(),
+          create: (_) =>
+              LocalizationCubit(ttsService: ttsService)..loadTranslations(),
         ),
         // PremiumCubit depends on AuthCubit for post-purchase user refresh
         // and on the billing provider for store calls. Both are picked up
@@ -64,43 +71,92 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<FavoritesCubit>(create: (_) => FavoritesCubit()),
         BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       ],
-      child: BlocBuilder<LocalizationCubit, LocalizationState>(
-        builder: (context, locState) {
-          return BlocBuilder<ThemeCubit, ThemeMode>(
-            builder: (context, themeMode) {
-              return MaterialApp(
-                title: 'Stone Town Guide',
-                theme: AppTheme.lightTheme,
-                darkTheme: AppTheme.darkTheme,
-                themeMode: themeMode,
-                debugShowCheckedModeBanner: false,
-                // Force RTL layout for Arabic (and any future RTL locale). The
-                // translations map is already language-specific; the locale-aware
-                // directionality wrapper makes alignment, scroll direction and
-                // icon mirroring behave correctly.
-                builder: (context, child) {
-                  return Directionality(
-                    textDirection: directionFor(locState.currentLanguage),
-                    child: child ?? const SizedBox.shrink(),
-                  );
-                },
-                home: const _SystemBarsRoot(child: SplashScreen()),
-                routes: {
-                  '/welcome': (context) =>
-                      const _SystemBarsRoot(child: WelcomeScreen()),
-                  '/home': (context) =>
-                      const _SystemBarsRoot(child: HomeScreen()),
-                  '/favorites': (context) =>
-                      const _SystemBarsRoot(child: FavoritesScreen()),
-                  '/admin': (context) =>
-                      const _SystemBarsRoot(child: AdminShell()),
-                },
-              );
-            },
-          );
+      child: BlocListener<LocalizationCubit, LocalizationState>(
+        // Listen for the moment a requested TTS voice isn't installed —
+        // LocalizationCubit emits a non-null ttsFallback. Show a SnackBar
+        // and clear the signal so it doesn't re-fire on rebuild.
+        listenWhen: (prev, curr) =>
+            curr.ttsFallback != null && prev.ttsFallback != curr.ttsFallback,
+        listener: (context, locState) {
+          final messenger = _messengerKey.currentState;
+          if (messenger == null) return;
+          final spoken = _languageDisplayName(locState.ttsFallback!);
+          final requested = _languageDisplayName(locState.currentLanguage);
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  '$requested voice not installed — playing in $spoken.',
+                ),
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          context.read<LocalizationCubit>().clearTtsFallback();
         },
+        child: BlocBuilder<LocalizationCubit, LocalizationState>(
+          builder: (context, locState) {
+            return BlocBuilder<ThemeCubit, ThemeMode>(
+              builder: (context, themeMode) {
+                return MaterialApp(
+                  title: 'Stone Town Guide',
+                  theme: AppTheme.lightTheme,
+                  darkTheme: AppTheme.darkTheme,
+                  themeMode: themeMode,
+                  scaffoldMessengerKey: _messengerKey,
+                  debugShowCheckedModeBanner: false,
+                  // Force RTL layout for Arabic (and any future RTL locale). The
+                  // translations map is already language-specific; the locale-aware
+                  // directionality wrapper makes alignment, scroll direction and
+                  // icon mirroring behave correctly.
+                  builder: (context, child) {
+                    return Directionality(
+                      textDirection: directionFor(locState.currentLanguage),
+                      child: child ?? const SizedBox.shrink(),
+                    );
+                  },
+                  home: const _SystemBarsRoot(child: SplashScreen()),
+                  routes: {
+                    '/welcome': (context) =>
+                        const _SystemBarsRoot(child: WelcomeScreen()),
+                    '/home': (context) =>
+                        const _SystemBarsRoot(child: HomeScreen()),
+                    '/favorites': (context) =>
+                        const _SystemBarsRoot(child: FavoritesScreen()),
+                    '/admin': (context) =>
+                        const _SystemBarsRoot(child: AdminShell()),
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
+  }
+
+  /// Display name for the audio-language chip — duplicated here to avoid
+  /// pulling the LanguageCubit just for label rendering. Kept in sync with
+  /// the chip's own switch in detail_screen.dart / navigation_screen_open.dart.
+  String _languageDisplayName(String code) {
+    switch (code) {
+      case 'en':
+        return 'English';
+      case 'sw':
+        return 'Kiswahili';
+      case 'fr':
+        return 'Français';
+      case 'de':
+        return 'Deutsch';
+      case 'ar':
+        return 'العربية';
+      case 'it':
+        return 'Italiano';
+      case 'es':
+        return 'Español';
+      default:
+        return code;
+    }
   }
 }
 
