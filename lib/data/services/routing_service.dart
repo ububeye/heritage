@@ -2,11 +2,166 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/stone_town_bounds.dart';
+import '../models/site_model.dart';
+import 'route_cache_service.dart';
+
+/// A single turn-by-turn instruction returned by the routing engine.
+///
+/// OSRM reports one [RouteStep] per "maneuver" — typically:
+///   * `depart` (or `null` modifier) at the start of the route,
+///   * `turn` modifiers: `left`/`right`/`straight`/`slight left`/...
+///   * `new name`/`continue`/`fork`/`merge`/`roundabout`,
+///   * `arrive` at the destination.
+///
+/// We persist this whole list to Firestore so cold starts don't have to
+/// re-hit OSRM just to render instructions.
+class RouteStep {
+
+  const RouteStep({
+    required this.maneuver,
+    required this.name,
+    required this.distanceMeters,
+    required this.startLocation,
+    required this.endLocation,
+    this.durationSeconds,
+    this.bearingBefore,
+    this.bearingAfter,
+  });
+  final String maneuver;
+  final String name;
+  final double distanceMeters;
+  final double? durationSeconds;
+  final LatLng startLocation;
+  final LatLng endLocation;
+  final int? bearingBefore;
+  final int? bearingAfter;
+
+  /// Map an OSRM maneuver string to the closest Flutter icon. This is the
+  /// single source of truth for instruction iconography across the app.
+  IconData get icon => ManeuverIcon.forManeuver(maneuver);
+
+  /// Human-readable summary of the step — what UI surfaces to show.
+  /// Combines the modifier ("left"/"right") with the street name, falling
+  /// back to a generic instruction when no name is available.
+  String get description {
+    final parts = maneuver.split(' ');
+    final main = parts.first;
+
+    // Arrival is a special case — the user has reached the destination,
+    // there's no next street to name. The other "main-word" cases
+    // (roundabout, fork, merge) carry their own modifier and fall through
+    // to the normal handler below.
+    if (main == 'arrive') return 'Arrive at destination';
+
+    final modifier =
+        parts.length > 1 ? parts.sublist(1).join(' ') : null;
+    final prettyModifier = _prettyModifier(modifier);
+    if (name.isNotEmpty) {
+      return prettyModifier != null
+          ? '$prettyModifier onto $name'
+          : 'Continue on $name';
+    }
+    return prettyModifier ?? 'Continue straight';
+  }
+
+  String? _prettyModifier(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    switch (raw) {
+      case 'left':
+        return 'Turn left';
+      case 'right':
+        return 'Turn right';
+      case 'slight left':
+        return 'Keep left';
+      case 'slight right':
+        return 'Keep right';
+      case 'sharp left':
+        return 'Sharp left';
+      case 'sharp right':
+        return 'Sharp right';
+      case 'straight':
+        return 'Continue straight';
+      case 'uturn':
+        return 'Make a U-turn';
+      case 'depart':
+        return null;
+      case 'arrive':
+        return 'Arrive at destination';
+      case 'fork':
+        return 'At the fork';
+      case 'merge':
+        return 'Merge';
+      case 'roundabout':
+      case 'rotary':
+        return 'Enter the roundabout';
+      default:
+        // OSRM occasionally adds new modifiers; fall back to a
+        // title-cased version rather than dumping the snake_case
+        // string into the UI.
+        return raw[0].toUpperCase() + raw.substring(1);
+    }
+  }
+}
+
+/// Single source of truth for "what icon represents an OSRM maneuver".
+/// The mapping is forgiving — OSRM commonly emits modifiers we haven't
+/// seen, so the default branch picks a reasonable directional icon from
+/// the modifier text.
+class ManeuverIcon {
+  ManeuverIcon._();
+
+  static IconData forManeuver(String maneuver) {
+    final parts = maneuver.split(' ');
+    final main = parts.first;
+    // Modifier can be 1 or 2 words ("left" / "slight left" / "sharp right").
+    // We pass both to the switch below so it can match multi-word modifiers
+    // exactly.
+    final mod1 = parts.length > 1 ? parts[1] : null;
+    final mod2 = parts.length > 2 ? parts.sublist(1).join(' ') : null;
+
+    // Special main-word cases first — these don't follow the
+    // "modifier is the second word" pattern.
+    if (main == 'depart') return Icons.play_arrow;
+    if (main == 'arrive') return Icons.flag;
+    if (main == 'fork') {
+      return mod1 == 'left' ? Icons.fork_left : Icons.fork_right;
+    }
+    if (main == 'merge') return Icons.merge_type;
+    if (main == 'roundabout' || main == 'rotary') {
+      return Icons.roundabout_left;
+    }
+    if (main == 'uturn' || mod1 == 'uturn') {
+      return Icons.u_turn_left;
+    }
+
+    // Prefer the two-word form when present, fall back to single-word.
+    final modifier = mod2 ?? mod1;
+    switch (modifier) {
+      case 'left':
+        return Icons.turn_left;
+      case 'right':
+        return Icons.turn_right;
+      case 'slight left':
+        return Icons.turn_slight_left;
+      case 'slight right':
+        return Icons.turn_slight_right;
+      case 'sharp left':
+        return Icons.turn_sharp_left;
+      case 'sharp right':
+        return Icons.turn_sharp_right;
+      case 'straight':
+        return Icons.straight;
+      default:
+        return Icons.straight;
+    }
+  }
+}
 
 /// Result of a routing request.
 class RouteResult {
@@ -18,6 +173,7 @@ class RouteResult {
     this.isFallback = false,
     this.errorMessage,
     this.provider = 'none',
+    this.steps = const [],
   });
   /// Ordered list of coordinates forming the route polyline.
   final List<LatLng> points;
@@ -40,6 +196,10 @@ class RouteResult {
   /// Which provider actually produced this result. Useful in logs and in
   /// the on-screen banner to tell the user *why* a fallback is showing.
   final String provider;
+
+  /// Ordered turn-by-turn instructions parsed from OSRM. Empty when the
+  /// result is a fallback (no engine data).
+  final List<RouteStep> steps;
 
   static RouteResult fallback({
     required LatLng from,
@@ -73,6 +233,8 @@ enum _RoutingProvider {
 
 /// Routing request lifecycle:
 ///
+///   0. Check the persistent Firestore cache (per-site) → bypass the
+///      engine if a recent geometry is stored.
 ///   1. Check the 30-minute in-memory cache → short-circuit if warm.
 ///   2. Try the highest-priority provider that this build supports
 ///      (ORS if a key was supplied, else OSRM directly).
@@ -85,9 +247,12 @@ class RoutingService {
 
   RoutingService({
     http.Client? client,
+    RouteCacheService? routeCache,
     this.timeout = const Duration(seconds: 6),
-  }) : _client = client ?? http.Client();
+  })  : _client = client ?? http.Client(),
+        _routeCache = routeCache;
   final http.Client _client;
+  final RouteCacheService? _routeCache;
   final Duration timeout;
 
   /// 30-minute TTL on successful routes. Re-asking for the same
@@ -106,9 +271,14 @@ class RoutingService {
   /// On any network / parse error, returns a [RouteResult.fallback] with
   /// just the two endpoints joined by a straight line. Callers should
   /// treat [RouteResult.isFallback] as informational.
+  ///
+  /// Pass [site] to opt into the persistent route cache: a hit skips the
+  /// network entirely and a successful engine response writes the
+  /// geometry back to Firestore for future visits.
   Future<RouteResult> getRoute({
     required LatLng from,
     required LatLng to,
+    SiteModel? site,
   }) async {
     // 0. Stone Town only — reject anything outside the box up-front. The
     //    app is a heritage guide for a single peninsula; we don't want to
@@ -130,6 +300,21 @@ class RoutingService {
         provider: 'none',
         errorMessage: 'Origin is outside Stone Town',
       );
+    }
+
+    // 0a. Persistent cache hit — bypass both the in-memory cache and the
+    //     network. Saves OSRM requests on repeat visits within the cache
+    //     age window. The cache layer treats stale / malformed entries
+    //     as a miss, so this branch is safe to attempt unconditionally.
+    if (site != null && _routeCache != null) {
+      final cached = await _routeCache.load(site);
+      if (cached != null) {
+        // Also warm the in-memory cache so the next refetch in the same
+        // session skips the Firestore round-trip too.
+        _cache[_cacheKey(from, to)] =
+            _CacheEntry(cached, DateTime.now());
+        return cached;
+      }
     }
 
     // 1. Cached path.
@@ -172,6 +357,12 @@ class RoutingService {
           }
 
           _cache[cacheKey] = _CacheEntry(result, DateTime.now());
+
+          // 3b. Best-effort write to Firestore. Fire-and-forget — a
+          //     failed write just means the next cold start re-fetches.
+          if (site != null && _routeCache != null) {
+            unawaited(_routeCache.save(site.id, result));
+          }
           return result;
         }
         lastError = result.errorMessage;
@@ -275,10 +466,24 @@ class RoutingService {
       '${AppConstants.osrmBaseUrl}/route/v1/foot/'
       '${from.longitude},${from.latitude};'
       '${to.longitude},${to.latitude}'
-      '?overview=full&geometries=geojson&steps=false&radiuses=25;25',
+      '?overview=full&geometries=geojson'
+      '&steps=true&annotations=false'
+      '&radiuses=25;25',
     );
 
-    final resp = await _client.get(uri).timeout(timeout);
+    // OSRM's public demo enforces a User-Agent on all requests; clients
+    // without one get a 429/403 and fall through to the straight-line
+    // banner. Mirror the header we send on OSM tile fetches so the routing
+    // and basemap layers are identified the same way.
+    final resp = await _client
+        .get(
+          uri,
+          headers: const {
+            'User-Agent':
+                'com.example.stone_town_heritage_vt_guide/1.0 (Flutter)',
+          },
+        )
+        .timeout(timeout);
     if (resp.statusCode != 200) {
       return RouteResult.fallback(
         from: from,
@@ -336,6 +541,7 @@ class RoutingService {
 
     final engineDistance = (first['distance'] as num?)?.toDouble();
     final engineDuration = (first['duration'] as num?)?.toDouble();
+    final steps = _parseOsrmSteps(first);
 
     return RouteResult(
       points: points,
@@ -343,7 +549,126 @@ class RoutingService {
       durationSeconds: engineDuration,
       isFallback: false,
       provider: 'osrmDemo',
+      steps: steps,
     );
+  }
+
+  /// Parse `routes[0].legs[0].steps[]` into a list of [RouteStep]s.
+  ///
+  /// OSRM structure (with `steps=true`):
+  ///
+  ///   {
+  ///     "routes": [{
+  ///       "legs": [{
+  ///         "steps": [{
+  ///           "maneuver": { "type": "turn", "modifier": "left",
+  ///                         "bearing_before": 180, "bearing_after": 90,
+  ///                         "location": [lng, lat] },
+  ///           "name": "Kenyatta Rd",
+  ///           "distance": 142.7,
+  ///           "duration": 102.0,
+  ///           "geometry": { "coordinates": [[lng,lat],...] }
+  ///         }, ...]
+  ///       }]
+  ///     }]
+  ///   }
+  ///
+  /// We collapse each step's geometry into a single (start, end) pair —
+  /// we don't render sub-step polylines, only the step-level "next
+  /// maneuver" instruction, so a 50-vertex array isn't worth retaining
+  /// for memory.
+  static List<RouteStep> _parseOsrmSteps(Map<String, dynamic> route) {
+    try {
+      final legs = route['legs'] as List<dynamic>?;
+      if (legs == null || legs.isEmpty) return const [];
+      final leg = legs.first as Map<String, dynamic>;
+      final rawSteps = (leg['steps'] as List<dynamic>?) ?? const [];
+      final result = <RouteStep>[];
+      for (final s in rawSteps) {
+        final step = s as Map<String, dynamic>;
+        final maneuver = step['maneuver'] as Map<String, dynamic>?;
+        final type = maneuver?['type'] as String? ?? 'continue';
+        final modifier = maneuver?['modifier'] as String?;
+        final maneuverString =
+            modifier != null && modifier.isNotEmpty
+                ? '$type $modifier'
+                : type;
+        final name = step['name'] as String? ?? '';
+        final distance = (step['distance'] as num?)?.toDouble() ?? 0;
+        final duration = (step['duration'] as num?)?.toDouble();
+        final loc = maneuver?['location'] as List<dynamic>?;
+        final startLatLng = (loc != null && loc.length >= 2)
+            ? LatLng(
+                (loc[1] as num).toDouble(),
+                (loc[0] as num).toDouble(),
+              )
+            : LatLng(0, 0);
+        // The end of step N is the start of step N+1, by construction.
+        // For the last step we approximate with the same start location —
+        // exact arrival coords aren't needed for instruction rendering.
+        result.add(RouteStep(
+          maneuver: maneuverString,
+          name: name,
+          distanceMeters: distance,
+          durationSeconds: duration,
+          startLocation: startLatLng,
+          endLocation: startLatLng, // populated below in a second pass
+          bearingBefore: (maneuver?['bearing_before'] as num?)?.toInt(),
+          bearingAfter: (maneuver?['bearing_after'] as num?)?.toInt(),
+        ),);
+      }
+      // Second pass: end of step N = start of step N+1.
+      for (var i = 0; i < result.length - 1; i++) {
+        result[i] = RouteStep(
+          maneuver: result[i].maneuver,
+          name: result[i].name,
+          distanceMeters: result[i].distanceMeters,
+          durationSeconds: result[i].durationSeconds,
+          startLocation: result[i].startLocation,
+          endLocation: result[i + 1].startLocation,
+          bearingBefore: result[i].bearingBefore,
+          bearingAfter: result[i].bearingAfter,
+        );
+      }
+      return result;
+    } catch (_) {
+      // A malformed step list shouldn't take down the whole route — fall
+      // back to "no turn instructions" mode.
+      return const [];
+    }
+  }
+
+  /// Returns the index of the [RouteStep] the user is currently on,
+  /// based on which step's [RouteStep.endLocation] is closest to
+  /// [userPos].
+  ///
+  /// Strategy: pick the step whose start is the *closest* point on the
+  /// route to the user. The step's [RouteStep.endLocation] is where the
+  /// next maneuver happens; the user is "on" whichever step that
+  /// maneuver belongs to.
+  ///
+  /// O(n) scan — Stone Town routes have <20 steps total.
+  static int currentStepIndex(List<RouteStep> steps, LatLng userPos) {
+    if (steps.isEmpty) return 0;
+    int bestIdx = 0;
+    double bestDist = _sqDist(steps.first.startLocation, userPos);
+    for (var i = 1; i < steps.length; i++) {
+      final d = _sqDist(steps[i].startLocation, userPos);
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    return bestIdx;
+  }
+
+  /// Squared euclidean distance between two coordinates. Skipping the
+  /// `sqrt` is fine because we only compare magnitudes to find the
+  /// minimum — close enough at Stone Town latitudes.
+  static double _sqDist(LatLng a, LatLng b) {
+    final dLat = a.latitude - b.latitude;
+    final dLng = a.longitude - b.longitude;
+    return dLat * dLat + dLng * dLng;
   }
 
   /// Parse an ORS GeoJSON `FeatureCollection` (with a `LineString` feature)

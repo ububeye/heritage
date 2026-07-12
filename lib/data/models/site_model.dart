@@ -29,6 +29,8 @@ class SiteModel extends Equatable {
     this.createdAt,
     this.updatedAt,
     this.featured = false,
+    this.routeGeometry,
+    this.routeGeometryUpdatedAt,
   });
 
   factory SiteModel.fromMap(Map<String, dynamic> map) {
@@ -71,6 +73,10 @@ class SiteModel extends Equatable {
           ? DateTime.tryParse(map['updated_at'])
           : null,
       featured: map['featured'] == true,
+      routeGeometry: map['route_geometry'] as String?,
+      routeGeometryUpdatedAt: map['route_geometry_updated_at'] != null
+          ? DateTime.tryParse(map['route_geometry_updated_at'] as String)
+          : null,
     );
   }
   final String id;
@@ -113,6 +119,17 @@ class SiteModel extends Equatable {
 
   // Curation
   final bool featured;
+
+  /// Cached routing geometry for this site, persisted to Firestore by
+  /// [RouteCacheService] after the first successful OSRM response.
+  /// Serialised GeoJSON `Feature` — `geometry` is a `LineString`; `properties`
+  /// carries the parsed step list. Avoids re-hitting OSRM on cold starts.
+  final String? routeGeometry;
+
+  /// Server-side timestamp of the last [routeGeometry] write. Lets the
+  /// routing service invalidate cached geometry when an admin re-pins a
+  /// doorway or the OSM data underneath moves.
+  final DateTime? routeGeometryUpdatedAt;
 
   // Get primary image (first in list, or fallback to single image)
   String get primaryImage {
@@ -220,6 +237,8 @@ class SiteModel extends Equatable {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? featured,
+    String? routeGeometry,
+    DateTime? routeGeometryUpdatedAt,
   }) {
     return SiteModel(
       id: id ?? this.id,
@@ -248,6 +267,9 @@ class SiteModel extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       featured: featured ?? this.featured,
+      routeGeometry: routeGeometry ?? this.routeGeometry,
+      routeGeometryUpdatedAt:
+          routeGeometryUpdatedAt ?? this.routeGeometryUpdatedAt,
     );
   }
 
@@ -279,6 +301,8 @@ class SiteModel extends Equatable {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'featured': featured,
+      'route_geometry': routeGeometry,
+      'route_geometry_updated_at': routeGeometryUpdatedAt?.toIso8601String(),
     };
   }
 
@@ -310,6 +334,8 @@ class SiteModel extends Equatable {
         createdAt,
         updatedAt,
         featured,
+        routeGeometry,
+        routeGeometryUpdatedAt,
       ];
 }
 

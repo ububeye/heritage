@@ -109,6 +109,12 @@ class AppConstants {
   /// re-fetched on next miss. We don't proactively evict.
   static const int tileCacheMaxAgeDays = 30;
 
+  /// Route-cache age (days). Cached routes older than this are treated
+  /// as a cache miss and re-fetched from OSRM — long enough that most
+  /// repeat visits in a holiday week will hit the cache, short enough
+  /// that admin-moved doorways don't keep pointing at an old road.
+  static const int routeCacheMaxAgeDays = 30;
+
   /// Set this to a real Google Maps API key in production builds to enable
   /// the live-navigation screen. When null, the "Navigate" buttons in the
   /// app show a friendly snackbar instead of opening NavigationScreen

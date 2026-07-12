@@ -15,9 +15,11 @@ import '../../blocs/navigation/navigation_state.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/colors.dart';
+import '../../core/utils/polyline_snap.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
 import '../../data/models/site_model.dart';
+import '../../data/services/route_cache_service.dart';
 import '../../data/services/routing_service.dart';
 import '../../data/services/tile_cache_service.dart';
 import '../widgets/arrival_overlay.dart';
@@ -39,7 +41,8 @@ class NavigationScreenOpen extends StatefulWidget {
 class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
-  final RoutingService _routingService = RoutingService();
+  late final RoutingService _routingService =
+      RoutingService(routeCache: FirestoreRouteCache());
   bool _showArrivalOverlay = false;
 
   /// Cached at [didChangeDependencies] time. We must not call
@@ -54,6 +57,18 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
 
   /// Route polyline points. Two points (start/end) when in fallback mode.
   List<LatLng> _routePoints = const [];
+
+  /// Turn-by-turn steps parsed from OSRM. Empty on a fallback route.
+  List<RouteStep> _routeSteps = const [];
+
+  /// Index into [_routeSteps] of the step the user is currently on.
+  /// Recomputed in the BlocConsumer listener on each GPS update.
+  int _activeStepIndex = 0;
+
+  /// Destination marker position. Initially the raw site coords; once the
+  /// route polyline is available it snaps to the nearest polyline vertex
+  /// so the marker visibly sits on the road.
+  LatLng? _snappedDestination;
   bool _routeLoading = true;
   bool _routeIsFallback = false;
   String? _routeError;
@@ -95,12 +110,22 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     final result = await _routingService.getRoute(
       from: origin,
       to: destination,
+      site: widget.site,
     );
 
     if (!mounted || myId != _routeRequestId) return;
 
+    // Snap destination to polyline as soon as the route is available —
+    // the marker should sit on the road, not 5 m into a doorway.
+    final snapped = result.points.length >= 2
+        ? PolylineSnap.snapToPolyline(destination, result.points)
+        : null;
+
     setState(() {
       _routePoints = result.points;
+      _routeSteps = result.steps;
+      _activeStepIndex = 0;
+      _snappedDestination = snapped;
       _routeLoading = false;
       _routeIsFallback = result.isFallback;
       _routeError = result.errorMessage;
@@ -221,6 +246,17 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           _animateCameraTo(posLatLng);
         }
 
+        // 2b. Advance the active turn-by-turn step when the user passes
+        //     a maneuver point. Only meaningful once steps have been
+        //     loaded; ignore on the initial pre-route state.
+        if (posLatLng != null && _routeSteps.isNotEmpty) {
+          final newIdx =
+              RoutingService.currentStepIndex(_routeSteps, posLatLng);
+          if (newIdx != _activeStepIndex) {
+            setState(() => _activeStepIndex = newIdx);
+          }
+        }
+
         // 3. Track whether the user is inside the box (drives a subtle
         //    banner so they know GPS hasn't locked onto Stone Town yet).
         if (posLatLng != null) {
@@ -338,12 +374,16 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         ),
         MarkerLayer(
           markers: [
-            // Destination — drop-pin marker.
+            // Destination — drop-pin marker. Uses the snapped position so
+            // it lands on the polyline rather than 5 m off into a
+            // doorway; proximity detection still uses the raw coord
+            // (see [CircleMarker] above).
             Marker(
-              point: LatLng(
-                widget.site.latitude,
-                widget.site.longitude,
-              ),
+              point: _snappedDestination ??
+                  LatLng(
+                    widget.site.latitude,
+                    widget.site.longitude,
+                  ),
               width: 44,
               height: 44,
               alignment: Alignment.topCenter,
@@ -598,6 +638,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                     statusChip,
                   ],
                 ),
+                // Turn-by-turn instruction row. Hidden on fallback routes
+                // (no step data) and on the arrived state (the destination
+                // overlay covers navigation). Sits just above the action
+                // button so the eye reads "next move → action".
+                if (_routeSteps.isNotEmpty &&
+                    !arrived)
+                  _buildTurnInstructionRow(),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -628,6 +675,70 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     if (d.inMinutes < 1) return '< 1 min';
     if (d.inHours < 1) return '${d.inMinutes} min';
     return '${d.inHours} h ${d.inMinutes % 60} min';
+  }
+
+  /// Builds the next-maneuver card that sits just above the Stop button
+  /// on the bottom sheet. Shows a maneuver icon, the instruction text
+  /// ("Turn left onto Kenyatta Rd"), and the remaining distance to the
+  /// next turn.
+  Widget _buildTurnInstructionRow() {
+    final step = _routeSteps[_activeStepIndex.clamp(0, _routeSteps.length - 1)];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(step.icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  step.description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_formatDistance(step.distanceMeters)}'
+                  '${step.durationSeconds != null ? ' • ${_formatDuration(Duration(seconds: step.durationSeconds!.round()))}' : ''}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
