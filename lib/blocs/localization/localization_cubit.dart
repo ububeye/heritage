@@ -28,6 +28,7 @@ class LocalizationCubit extends Cubit<LocalizationState> {
         currentLanguage: languageCode,
         translations: translations,
         ttsFallback: ttsFallback,
+        ttsFallbackRequested: ttsFallback == null ? null : languageCode,
       ),);
     } catch (e) {
       emit(state.copyWith(status: LocalizationStatus.error));
@@ -47,6 +48,7 @@ class LocalizationCubit extends Cubit<LocalizationState> {
         currentLanguage: languageCode,
         translations: translations,
         ttsFallback: ttsFallback,
+        ttsFallbackRequested: ttsFallback == null ? null : languageCode,
       ),);
     } catch (e) {
       // Fallback to English
@@ -56,8 +58,24 @@ class LocalizationCubit extends Cubit<LocalizationState> {
         currentLanguage: 'en',
         translations: translations,
         ttsFallback: ttsFallback,
+        ttsFallbackRequested: ttsFallback == null ? null : 'en',
       ),);
     }
+  }
+
+  /// Surface a TTS-voice fallback that came from outside this cubit
+  /// (currently: SiteDetailCubit.playAudio, where the audio-language pick
+  /// differs from the UI language). [requestedCode] is what the user picked,
+  /// [spokenCode] is what the engine will actually use.
+  void reportTtsFallback({
+    required String requestedCode,
+    required String spokenCode,
+  }) {
+    if (requestedCode == spokenCode) return;
+    emit(state.copyWith(
+      ttsFallback: spokenCode,
+      ttsFallbackRequested: requestedCode,
+    ),);
   }
 
   /// Manually clear the ttsFallback signal after the UI has shown the
@@ -90,6 +108,7 @@ class LocalizationState {
     this.currentLanguage = 'en',
     this.translations = const {},
     this.ttsFallback,
+    this.ttsFallbackRequested,
   });
   final LocalizationStatus status;
   final String currentLanguage;
@@ -101,11 +120,18 @@ class LocalizationState {
   /// can render a localized "voice not installed" message.
   final String? ttsFallback;
 
+  /// The language code the user actually requested when the fallback fired.
+  /// For UI-language changes this matches [currentLanguage]; for audio-
+  /// language changes (via SiteDetailCubit) it can differ — the listener
+  /// uses it to render the SnackBar's "X voice not installed" prefix.
+  final String? ttsFallbackRequested;
+
   LocalizationState copyWith({
     LocalizationStatus? status,
     String? currentLanguage,
     Map<String, String>? translations,
     String? ttsFallback,
+    String? ttsFallbackRequested,
     bool clearTtsFallback = false,
   }) {
     return LocalizationState(
@@ -113,6 +139,8 @@ class LocalizationState {
       currentLanguage: currentLanguage ?? this.currentLanguage,
       translations: translations ?? this.translations,
       ttsFallback: clearTtsFallback ? null : (ttsFallback ?? this.ttsFallback),
+      ttsFallbackRequested:
+          clearTtsFallback ? null : (ttsFallbackRequested ?? this.ttsFallbackRequested),
     );
   }
 }

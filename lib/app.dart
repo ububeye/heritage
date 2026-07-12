@@ -24,14 +24,13 @@ import 'ui/screens/home_screen.dart';
 import 'ui/screens/favorites_screen.dart';
 import 'ui/screens/admin/admin_shell.dart';
 
-class StoneTownApp extends StatelessWidget {
-  StoneTownApp({super.key});
+// Top-level so StoneTownApp can stay const. The key is stable for the
+// lifetime of the process — there's only one MaterialApp at the root.
+final GlobalKey<ScaffoldMessengerState> _rootMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
-  // Global messenger so the root BlocListener can surface a SnackBar when
-  // the TTS engine reports that a requested voice is missing — without
-  // having to thread a BuildContext through every screens's call site.
-  final GlobalKey<ScaffoldMessengerState> _messengerKey =
-      GlobalKey<ScaffoldMessengerState>();
+class StoneTownApp extends StatelessWidget {
+  const StoneTownApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +47,13 @@ class StoneTownApp extends StatelessWidget {
         ),
         BlocProvider<SiteListCubit>(create: (_) => SiteListCubit()),
         BlocProvider<SiteDetailCubit>(
-          create: (_) => SiteDetailCubit(ttsService: ttsService),
+          // LocalizationCubit is registered below; SiteDetailCubit reads
+          // it lazily so the create closure here is called only when the
+          // first consumer accesses it (after both providers exist).
+          create: (ctx) => SiteDetailCubit(
+            ttsService: ttsService,
+            localizationCubit: ctx.read<LocalizationCubit>(),
+          ),
         ),
         BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
         BlocProvider<LanguageCubit>(create: (_) => LanguageCubit()),
@@ -78,10 +83,15 @@ class StoneTownApp extends StatelessWidget {
         listenWhen: (prev, curr) =>
             curr.ttsFallback != null && prev.ttsFallback != curr.ttsFallback,
         listener: (context, locState) {
-          final messenger = _messengerKey.currentState;
+          final messenger = _rootMessengerKey.currentState;
           if (messenger == null) return;
           final spoken = _languageDisplayName(locState.ttsFallback!);
-          final requested = _languageDisplayName(locState.currentLanguage);
+          // For UI-language changes ttsFallbackRequested == currentLanguage;
+          // for audio-language changes via SiteDetailCubit it can differ —
+          // use it so the message names what the user actually picked.
+          final requested = _languageDisplayName(
+            locState.ttsFallbackRequested ?? locState.currentLanguage,
+          );
           messenger
             ..hideCurrentSnackBar()
             ..showSnackBar(
@@ -103,7 +113,7 @@ class StoneTownApp extends StatelessWidget {
                   theme: AppTheme.lightTheme,
                   darkTheme: AppTheme.darkTheme,
                   themeMode: themeMode,
-                  scaffoldMessengerKey: _messengerKey,
+                  scaffoldMessengerKey: _rootMessengerKey,
                   debugShowCheckedModeBanner: false,
                   // Force RTL layout for Arabic (and any future RTL locale). The
                   // translations map is already language-specific; the locale-aware

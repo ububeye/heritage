@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/audio_state.dart';
 import '../../data/repositories/site_repository.dart';
 import '../../data/services/tts_service.dart';
+import '../localization/localization_cubit.dart';
 import 'site_detail_state.dart';
 
 class SiteDetailCubit extends Cubit<SiteDetailState> {
@@ -11,11 +12,18 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   SiteDetailCubit({
     SiteRepository? siteRepository,
     TtsService? ttsService,
+    LocalizationCubit? localizationCubit,
   })  : _siteRepository = siteRepository ?? SiteRepository(),
         _ttsService = ttsService ?? TtsService(),
+        _localizationCubit = localizationCubit,
         super(const SiteDetailState());
   final SiteRepository _siteRepository;
   final TtsService _ttsService;
+
+  /// Optional handle to LocalizationCubit so we can surface TTS-voice
+  /// fallbacks discovered during playback through the same SnackBar
+  /// channel as UI-language changes. May be null in unit tests.
+  final LocalizationCubit? _localizationCubit;
 
   /// Periodic timer used to advance the visible audio progress bar. The
   /// `flutter_tts` plugin does not report playback position, so we drive the
@@ -110,6 +118,16 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
 
     try {
       _ttsService.setPremium(isPremium);
+      // Switch the TTS voice to the requested language *before* speak so
+      // we can detect a missing voice and surface it via LocalizationCubit
+      // (the same SnackBar listener that handles UI-language changes).
+      final fallback = await _ttsService.setLanguage(languageCode);
+      if (fallback != null) {
+        _localizationCubit?.reportTtsFallback(
+          requestedCode: languageCode,
+          spokenCode: fallback,
+        );
+      }
       await _ttsService.speak(text, languageCode: languageCode);
 
       emit(state.copyWith(
