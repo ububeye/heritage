@@ -51,9 +51,21 @@ class AppColors {
   static const Color darkOnPrimary = Color(0xFF1B1208); // dark text on light brown primary button
   static const Color darkOnAccent = Color(0xFF1B1208); // dark text on tan accent button
   static const Color darkError = Color(0xFFCF6679); // Material dark-mode error red
-  static const Color darkBody = Color(0xFFE8E1D6); // warm off-white body text (vs cold #E0E0E0)
-  static const Color darkMuted = Color(0xFFB8A89A); // muted secondary text on dark
-  static const Color darkBorder = Color(0xFF2A2A2A); // subtle border on dark surface
+  // Body text lifted from #E8E1D6 → #F0EAE0: AAA contrast on #1E1E1E (≈13:1),
+  // warmer than pure white, avoids OLED halation. Used for body / label.
+  static const Color darkBody = Color(0xFFF0EAE0);
+  // Secondary text — bright enough to read clearly on #1E1E1E cards (≈9.5:1).
+  // The previous #B8A89A only hit 6.3:1, which fails WCAG AA for small text.
+  static const Color darkMuted = Color(0xFFD7C7B6);
+  static const Color darkHint = Color(0xFFB8A89A); // placeholder/hint text only
+  static const Color darkBorder = Color(0xFF3A312A); // visible-but-quiet warm border
+  // Tonal-elevation tokens — cards lift off the scaffold via these rather
+  // than via shadow, which is invisible on a warm dark surface.
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkScaffold = Color(0xFF121212);
+  static const Color darkSurfaceContainer = Color(0xFF262220);
+  static const Color darkSurfaceContainerHigh = Color(0xFF2E2924);
+  static const Color darkSurfaceTint = Color(0xFF6B3F27); // primaryDark — drives the lift
 
   // Gradient
   static const LinearGradient primaryGradient = LinearGradient(

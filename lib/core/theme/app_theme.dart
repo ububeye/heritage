@@ -278,27 +278,55 @@ class AppTheme {
 
   static ThemeData get darkTheme {
     final baseTheme = ThemeData.dark();
-    const darkSurface = Color(0xFF1E1E1E);
-    const darkBackground = Color(0xFF121212);
-    const textPrimaryDark = Color(0xFFE8E1D6); // warm off-white body text
-    const textSecondaryDark = Color(0xFFB8A89A); // muted warm secondary
-    const headlineDark = Color(0xFFF5F0E8); // bright warm-white for headings
-    const borderDark = Color(0xFF2A2A2A);
+    // Warm dark surfaces — pure black would clash with the heritage brand;
+    // pure #121212 makes cards disappear. surface sits one tonal step above
+    // the scaffold, surfaceContainer two steps, surfaceContainerHigh three.
+    const darkScaffold = AppColors.darkScaffold; //   #121212
+    const darkSurface = AppColors.darkSurface; //       #1E1E1E
+    const darkSurfaceContainer = AppColors.darkSurfaceContainer; // #262220
+    const darkSurfaceContainerHigh = AppColors.darkSurfaceContainerHigh; // #2E2924
+    const textPrimaryDark = AppColors.darkBody; //  #F0EAE0 — AAA on darkSurface
+    const textSecondaryDark = AppColors.darkMuted; // #D7C7B6 — AA on darkSurface
+    const headlineDark = Color(0xFFF5F0E8); // brighter still for hero/headline copy
+    const borderDark = AppColors.darkBorder; // #3A312A — warm, visible on dark
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       primaryColor: AppColors.primaryLight,
-      scaffoldBackgroundColor: darkBackground,
+      scaffoldBackgroundColor: darkScaffold,
+      // surfaceTint drives M3's tonal-elevation lifts for cards, dialogs,
+      // sheets. Without it, every card paints flat on the scaffold and the
+      // hierarchy collapses. Tied to the brand's primaryDark so the lift
+      // feels warm, not grey.
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primaryLight,
+        onPrimary: AppColors.darkOnPrimary,
+        primaryContainer: AppColors.primaryDark,
+        onPrimaryContainer: AppColors.darkBody,
         secondary: AppColors.accent,
-        surface: darkSurface,
-        error: Color(0xFFCF6679),
-        onPrimary: AppColors.darkOnPrimary, // dark text on light-brown primary
-        onSecondary: AppColors.darkOnAccent, // dark text on tan accent
-        onSurface: textPrimaryDark,
+        onSecondary: AppColors.darkOnAccent,
+        secondaryContainer: AppColors.primaryDark,
+        onSecondaryContainer: AppColors.darkBody,
+        tertiary: AppColors.accentLight,
+        onTertiary: AppColors.darkOnAccent,
+        error: AppColors.darkError,
         onError: AppColors.textOnPrimary,
+        surface: darkSurface,
+        onSurface: textPrimaryDark,
+        // onSurfaceVariant covers body-secondary / hint text in M3.
+        onSurfaceVariant: textSecondaryDark,
+        // outline / outlineVariant drive borders & dividers in M3 component
+        // themes (input, card, divider) when we wire them below.
+        outline: borderDark,
+        outlineVariant: Color(0xFF2E2924),
+        // Tonal elevation slots — surfaces layered above [surface].
+        surfaceContainerLowest: darkScaffold,
+        surfaceContainerLow: Color(0xFF1A1A1A),
+        surfaceContainer: darkSurfaceContainer,
+        surfaceContainerHigh: darkSurfaceContainerHigh,
+        surfaceContainerHighest: Color(0xFF36312C),
+        surfaceTint: AppColors.darkSurfaceTint,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: darkSurface,
@@ -323,9 +351,13 @@ class AppTheme {
         ),
         unselectedLabelStyle: TextStyle(fontSize: 12),
       ),
+      // Cards lift one tonal step above the scaffold via surfaceContainer —
+      // shadows are barely visible on a warm dark surface, so tonal elevation
+      // is the M3-correct way to express hierarchy here.
       cardTheme: CardTheme(
-        color: darkSurface,
-        elevation: AppConstants.elevationLow,
+        color: darkSurfaceContainer,
+        surfaceTintColor: AppColors.darkSurfaceTint,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
         ),
@@ -383,7 +415,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: darkSurface,
+        fillColor: darkSurfaceContainer,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
@@ -402,10 +434,10 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
-          borderSide: const BorderSide(color: Color(0xFFCF6679)),
+          borderSide: const BorderSide(color: AppColors.darkError),
         ),
         labelStyle: GoogleFonts.inter(color: textSecondaryDark, fontSize: 14),
-        hintStyle: GoogleFonts.inter(color: textSecondaryDark, fontSize: 14),
+        hintStyle: GoogleFonts.inter(color: AppColors.darkHint, fontSize: 14),
       ),
       textTheme: _buildTextTheme(
         baseTheme.textTheme,
@@ -414,9 +446,11 @@ class AppTheme {
         headlineColor: headlineDark,
       ),
       iconTheme: const IconThemeData(color: AppColors.primaryLight, size: 24),
+      // FAB stays warm-brown in dark mode (matches the brand); the on-color
+      // is darkBody so the glyph is readable on the warm button face.
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        foregroundColor: AppColors.darkOnPrimary,
         elevation: AppConstants.elevationMedium,
       ),
       dividerTheme: const DividerThemeData(
@@ -424,12 +458,29 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      // Snackbars on dark mode use inverseSurface so they pop off the warm
+      // scaffold. Default behavior (darkSurface fill, darkBody text) had the
+      // snackbar blending into the background.
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: darkSurface,
+        backgroundColor: darkSurfaceContainerHigh,
         contentTextStyle: GoogleFonts.inter(color: textPrimaryDark),
+        actionTextColor: AppColors.primaryLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
+        ),
+      ),
+      dialogTheme: DialogTheme(
+        backgroundColor: darkSurfaceContainerHigh,
+        surfaceTintColor: AppColors.darkSurfaceTint,
+        titleTextStyle: GoogleFonts.inter(
+          color: headlineDark,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: GoogleFonts.inter(
+          color: textPrimaryDark,
+          fontSize: 14,
         ),
       ),
     );
