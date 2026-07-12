@@ -86,6 +86,16 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
             isPlaying: false,
           ),
         ),);
+        // For free-tier playback the timer hitting the cap means the
+        // sentence-bounded chunk just finished. Surface a "preview
+        // ended" signal so the root SnackBar listener can prompt the
+        // user to upgrade. Premium playback has no cap so this branch
+        // is unreachable there.
+        if (current.wasTruncated && current.maxDurationSeconds != null) {
+          _localizationCubit?.reportTtsPreviewEnded(
+            maxSeconds: current.maxDurationSeconds!,
+          );
+        }
         return;
       }
       emit(state.copyWith(
@@ -113,6 +123,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         isLoading: true,
         languageCode: languageCode,
         duration: estimatedDuration,
+        maxDurationSeconds: maxSeconds,
       ),
     ),);
 
@@ -128,7 +139,8 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           spokenCode: fallback,
         );
       }
-      await _ttsService.speak(text, languageCode: languageCode);
+      final speakResult =
+          await _ttsService.speak(text, languageCode: languageCode);
 
       emit(state.copyWith(
         audioState: state.audioState.copyWith(
@@ -136,6 +148,9 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           isPlaying: true,
           position: Duration.zero,
           duration: estimatedDuration,
+          // Stash the truncation flag on the audio state so screens can
+          // render a "Preview" badge near the play button.
+          wasTruncated: speakResult.wasTruncated,
         ),
       ),);
 

@@ -78,6 +78,23 @@ class LocalizationCubit extends Cubit<LocalizationState> {
     ),);
   }
 
+  /// Surface the fact that a free-tier playback hit the per-session
+  /// time cap and stopped at a sentence boundary. The root listener
+  /// shows a SnackBar prompting the user to upgrade. [maxSeconds] is
+  /// the cap value so the SnackBar can render e.g. "30-second preview
+  /// ended — upgrade to keep listening."
+  void reportTtsPreviewEnded({required int maxSeconds}) {
+    emit(state.copyWith(ttsPreviewEndedAt: maxSeconds),);
+  }
+
+  /// Reset the preview-ended signal after the UI has shown the SnackBar
+  /// so the same state doesn't re-trigger on rebuild.
+  void clearTtsPreviewEnded() {
+    if (state.ttsPreviewEndedAt != null) {
+      emit(state.copyWith(clearTtsPreviewEnded: true),);
+    }
+  }
+
   /// Manually clear the ttsFallback signal after the UI has shown the
   /// SnackBar so the same state isn't redisplayed on rebuild.
   void clearTtsFallback() {
@@ -109,6 +126,7 @@ class LocalizationState {
     this.translations = const {},
     this.ttsFallback,
     this.ttsFallbackRequested,
+    this.ttsPreviewEndedAt,
   });
   final LocalizationStatus status;
   final String currentLanguage;
@@ -126,21 +144,33 @@ class LocalizationState {
   /// uses it to render the SnackBar's "X voice not installed" prefix.
   final String? ttsFallbackRequested;
 
+  /// Set to the free-tier cap (in seconds) when SiteDetailCubit reports
+  /// that a preview just ended at a sentence boundary. Non-null is the
+  /// signal; the value lets the listener render the right duration in
+  /// the SnackBar ("30-second preview ended…").
+  final int? ttsPreviewEndedAt;
+
   LocalizationState copyWith({
     LocalizationStatus? status,
     String? currentLanguage,
     Map<String, String>? translations,
     String? ttsFallback,
     String? ttsFallbackRequested,
+    int? ttsPreviewEndedAt,
     bool clearTtsFallback = false,
+    bool clearTtsPreviewEnded = false,
   }) {
     return LocalizationState(
       status: status ?? this.status,
       currentLanguage: currentLanguage ?? this.currentLanguage,
       translations: translations ?? this.translations,
       ttsFallback: clearTtsFallback ? null : (ttsFallback ?? this.ttsFallback),
-      ttsFallbackRequested:
-          clearTtsFallback ? null : (ttsFallbackRequested ?? this.ttsFallbackRequested),
+      ttsFallbackRequested: clearTtsFallback
+          ? null
+          : (ttsFallbackRequested ?? this.ttsFallbackRequested),
+      ttsPreviewEndedAt: clearTtsPreviewEnded
+          ? null
+          : (ttsPreviewEndedAt ?? this.ttsPreviewEndedAt),
     );
   }
 }

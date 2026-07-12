@@ -77,32 +77,59 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       ],
       child: BlocListener<LocalizationCubit, LocalizationState>(
-        // Listen for the moment a requested TTS voice isn't installed —
-        // LocalizationCubit emits a non-null ttsFallback. Show a SnackBar
-        // and clear the signal so it doesn't re-fire on rebuild.
-        listenWhen: (prev, curr) =>
-            curr.ttsFallback != null && prev.ttsFallback != curr.ttsFallback,
+        // Listen for two distinct TTS signals from LocalizationCubit:
+        //   1. ttsFallback — the requested voice isn't installed
+        //   2. ttsPreviewEndedAt — free-tier playback hit its time cap
+        // Either emits a one-shot SnackBar; we clear the signal after so
+        // rebuilds don't re-fire the listener.
+        listenWhen: (prev, curr) {
+          final fallbackFired =
+              curr.ttsFallback != null && prev.ttsFallback != curr.ttsFallback;
+          final previewFired = curr.ttsPreviewEndedAt != null &&
+              prev.ttsPreviewEndedAt != curr.ttsPreviewEndedAt;
+          return fallbackFired || previewFired;
+        },
         listener: (context, locState) {
           final messenger = _rootMessengerKey.currentState;
           if (messenger == null) return;
-          final spoken = _languageDisplayName(locState.ttsFallback!);
-          // For UI-language changes ttsFallbackRequested == currentLanguage;
-          // for audio-language changes via SiteDetailCubit it can differ —
-          // use it so the message names what the user actually picked.
-          final requested = _languageDisplayName(
-            locState.ttsFallbackRequested ?? locState.currentLanguage,
-          );
-          messenger
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(
-                  '$requested voice not installed — playing in $spoken.',
+          final locCubit = context.read<LocalizationCubit>();
+
+          if (locState.ttsPreviewEndedAt != null) {
+            messenger
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${locState.ttsPreviewEndedAt}-second preview ended — upgrade for the full tour.',
+                  ),
+                  duration: const Duration(seconds: 5),
                 ),
-                duration: const Duration(seconds: 4),
-              ),
+              );
+            locCubit.clearTtsPreviewEnded();
+            return;
+          }
+
+          if (locState.ttsFallback != null) {
+            final spoken = _languageDisplayName(locState.ttsFallback!);
+            // For UI-language changes ttsFallbackRequested ==
+            // currentLanguage; for audio-language changes via
+            // SiteDetailCubit it can differ — use it so the message
+            // names what the user actually picked.
+            final requested = _languageDisplayName(
+              locState.ttsFallbackRequested ?? locState.currentLanguage,
             );
-          context.read<LocalizationCubit>().clearTtsFallback();
+            messenger
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '$requested voice not installed — playing in $spoken.',
+                  ),
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            locCubit.clearTtsFallback();
+          }
         },
         child: BlocBuilder<LocalizationCubit, LocalizationState>(
           builder: (context, locState) {
