@@ -3,12 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/language_meta.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/site_detail/site_detail_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/favorites/favorites_cubit.dart';
 import '../../core/utils/nav_guard.dart';
+import '../widgets/audio_player_bar.dart';
+import '../widgets/transcript_section.dart';
 import '../widgets/upgrade_banner.dart';
 import '../widgets/rating_stars.dart';
 import 'site_map_screen.dart';
@@ -40,27 +43,10 @@ class _DetailScreenState extends State<DetailScreen> {
     super.dispose();
   }
 
-  /// Display name for the audio-language chip.
-  String _audioLanguageName(String code) {
-    switch (code) {
-      case 'en':
-        return 'English';
-      case 'sw':
-        return 'Kiswahili';
-      case 'fr':
-        return 'Français';
-      case 'de':
-        return 'Deutsch';
-      case 'ar':
-        return 'العربية';
-      case 'it':
-        return 'Italiano';
-      case 'es':
-        return 'Español';
-      default:
-        return code;
-    }
-  }
+  /// Display name for the audio-language chip — delegates to the
+  /// shared LanguageMeta util. Kept as a local shim because the
+  /// audio-language picker below uses it in a couple of places.
+  String _audioLanguageName(String code) => LanguageMeta.name(code);
 
   /// Show a modal bottom sheet with the 7 audio languages. Free users see
   /// the 5 premium languages greyed out with a "Premium" badge; tapping a
@@ -184,26 +170,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  String _flagForCode(String code) {
-    switch (code) {
-      case 'en':
-        return '🇬🇧';
-      case 'sw':
-        return '🇹🇿';
-      case 'fr':
-        return '🇫🇷';
-      case 'de':
-        return '🇩🇪';
-      case 'ar':
-        return '🇸🇦';
-      case 'it':
-        return '🇮🇹';
-      case 'es':
-        return '🇪🇸';
-      default:
-        return '🌐';
-    }
-  }
+  String _flagForCode(String code) => LanguageMeta.flag(code);
 
   @override
   Widget build(BuildContext context) {
@@ -480,6 +447,27 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
+                      // Transcript of what's actually being spoken — sits
+                      // between the description and the upgrade banner so
+                      // deaf / quiet-environment users can read along.
+                      // Collapsed by default; renders only after audio
+                      // has been played once (so we have spokenText).
+                      Builder(
+                        builder: (innerContext) {
+                          final audioLang = innerContext
+                              .watch<LanguageCubit>()
+                              .state
+                              .audioLanguage;
+                          final audioState = state.audioState;
+                          return TranscriptSection(
+                            title: 'Transcript',
+                            text: audioState.spokenText,
+                            audioLanguageCode: audioLang,
+                            truncated: audioState.wasTruncated,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
                       if (!isPremium)
                         UpgradeBanner(
                           onUpgrade: () => Navigator.of(context).push(
@@ -555,102 +543,42 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ],
           ),
-          bottomSheet: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      final audioState = state.audioState;
-                      if (audioState.isPlaying) {
-                        context.read<SiteDetailCubit>().pauseAudio();
-                      } else {
-                        final audioLang = context.read<LanguageCubit>().state.audioLanguage;
-                        context.read<SiteDetailCubit>().playAudio(audioLang, isPremium: isPremium);
-                      }
-                    },
-                    child: Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: Icon(
-                        state.audioState.isPlaying ? Icons.pause : Icons.play_arrow,
-                        size: 32,
-                        color: AppColors.textOnAccent,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Language chip — tap to switch audio language
-                        // in-place. Stops current audio (if playing) and
-                        // starts in the new language when one is picked.
-                        Builder(
-                          builder: (innerContext) {
-                            final audioLang = innerContext.watch<LanguageCubit>().state.audioLanguage;
-                            return Align(
-                              alignment: Alignment.centerLeft,
-                              child: _AudioLanguageChip(
-                                code: audioLang,
-                                name: _audioLanguageName(audioLang),
-                                onTap: () => _showAudioLanguagePicker(innerContext, isPremium),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 6),
-                        LinearProgressIndicator(
-                          value: state.audioState.progress.clamp(0.0, 1.0),
-                          backgroundColor: AppColors.border,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
-                          minHeight: 4,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${state.audioState.positionText} / ${state.audioState.durationText}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isPremium)
-                    Builder(
-                      builder: (innerContext) => IconButton(
-                        tooltip: 'Replay',
-                        onPressed: () async {
-                          final audioLang = innerContext.read<LanguageCubit>().state.audioLanguage;
-                          final cubit = innerContext.read<SiteDetailCubit>();
-                          await cubit.stopAudio();
-                          if (!mounted) return;
-                          await cubit.playAudio(audioLang, isPremium: isPremium);
-                        },
-                        icon: const Icon(Icons.replay, color: AppColors.primary),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+          bottomSheet: Builder(
+            builder: (sheetContext) {
+              // Read the live audio-language pick inside the sheet so the
+              // chip updates as soon as the user picks a new language
+              // from the modal.
+              final audioLang = sheetContext
+                  .watch<LanguageCubit>()
+                  .state
+                  .audioLanguage;
+              return AudioPlayerBar(
+                audioState: state.audioState,
+                audioLanguageCode: audioLang,
+                isPremium: isPremium,
+                onPlayPause: () {
+                  final a = state.audioState;
+                  if (a.isPlaying) {
+                    context.read<SiteDetailCubit>().pauseAudio();
+                  } else if (a.isPaused) {
+                    context.read<SiteDetailCubit>().resumeAudio();
+                  } else {
+                    context.read<SiteDetailCubit>().playAudio(
+                          audioLang,
+                          isPremium: isPremium,
+                        );
+                  }
+                },
+                onLanguageTap: () =>
+                    _showAudioLanguagePicker(sheetContext, isPremium),
+                onReplay: () async {
+                  final cubit = context.read<SiteDetailCubit>();
+                  await cubit.stopAudio();
+                  if (!mounted) return;
+                  await cubit.playAudio(audioLang, isPremium: isPremium);
+                },
+              );
+            },
           ),
         );
       },
@@ -699,71 +627,3 @@ class _GalleryArrow extends StatelessWidget {
   }
 }
 
-/// Language flag emoji + display name + a small chevron.
-/// Tapping invokes [onTap]. Used as the audio-language chip on the
-/// bottom-sheet player.
-class _AudioLanguageChip extends StatelessWidget {
-
-  const _AudioLanguageChip({
-    required this.code,
-    required this.name,
-    required this.onTap,
-  });
-  final String code;
-  final String name;
-  final VoidCallback onTap;
-
-  String get _flag {
-    switch (code) {
-      case 'en':
-        return '🇬🇧';
-      case 'sw':
-        return '🇹🇿';
-      case 'fr':
-        return '🇫🇷';
-      case 'de':
-        return '🇩🇪';
-      case 'ar':
-        return '🇸🇦';
-      case 'it':
-        return '🇮🇹';
-      case 'es':
-        return '🇪🇸';
-      default:
-        return '🌐';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceDark,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_flag, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 4),
-            Text(
-              name,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 2),
-            const Icon(Icons.expand_more, size: 16, color: AppColors.textSecondary),
-          ],
-        ),
-      ),
-    );
-  }
-}

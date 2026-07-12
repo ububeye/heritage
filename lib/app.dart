@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/language_meta.dart';
 import 'core/utils/rtl.dart';
 import 'blocs/auth/auth_cubit.dart';
 import 'blocs/site_list/site_list_cubit.dart';
@@ -110,12 +111,12 @@ class StoneTownApp extends StatelessWidget {
           }
 
           if (locState.ttsFallback != null) {
-            final spoken = _languageDisplayName(locState.ttsFallback!);
+            final spoken = LanguageMeta.name(locState.ttsFallback!);
             // For UI-language changes ttsFallbackRequested ==
             // currentLanguage; for audio-language changes via
             // SiteDetailCubit it can differ — use it so the message
             // names what the user actually picked.
-            final requested = _languageDisplayName(
+            final requested = LanguageMeta.name(
               locState.ttsFallbackRequested ?? locState.currentLanguage,
             );
             messenger
@@ -170,30 +171,6 @@ class StoneTownApp extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Display name for the audio-language chip — duplicated here to avoid
-  /// pulling the LanguageCubit just for label rendering. Kept in sync with
-  /// the chip's own switch in detail_screen.dart / navigation_screen_open.dart.
-  String _languageDisplayName(String code) {
-    switch (code) {
-      case 'en':
-        return 'English';
-      case 'sw':
-        return 'Kiswahili';
-      case 'fr':
-        return 'Français';
-      case 'de':
-        return 'Deutsch';
-      case 'ar':
-        return 'العربية';
-      case 'it':
-        return 'Italiano';
-      case 'es':
-        return 'Español';
-      default:
-        return code;
-    }
   }
 }
 

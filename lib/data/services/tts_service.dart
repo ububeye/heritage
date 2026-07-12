@@ -1,6 +1,9 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/constants/app_constants.dart';
+import '../models/audio_state.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -47,6 +50,16 @@ class TtsService {
   /// cycle swap. Cheap to compute, good enough to disambiguate.
   String? _activeFingerprint;
   ValueChanged<Duration>? _activeOnPosition;
+
+  /// Snapshot of the chunk the engine is speaking, paired with the
+  /// fingerprint. Pause-and-restart on Android needs the original chunk
+  /// text (not just the offset) so it can re-speak the suffix.
+  String? _activeSpokenText;
+
+  /// Char offset added to every observed progress event. Set non-zero on
+  /// Android resume so the visible position jumps forward to where the
+  /// engine actually picks up, instead of resetting to 0.
+  int _activeResumeBaseline = 0;
 
   /// Self-calibrating chars-per-ms. Start at the population estimate
   /// (12.5 chars/sec → 80 ms/char) and refine as real callbacks arrive.
@@ -302,13 +315,22 @@ class TtsService {
   ///
   /// [budget] is the chunk's expected total Duration; the cubit clamps
   /// against its own AudioState.duration, so this is informational.
+  ///
+  /// [resumeBaseline] is non-zero when this reporter is being installed
+  /// as part of an Android resume — the engine is speaking the suffix
+  /// of [spokenText], so every emitted Duration is offset by the chars
+  /// that came before the resume point. The cubit uses this to keep the
+  /// visible progress bar in sync without snapping back to zero.
   void startReportingPosition(
     String spokenText, {
     required ValueChanged<Duration> onPosition,
     required Duration budget,
+    int resumeBaseline = 0,
   }) {
     _activeFingerprint = _fingerprint(spokenText);
+    _activeSpokenText = spokenText;
     _activeOnPosition = onPosition;
+    _activeResumeBaseline = resumeBaseline;
     _lastObservedOffset = 0;
     _lastObservationMs = 0;
     _msPerChar = 80; // 12.5 chars/sec seed until first callback refines it
@@ -319,7 +341,9 @@ class TtsService {
   /// native callbacks become no-ops.
   void stopReportingPosition() {
     _activeFingerprint = null;
+    _activeSpokenText = null;
     _activeOnPosition = null;
+    _activeResumeBaseline = 0;
   }
 
   /// Cheap fingerprint of the chunk — length + first/last 4 chars.
@@ -364,9 +388,67 @@ class TtsService {
   }
 
   /// Char-offset → Duration using the current self-calibrated rate.
+  /// On Android resume the engine is speaking a suffix of the original
+  /// chunk, so we add the resume baseline to the observed offset to
+  /// produce a position that's monotonic across the pause.
   Duration _offsetToDuration(int charOffset) {
     if (charOffset <= 0) return Duration.zero;
-    return Duration(milliseconds: (charOffset * _msPerChar).round());
+    return Duration(
+      milliseconds:
+          ((charOffset + _activeResumeBaseline) * _msPerChar).round(),
+    );
+  }
+
+  /// Current self-calibrated ms/char rate. Exposed so the cubit can
+  /// compute a baseline-adjusted position synchronously on Android
+  /// resume (before the first progress callback fires). Falls back to
+  /// the seed rate (80 ms/char ≈ 12.5 chars/sec) before any callback
+  /// has been observed for the current speak().
+  double get currentMsPerChar => _msPerChar;
+
+  // --- Pause / resume (Android-safe) ----------------------------------
+
+  /// Pause the engine in a way that survives across platforms. iOS uses
+  /// the native `pause()` which keeps the engine's internal position;
+  /// Android stops the utterance and snapshots the offset so the cubit
+  /// can restart from the right place via [resumeFrom].
+  ///
+  /// Returns null on iOS (the engine keeps state) or when no chunk is
+  /// currently being reported (nothing to resume from). Returns a
+  /// [PausedResumePoint] on Android when we successfully captured a
+  /// restart point.
+  Future<PausedResumePoint?> pauseForRestart() async {
+    if (Platform.isIOS) {
+      await _flutterTts.pause();
+      _state = TtsState.paused;
+      return null;
+    }
+    final captured = _lastObservedOffset;
+    final fp = _activeFingerprint;
+    final text = _activeSpokenText;
+    await _flutterTts.stop();
+    _state = TtsState.paused;
+    if (fp == null || text == null || captured <= 0) return null;
+    return PausedResumePoint(text: text, charOffset: captured);
+  }
+
+  /// Re-speak the suffix of [point.text] starting at [point.charOffset]
+  /// and re-install the progress reporter with the matching baseline so
+  /// the visible position picks up where the engine stopped, not at
+  /// zero. No-op when the offset is already at end-of-text.
+  ///
+  /// Caller is expected to follow up with `startReportingPosition`
+  /// (or `playAudio` re-emitting state) so the bar advances.
+  Future<void> resumeFrom(PausedResumePoint point) async {
+    if (point.charOffset >= point.text.length) return;
+    final suffix = point.text.substring(point.charOffset);
+    if (Platform.isAndroid) {
+      // Defensive — make sure the previous utterance is fully released
+      // before asking the engine for a new one.
+      await _flutterTts.stop();
+    }
+    await _flutterTts.speak(suffix);
+    _state = TtsState.playing;
   }
 
   void dispose() {

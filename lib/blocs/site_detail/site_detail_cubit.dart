@@ -58,6 +58,53 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     return Duration(seconds: seconds);
   }
 
+  /// Install (or reinstall) the TTS progress reporter. Used both on
+  /// fresh play and after a pause/resume cycle so the closure shape
+  /// lives in exactly one place.
+  ///
+  /// [baseline] is non-zero on Android resume — the engine is speaking
+  /// a suffix of [spokenText], so every emitted Duration is offset by
+  /// the chars that came before the resume point. The closure below
+  /// still clamps against AudioState.duration, so the bar caps at
+  /// the chunk's real total duration rather than the suffix's.
+  void _reinstallProgressReporter({
+    required String spokenText,
+    required int baseline,
+  }) {
+    _ttsService.startReportingPosition(
+      spokenText,
+      budget: state.audioState.duration,
+      resumeBaseline: baseline,
+      onPosition: (pos) {
+        if (isClosed) return;
+        final current = state.audioState;
+        if (!current.isPlaying) return;
+        final clamped =
+            pos > current.duration ? current.duration : pos;
+        // Cheap guard against a freakishly large jump that would let
+        // the bar shoot to the end on a single noisy callback.
+        if ((clamped - current.position).inMilliseconds < 0) return;
+        emit(state.copyWith(
+          audioState: current.copyWith(position: clamped),
+        ),);
+        if (clamped >= current.duration) {
+          _ttsService.stopReportingPosition();
+          emit(state.copyWith(
+            audioState: current.copyWith(
+              position: current.duration,
+              isPlaying: false,
+            ),
+          ),);
+          if (current.wasTruncated && current.maxDurationSeconds != null) {
+            _localizationCubit?.reportTtsPreviewEnded(
+              maxSeconds: current.maxDurationSeconds!,
+            );
+          }
+        }
+      },
+    );
+  }
+
   Future<void> playAudio(String languageCode, {bool isPremium = false}) async {
     if (state.site == null) return;
 
@@ -108,6 +155,12 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           // Stash the truncation flag on the audio state so screens can
           // render a "Preview" badge near the play button.
           wasTruncated: speakResult.wasTruncated,
+          // Stash the chunk the engine will speak — the transcript
+          // widget binds to this so it shows the spoken chunk, not the
+          // full description in the UI language.
+          spokenText: chunk.text,
+          // A fresh play means any prior pausedResumePoint is stale.
+          clearPausedResumePoint: true,
         ),
       ),);
 
@@ -115,37 +168,9 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // service self-calibrates chars/sec from observed progress events;
       // we just emit clamped positions and detect end-of-chunk via the
       // existing duration gate (preview-ended SnackBar still fires here).
-      final budget = state.audioState.duration;
-      _ttsService.startReportingPosition(
-        chunk.text,
-        budget: budget,
-        onPosition: (pos) {
-          if (isClosed) return;
-          final current = state.audioState;
-          if (!current.isPlaying) return;
-          final clamped =
-              pos > current.duration ? current.duration : pos;
-          // Cheap guard against a freakishly large jump that would let
-          // the bar shoot to the end on a single noisy callback.
-          if ((clamped - current.position).inMilliseconds < 0) return;
-          emit(state.copyWith(
-            audioState: current.copyWith(position: clamped),
-          ),);
-          if (clamped >= current.duration) {
-            _ttsService.stopReportingPosition();
-            emit(state.copyWith(
-              audioState: current.copyWith(
-                position: current.duration,
-                isPlaying: false,
-              ),
-            ),);
-            if (current.wasTruncated && current.maxDurationSeconds != null) {
-              _localizationCubit?.reportTtsPreviewEnded(
-                maxSeconds: current.maxDurationSeconds!,
-              );
-            }
-          }
-        },
+      _reinstallProgressReporter(
+        baseline: 0,
+        spokenText: chunk.text,
       );
     } catch (e) {
       _ttsService.stopReportingPosition();
@@ -160,49 +185,59 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
 
   Future<void> pauseAudio() async {
     _ttsService.stopReportingPosition();
-    await _ttsService.pause();
+    // pauseForRestart is platform-aware: iOS uses native pause (engine
+    // keeps its position internally), Android stops the engine and
+    // returns a snapshot the cubit stashes on AudioState so resumeAudio
+    // can re-speak the suffix from the right char offset.
+    final resumePoint = await _ttsService.pauseForRestart();
     emit(state.copyWith(
       audioState: state.audioState.copyWith(
         isPlaying: false,
         isPaused: true,
+        pausedResumePoint: resumePoint,
       ),
     ),);
   }
 
   Future<void> resumeAudio() async {
-    await _ttsService.resume();
+    final point = state.audioState.pausedResumePoint;
+    if (point == null) {
+      // iOS path — the engine kept its own position. Native resume()
+      // picks up exactly where it stopped. Re-install the reporter
+      // without a baseline so emitted positions start from zero.
+      await _ttsService.resume();
+      emit(state.copyWith(
+        audioState: state.audioState.copyWith(
+          isPlaying: true,
+          isPaused: false,
+        ),
+      ),);
+      _reinstallProgressReporter(
+        baseline: 0,
+        spokenText: state.audioState.spokenText,
+      );
+      return;
+    }
+
+    // Android path — re-speak the suffix and shift the visible position
+    // forward by the captured offset so the bar picks up where it left
+    // off instead of snapping to zero.
+    await _ttsService.resumeFrom(point);
+    final resumedAtMs = (point.charOffset * _ttsService.currentMsPerChar).round();
+    if (isClosed) return;
     emit(state.copyWith(
       audioState: state.audioState.copyWith(
         isPlaying: true,
         isPaused: false,
+        position: Duration(milliseconds: resumedAtMs),
+        // The resume point has been consumed.
+        clearPausedResumePoint: true,
       ),
     ),);
-    // Re-install the reporter — stopReportingPosition was called in
-    // pauseAudio, so we need a fresh calibration. We pass the same
-    // chunked text the engine is speaking so char offsets line up.
-    // The Android-pause-is-a-no-op bug is out of scope here; if it
-    // bites, the bar will drift until the next stop/play cycle.
-    if (state.site != null) {
-      final audioLang = state.audioState.languageCode;
-      final spoken = _ttsService.previewChunkFor(
-        state.site!.getDescription(audioLang),
-      );
-      _ttsService.startReportingPosition(
-        spoken.text,
-        budget: state.audioState.duration,
-        onPosition: (pos) {
-          if (isClosed) return;
-          final current = state.audioState;
-          if (!current.isPlaying) return;
-          final clamped =
-              pos > current.duration ? current.duration : pos;
-          if ((clamped - current.position).inMilliseconds < 0) return;
-          emit(state.copyWith(
-            audioState: current.copyWith(position: clamped),
-          ),);
-        },
-      );
-    }
+    _reinstallProgressReporter(
+      baseline: point.charOffset,
+      spokenText: point.text,
+    );
   }
 
   Future<void> stopAudio() async {

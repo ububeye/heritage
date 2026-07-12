@@ -1,5 +1,20 @@
 import 'package:equatable/equatable.dart';
 
+/// Snapshot of where playback was paused, used to resume on Android.
+/// `flutter_tts.pause()` is iOS-only; on Android we stop the engine and
+/// restart from this saved offset when the user resumes.
+class PausedResumePoint extends Equatable {
+  const PausedResumePoint({
+    required this.text,
+    required this.charOffset,
+  });
+  final String text;
+  final int charOffset;
+
+  @override
+  List<Object?> get props => [text, charOffset];
+}
+
 class AudioState extends Equatable {
 
   const AudioState({
@@ -12,6 +27,8 @@ class AudioState extends Equatable {
     this.errorMessage,
     this.wasTruncated = false,
     this.maxDurationSeconds,
+    this.spokenText = '',
+    this.pausedResumePoint,
   });
   final bool isPlaying;
   final bool isPaused;
@@ -31,6 +48,16 @@ class AudioState extends Equatable {
   /// (premium) playback. Surfaced to the UI so the badge can read
   /// "30-second preview" rather than hard-coding the number.
   final int? maxDurationSeconds;
+
+  /// The exact string the engine is speaking (or was speaking before a
+  /// pause). For free-tier playback this is the sentence-bounded chunk,
+  /// not the full description — used by the transcript view to render
+  /// the spoken text in the audio language.
+  final String spokenText;
+
+  /// Snapshot taken at pause time so the Android path can restart from
+  /// the right offset. Null on iOS where the engine keeps its own position.
+  final PausedResumePoint? pausedResumePoint;
 
   double get progress {
     if (duration.inMilliseconds == 0) return 0;
@@ -56,6 +83,9 @@ class AudioState extends Equatable {
     String? errorMessage,
     bool? wasTruncated,
     int? maxDurationSeconds,
+    String? spokenText,
+    PausedResumePoint? pausedResumePoint,
+    bool clearPausedResumePoint = false,
   }) {
     return AudioState(
       isPlaying: isPlaying ?? this.isPlaying,
@@ -67,6 +97,10 @@ class AudioState extends Equatable {
       errorMessage: errorMessage,
       wasTruncated: wasTruncated ?? this.wasTruncated,
       maxDurationSeconds: maxDurationSeconds ?? this.maxDurationSeconds,
+      spokenText: spokenText ?? this.spokenText,
+      pausedResumePoint: clearPausedResumePoint
+          ? null
+          : (pausedResumePoint ?? this.pausedResumePoint),
     );
   }
 
@@ -81,5 +115,7 @@ class AudioState extends Equatable {
         errorMessage,
         wasTruncated,
         maxDurationSeconds,
+        spokenText,
+        pausedResumePoint,
       ];
 }
