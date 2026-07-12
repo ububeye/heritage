@@ -34,7 +34,16 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<SiteDetailCubit>().loadSite(widget.siteId);
+    // Defer the load until after the first frame so the InheritedWidget
+    // tree (and SiteDetailCubit itself) is settled. initState runs before
+    // descendants finish mounting; reading providers here has historically
+    // thrown ProviderNotFoundException on cold launch — `mounted` guard
+    // backstops the case where the user navigates away before the callback
+    // fires.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<SiteDetailCubit>().loadSite(widget.siteId);
+    });
   }
 
   @override

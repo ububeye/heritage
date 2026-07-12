@@ -47,20 +47,22 @@ class StoneTownApp extends StatelessWidget {
           create: (_) => AuthCubit(authService: AuthService()),
         ),
         BlocProvider<SiteListCubit>(create: (_) => SiteListCubit()),
+        BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
+        BlocProvider<LanguageCubit>(create: (_) => LanguageCubit()),
+        // Registered before SiteDetailCubit: BlocProvider is lazy: false by
+        // default, so each create closure runs during MultiBlocProvider's
+        // first mount. SiteDetailCubit's create below reads
+        // LocalizationCubit, so LocalizationCubit has to be in the scope
+        // *above* it (and therefore registered earlier in the list).
+        BlocProvider<LocalizationCubit>(
+          create: (_) =>
+              LocalizationCubit(ttsService: ttsService)..loadTranslations(),
+        ),
         BlocProvider<SiteDetailCubit>(
-          // LocalizationCubit is registered below; SiteDetailCubit reads
-          // it lazily so the create closure here is called only when the
-          // first consumer accesses it (after both providers exist).
           create: (ctx) => SiteDetailCubit(
             ttsService: ttsService,
             localizationCubit: ctx.read<LocalizationCubit>(),
           ),
-        ),
-        BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
-        BlocProvider<LanguageCubit>(create: (_) => LanguageCubit()),
-        BlocProvider<LocalizationCubit>(
-          create: (_) =>
-              LocalizationCubit(ttsService: ttsService)..loadTranslations(),
         ),
         // PremiumCubit depends on AuthCubit for post-purchase user refresh
         // and on the billing provider for store calls. Both are picked up
