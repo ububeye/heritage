@@ -62,28 +62,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                       ),
                       const Divider(height: 1),
-                      _DropdownTile(
-                        icon: Icons.record_voice_over,
-                        title: _tr(locState, 'audio_language'),
-                        subtitle: authState.isPremium
-                            ? _tr(locState, 'benefit_audio_tours')
-                            : _tr(locState, 'upgrade_for_full_audio'),
-                        value: context.watch<LanguageCubit>().state.audioLanguage,
-                        items: authState.isPremium
-                            ? AppConstants.ttsLanguages
-                            : AppConstants.freeTtsLanguages,
-                        labels: (authState.isPremium
+                      // Wrapped in its own BlocBuilder so this dropdown
+                      // reacts to audio-language changes made on other
+                      // screens (e.g. the modal picker on the site
+                      // detail). Without it, the dropdown only rebuilt
+                      // when LocalizationCubit emitted — audio-language
+                      // flips that don't go through LocalizationCubit
+                      // were invisible here.
+                      BlocBuilder<LanguageCubit, LanguageState>(
+                        builder: (context, langState) {
+                          return _DropdownTile(
+                            icon: Icons.record_voice_over,
+                            title: _tr(locState, 'audio_language'),
+                            subtitle: authState.isPremium
+                                ? _tr(locState, 'benefit_audio_tours')
+                                : _tr(locState, 'upgrade_for_full_audio'),
+                            value: langState.audioLanguage,
+                            items: authState.isPremium
                                 ? AppConstants.ttsLanguages
-                                : AppConstants.freeTtsLanguages)
-                            .map(_audioLanguageLabel)
-                            .toList(),
-                        enabled: authState.isPremium,
-                        onChanged: (value) {
-                          if (value != null && authState.isPremium) {
-                            context.read<LanguageCubit>().setAudioLanguage(value);
-                          } else if (!authState.isPremium) {
-                            _showUpgradeDialog(context, locState);
-                          }
+                                : AppConstants.freeTtsLanguages,
+                            labels: (authState.isPremium
+                                    ? AppConstants.ttsLanguages
+                                    : AppConstants.freeTtsLanguages)
+                                .map(_audioLanguageLabel)
+                                .toList(),
+                            enabled: authState.isPremium,
+                            onChanged: (value) {
+                              if (value != null && authState.isPremium) {
+                                context
+                                    .read<LanguageCubit>()
+                                    .setAudioLanguage(value);
+                              } else if (!authState.isPremium) {
+                                _showUpgradeDialog(context, locState);
+                              }
+                            },
+                          );
                         },
                       ),
                     ],

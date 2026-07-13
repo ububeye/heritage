@@ -54,13 +54,25 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
     // 2. Reject destinations outside Stone Town up-front — the user can't
     // navigate to a place we don't cover.
     if (!StoneTownBounds.contains(LatLng(siteLat, siteLng))) {
-      _emitError(mySession, 'Destination is outside Stone Town');
+      _emitError(
+        mySession,
+        'Destination is outside Stone Town',
+        errorCode: 'destination_out_of_bounds',
+      );
       return;
     }
 
     final hasPermission = await _locationService.checkPermission();
     if (!hasPermission) {
-      _emitError(mySession, 'Location permission required');
+      // Surface a structured errorCode so the screen can render a
+      // localized "Location permission required" SnackBar with an
+      // "Open Settings" CTA, rather than the previous English-only
+      // free-text banner.
+      _emitError(
+        mySession,
+        'Location permission required',
+        errorCode: 'permission_denied',
+      );
       return;
     }
 
@@ -79,7 +91,7 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
       },
       onError: (error, _) {
         if (mySession != _sessionId) return;
-        _emitError(mySession, error.toString());
+        _emitError(mySession, error.toString(), errorCode: 'gps_error');
       },
     );
   }
@@ -121,7 +133,7 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
     }
   }
 
-  void _emitError(int session, String message) {
+  void _emitError(int session, String message, {String? errorCode}) {
     if (session != _sessionId) return;
     // Preserve the last known position / distance so the UI keeps showing
     // something useful — only flip status + message.
@@ -129,6 +141,7 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
       navigationState: state.navigationState.copyWith(
         status: NavigationStatus.error,
         errorMessage: message,
+        errorCode: errorCode,
       ),
     ),);
   }

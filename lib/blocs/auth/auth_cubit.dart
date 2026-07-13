@@ -196,13 +196,24 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Send a password-reset email. The user is *not* signed in here —
+  /// they tapped "Forgot password" from the login screen — so the
+  /// previous behaviour of emitting [AuthStatus.authenticated] was a
+  /// bug that flipped the root navigator into the home shell. We
+  /// surface the success via a dedicated [AuthStatus.passwordResetSent]
+  /// status so a [BlocListener] on the login screen can show a
+  /// "check your inbox" SnackBar.
   Future<void> resetPassword(String email) async {
     emit(state.copyWith(status: AuthStatus.loading));
 
     try {
       await _authService.resetPassword(email);
-      emit(state.copyWith(status: AuthStatus.authenticated));
+      if (isClosed) return;
+      emit(state.copyWith(
+        status: AuthStatus.passwordResetSent,
+      ),);
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(
         status: AuthStatus.error,
         errorMessage: e.toString(),

@@ -46,65 +46,78 @@ class RouteStep {
   /// single source of truth for instruction iconography across the app.
   IconData get icon => ManeuverIcon.forManeuver(maneuver);
 
-  /// Human-readable summary of the step — what UI surfaces to show.
-  /// Combines the modifier ("left"/"right") with the street name, falling
-  /// back to a generic instruction when no name is available.
-  String get description {
-    final parts = maneuver.split(' ');
-    final main = parts.first;
+  /// Localized, human-readable summary of the step. [tr] is a lookup
+  /// callback (typically `LocalizationCubit.translate`) that takes a
+  /// translation key and returns the localized string. The previous
+  /// `description` getter hardcoded English — Arabic users on this app
+  /// saw mixed English/Arabic turn-by-turn, which the audit flagged.
+  String localizedDescription(String Function(String key) tr) {
+    final main = mainManeuver;
+    final modifier = modifierManeuver;
+    // Arrival is a special case — there is no next street to name.
+    if (main == 'arrive') return tr('arrive_at_destination');
 
-    // Arrival is a special case — the user has reached the destination,
-    // there's no next street to name. The other "main-word" cases
-    // (roundabout, fork, merge) carry their own modifier and fall through
-    // to the normal handler below.
-    if (main == 'arrive') return 'Arrive at destination';
+    final modifierKey = _modifierTranslationKey(main, modifier);
+    final prettyModifier =
+        modifierKey != null ? tr(modifierKey) : null;
 
-    final modifier =
-        parts.length > 1 ? parts.sublist(1).join(' ') : null;
-    final prettyModifier = _prettyModifier(modifier);
     if (name.isNotEmpty) {
       return prettyModifier != null
-          ? '$prettyModifier onto $name'
-          : 'Continue on $name';
+          ? '$prettyModifier ${tr('onto')} $name'
+          : '${tr('continue_on')} $name';
     }
-    return prettyModifier ?? 'Continue straight';
+    return prettyModifier ?? tr('continue_straight');
   }
 
-  String? _prettyModifier(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-    switch (raw) {
+  /// Main maneuver word (`'turn'`, `'arrive'`, `'fork'`, ...). Splits
+  /// the OSRM maneuver string on the first space so the modifier (if
+  /// any) lands in [modifierManeuver].
+  String get mainManeuver {
+    final parts = maneuver.split(' ');
+    return parts.first;
+  }
+
+  /// Modifier token from the OSRM maneuver string (`'left'`,
+  /// `'slight left'`, etc.), or null when the maneuver has no
+  /// modifier. Multi-word modifiers are joined with a space, matching
+  /// OSRM's spelling.
+  String? get modifierManeuver {
+    final parts = maneuver.split(' ');
+    return parts.length > 1 ? parts.sublist(1).join(' ') : null;
+  }
+
+  /// Map OSRM maneuver (main + modifier) to a translation key. The UI
+  /// is responsible for fetching the localized string via [tr]; the
+  /// service stays in English-free code paths so it can be unit-tested
+  /// without a LocalizationCubit.
+  static String? _modifierTranslationKey(String main, String? modifier) {
+    if (main == 'depart') return null;
+    if (main == 'arrive') return 'arrive_at_destination';
+    if (main == 'fork') return 'at_the_fork';
+    if (main == 'merge') return 'merge_ahead';
+    if (main == 'roundabout' || main == 'rotary') {
+      return 'enter_roundabout';
+    }
+    if (main == 'uturn' || modifier == 'uturn') return 'make_uturn';
+    switch (modifier) {
       case 'left':
-        return 'Turn left';
+        return 'turn_left';
       case 'right':
-        return 'Turn right';
+        return 'turn_right';
       case 'slight left':
-        return 'Keep left';
+        return 'turn_slight_left';
       case 'slight right':
-        return 'Keep right';
+        return 'turn_slight_right';
       case 'sharp left':
-        return 'Sharp left';
+        return 'turn_sharp_left';
       case 'sharp right':
-        return 'Sharp right';
+        return 'turn_sharp_right';
       case 'straight':
-        return 'Continue straight';
-      case 'uturn':
-        return 'Make a U-turn';
-      case 'depart':
-        return null;
-      case 'arrive':
-        return 'Arrive at destination';
-      case 'fork':
-        return 'At the fork';
-      case 'merge':
-        return 'Merge';
-      case 'roundabout':
-      case 'rotary':
-        return 'Enter the roundabout';
+        return 'continue_straight';
       default:
-        // OSRM occasionally adds new modifiers; fall back to a
-        // title-cased version rather than dumping the snake_case
-        // string into the UI.
-        return raw[0].toUpperCase() + raw.substring(1);
+        // Unknown modifier — fall back to the raw OSRM text rather
+        // than dumping the snake_case string into the UI.
+        return null;
     }
   }
 }
@@ -436,12 +449,22 @@ class RoutingService {
         .timeout(timeout);
 
     if (resp.statusCode != 200) {
+      // Distinguish auth / config errors from transient engine errors
+      // so the operator can see a useful message instead of the
+      // generic "Routing offline" banner. The chain still falls
+      // through to OSRM by design (the caller can override), but the
+      // errorMessage now carries enough signal for the banner to
+      // surface "check your ORS API key" specifically.
+      final authFailure = resp.statusCode == 401 || resp.statusCode == 403;
+      final errorMessage = authFailure
+          ? 'routing_api_key_invalid' // localized key; UI swaps to text
+          : 'HTTP ${resp.statusCode}';
       return RouteResult.fallback(
         from: from,
         to: to,
         distanceMeters: straightLineMeters,
         provider: 'openRouteService',
-        errorMessage: 'HTTP ${resp.statusCode}',
+        errorMessage: errorMessage,
       );
     }
 

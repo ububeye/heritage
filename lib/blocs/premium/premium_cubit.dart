@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/services/billing_provider.dart';
 import '../../data/services/shared_prefs_service.dart';
+import '../../data/services/tts_service.dart';
 import '../auth/auth_cubit.dart';
 import 'premium_state.dart';
 
@@ -14,9 +15,11 @@ class PremiumCubit extends Cubit<PremiumState> {
     required BillingProvider billing,
     AuthCubit? auth,
     SharedPrefsService? prefs,
+    TtsService? ttsService,
   })  : _billing = billing,
         _auth = auth,
         _prefs = prefs ?? SharedPrefsService.instance,
+        _ttsService = ttsService,
         super(const PremiumState()) {
     _hydrateFromPrefs();
   }
@@ -24,6 +27,7 @@ class PremiumCubit extends Cubit<PremiumState> {
   final BillingProvider _billing;
   final AuthCubit? _auth;
   final SharedPrefsService _prefs;
+  final TtsService? _ttsService;
 
   /// Pull cached values from SharedPreferences so the screen paints with
   /// the right state on first frame. The BillingProvider call happens
@@ -38,13 +42,20 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// App-start hook. Asks the billing provider for the authoritative
   /// entitlement. Resilient to the provider being slow: we don't block
   /// the splash screen, the cubit re-emits when the answer arrives.
+  ///
+  /// Late-emit guards: every `emit` after an `await` checks `isClosed`
+  /// first. Without this, a logout / hot-restart while the billing SDK
+  /// is in flight throws "Bad state: Cannot emit new states after
+  /// calling close" and crashes the splash transition.
   Future<void> initialize() async {
+    if (isClosed) return;
     emit(state.copyWith(
       isLoading: true,
       lastOutcome: PurchaseOutcome.idle,
     ),);
     try {
       final entitlement = await _billing.currentEntitlement();
+      if (isClosed) return;
       if (entitlement != null) {
         emit(state.copyWith(
           isLoading: false,
@@ -54,13 +65,21 @@ class PremiumCubit extends Cubit<PremiumState> {
           lastReceiptId: entitlement.receiptId,
           lastOutcome: PurchaseOutcome.success,
         ),);
+        // Push the upgrade onto the TTS engine so the next speak()
+        // uses the unlimited chunk rather than the 30s preview.
+        _ttsService?.setPremium(true);
       } else {
         emit(state.copyWith(isLoading: false),);
       }
     } catch (e) {
-      // Non-fatal: leave premium=cache and let the user retry from the
-      // upgrade screen.
-      emit(state.copyWith(isLoading: false),);
+      // Surface the error so the upgrade screen can show a banner
+      // rather than silently leaving the user on a stale cached value.
+      if (isClosed) return;
+      emit(state.copyWith(
+        isLoading: false,
+        lastOutcome: PurchaseOutcome.error,
+        errorMessage: 'Could not verify entitlement: $e',
+      ),);
     }
   }
 
@@ -85,6 +104,7 @@ class PremiumCubit extends Cubit<PremiumState> {
     ),);
 
     final result = await _billing.purchase(state.selectedPlanId);
+    if (isClosed) return;
     await _applyResult(result);
   }
 
@@ -98,6 +118,7 @@ class PremiumCubit extends Cubit<PremiumState> {
       errorMessage: null,
     ),);
     final result = await _billing.restore();
+    if (isClosed) return;
     await _applyResult(result);
   }
 
@@ -110,6 +131,7 @@ class PremiumCubit extends Cubit<PremiumState> {
         ):
         await _prefs.setPremiumDemo(true);
         await _prefs.setShowPremiumOffer(false);
+        if (isClosed) return;
         emit(state.copyWith(
           isLoading: false,
           isPremium: true,
@@ -119,20 +141,29 @@ class PremiumCubit extends Cubit<PremiumState> {
           lastReceiptId: receiptId,
           lastOutcome: PurchaseOutcome.success,
         ),);
+        // Push the upgrade onto the TTS engine immediately so the
+        // next speak() (e.g. the user replays the audio right after
+        // buying) uses the unlimited chunk. Without this, the user
+        // would still hear the 30s preview until they restart the app.
+        _ttsService?.setPremium(true);
         // Mirror the entitlement onto the auth state so settings/profile
         // surfaces update without an app restart.
+        if (isClosed) return;
         await _mirrorUserPremium(true);
       case BillingCancelled():
+        if (isClosed) return;
         emit(state.copyWith(
           isLoading: false,
           lastOutcome: PurchaseOutcome.cancelled,
         ),);
       case BillingPending():
+        if (isClosed) return;
         emit(state.copyWith(
           isLoading: false,
           lastOutcome: PurchaseOutcome.pending,
         ),);
       case BillingError(:final message):
+        if (isClosed) return;
         emit(state.copyWith(
           isLoading: false,
           lastOutcome: PurchaseOutcome.error,
@@ -144,6 +175,7 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// User dismissed the first-login paywall.
   Future<void> skipPremiumOffer() async {
     await _prefs.setShowPremiumOffer(false);
+    if (isClosed) return;
     emit(state.copyWith(showPremiumOffer: false),);
   }
 
@@ -162,7 +194,9 @@ class PremiumCubit extends Cubit<PremiumState> {
   @visibleForTesting
   Future<void> setPremium(bool isPremium) async {
     await _prefs.setPremiumDemo(isPremium);
+    if (isClosed) return;
     emit(state.copyWith(isPremium: isPremium),);
+    _ttsService?.setPremium(isPremium);
   }
 
   Future<void> _mirrorUserPremium(bool value) async {

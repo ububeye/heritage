@@ -177,5 +177,32 @@
   "arrival_alerts": "Arifa za kufika",
   "arrival_alerts_subtitle": "Onyesha kadi ya kukaribisha unapofika kwenye eneo la urithi",
 
-  "replay": "Rudia"
+  "replay": "Rudia",
+  "no_results": "Hakuna matokeo",
+
+  "play": "Cheza",
+  "pause": "Simamisha",
+
+  "location_permission_required": "Ruhusa ya eneo inahitajika",
+  "action_open_settings": "Fungua Mipangilio",
+
+  "routing_api_key_invalid": "Ufunguo wa OpenRouteService API si sahihi. Angalia app_constants.dart na ujenge upya.",
+
+  "turn_left": "Geuka kushoto",
+  "turn_right": "Geuka kulia",
+  "turn_slight_left": "Shikilia kidogo kushoto",
+  "turn_slight_right": "Shikilia kidogo kulia",
+  "turn_sharp_left": "Geuka kushoto kwa nguvu",
+  "turn_sharp_right": "Geuka kulia kwa nguvu",
+  "continue_straight": "Endelea moja kwa moja",
+  "keep_left": "Shikilia kushoto",
+  "keep_right": "Shikilia kulia",
+  "make_uturn": "Rudi nyuma",
+  "enter_roundabout": "Ingia kwenye mzunguko",
+  "at_the_fork": "Katika njia panda",
+  "merge_ahead": "Jiunge",
+  "arrive_at_destination": "Wasili kwenye marudio",
+  "continue_on": "Endelea kwenye",
+  "onto": "kuelekea",
+  "routing_offline": "Uelekeo umekatwa — mstari wa moja kwa moja."
 }

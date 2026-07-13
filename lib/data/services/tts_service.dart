@@ -390,6 +390,33 @@ class TtsService {
     _activeResumeBaseline = 0;
   }
 
+  /// Re-install the progress reporter after an Android resume. The
+  /// engine is now speaking a *suffix* of the original chunk (the text
+  /// after the captured char offset), so the fingerprint and the
+  /// baseline need to be swapped atomically. Without this, the next
+  /// progress callback (whose `text` is the suffix) would mismatch the
+  /// original fingerprint and the bar would freeze.
+  ///
+  /// [suffix] is the text the engine is currently speaking (i.e.
+  /// `point.text.substring(point.charOffset)`). [baseline] is the
+  /// char offset of the suffix's first character in the original chunk,
+  /// used by [_offsetToDuration] to keep the visible position
+  /// monotonic across the pause. [onPosition] and [budget] are the same
+  /// values that would be passed to a fresh [startReportingPosition].
+  void restartReportingWithSuffix({
+    required String suffix,
+    required int baseline,
+    required ValueChanged<Duration> onPosition,
+    required Duration budget,
+  }) {
+    startReportingPosition(
+      suffix,
+      onPosition: onPosition,
+      budget: budget,
+      resumeBaseline: baseline,
+    );
+  }
+
   /// Cheap fingerprint of the chunk — length + first/last 4 chars.
   /// Stale-callback dedup doesn't need cryptographic strength; it just
   /// needs to distinguish between two `speak()` calls in quick succession.

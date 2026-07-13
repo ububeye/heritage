@@ -5,12 +5,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/language/language_cubit.dart';
+import '../../blocs/localization/localization_cubit.dart';
 import '../../blocs/navigation/navigation_cubit.dart';
 import '../../blocs/navigation/navigation_state.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
@@ -222,7 +224,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       listenWhen: (prev, next) =>
           prev.navigationState.status != next.navigationState.status ||
           prev.navigationState.currentPosition !=
-              next.navigationState.currentPosition,
+              next.navigationState.currentPosition ||
+          // Fire on a permission-denied transition so we can pop the
+          // "Open Settings" SnackBar. Re-emits with the same error
+          // code do not re-pop (the prev/next inequality gate).
+          (prev.navigationState.errorCode !=
+                  next.navigationState.errorCode &&
+              next.navigationState.errorCode == 'permission_denied'),
       listener: (context, state) {
         final navState = state.navigationState;
         final pos = navState.currentPosition;
@@ -281,6 +289,26 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           _cameraTicker?.stop();
           _cameraTicker?.dispose();
           _cameraTicker = null;
+        }
+
+        // 6. Permission denied → localized SnackBar with an
+        //    "Open Settings" CTA so the user can grant location
+        //    access without leaving the app and hunting through
+        //    the OS settings tree on their own.
+        if (navState.errorCode == 'permission_denied') {
+          final locCubit = context.read<LocalizationCubit>();
+          final messenger = ScaffoldMessenger.maybeOf(context);
+          messenger?.hideCurrentSnackBar();
+          messenger?.showSnackBar(
+            SnackBar(
+              content: Text(locCubit.translate('location_permission_required')),
+              duration: const Duration(seconds: 6),
+              action: SnackBarAction(
+                label: locCubit.translate('action_open_settings'),
+                onPressed: () => Geolocator.openAppSettings(),
+              ),
+            ),
+          );
         }
       },
       builder: (context, state) {
@@ -466,20 +494,30 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   }
 
   /// Banner shown above the map while the route is loading or when the
-  /// engine fell back to a straight line.
+  /// engine fell back to a straight line. Localized via the
+  /// [LocalizationCubit] the screen already reads from.
   Widget _buildBanner(BuildContext context, nav_model.NavigationState nav) {
     final hasError = nav.status == nav_model.NavigationStatus.error;
     if (!_routeLoading && !_routeIsFallback && !hasError) {
       return const SizedBox.shrink();
     }
+    final loc = context.read<LocalizationCubit>();
+    String tr(String key) => loc.translate(key);
+    // Auth-failure is a special-case routing errorMessage (the ORS
+    // provider returns the literal key "routing_api_key_invalid"
+    // when it gets a 401/403). Other errorMessage values are treated
+    // as free-text from the engine.
+    final isRoutingAuthFailure = _routeError == 'routing_api_key_invalid';
     final color = hasError ? AppColors.error : Colors.black87;
     final text = hasError
-        ? (nav.errorMessage ?? 'Navigation unavailable')
+        ? (nav.errorMessage ?? tr('error_generic'))
         : _routeLoading
-            ? 'Fetching route…'
-            : (_routeError != null
-                ? 'Routing offline — direct line.\n${_routeError!}'
-                : 'Routing offline — direct line.');
+            ? tr('loading')
+            : (isRoutingAuthFailure
+                ? tr('routing_api_key_invalid')
+                : (_routeError != null
+                    ? '${tr('routing_offline')}\n$_routeError'
+                    : tr('routing_offline')));
 
     return Positioned(
       top: MediaQuery.of(context).padding.top + 64,
@@ -685,8 +723,16 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   /// on the bottom sheet. Shows a maneuver icon, the instruction text
   /// ("Turn left onto Kenyatta Rd"), and the remaining distance to the
   /// next turn.
+  ///
+  /// Instructions are routed through [RouteStep.localizedDescription] so
+  /// the modifier ("Turn left", "Keep right", ...) renders in the
+  /// user's UI language instead of the hardcoded English that the
+  /// old `step.description` getter returned.
   Widget _buildTurnInstructionRow() {
+    if (_routeSteps.isEmpty) return const SizedBox.shrink();
     final step = _routeSteps[_activeStepIndex.clamp(0, _routeSteps.length - 1)];
+    final loc = context.read<LocalizationCubit>();
+    final instruction = step.localizedDescription(loc.translate);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -719,7 +765,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  step.description,
+                  instruction,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

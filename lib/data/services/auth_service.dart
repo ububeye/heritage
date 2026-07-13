@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_model.dart';
 import 'firestore_service.dart';
@@ -30,7 +29,15 @@ class AuthService {
       );
       if (credential.user == null) return null;
       final userModel = await _createUserModel(credential.user!);
-      await _syncUserToFirestore(userModel);
+      try {
+        await _syncUserToFirestore(userModel);
+      } catch (_) {
+        // Profile sync is best-effort here; the user is already
+        // signed-in via Firebase Auth. The legacy role fallback in
+        // _createUserModel has already applied the correct role, so
+        // admin promotions reach the user on the next login. Don't
+        // fail auth over a profile-write race.
+      }
       return userModel;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthError(e);
@@ -45,7 +52,11 @@ class AuthService {
       );
       if (credential.user == null) return null;
       final userModel = await _createUserModel(credential.user!);
-      await _syncUserToFirestore(userModel);
+      try {
+        await _syncUserToFirestore(userModel);
+      } catch (_) {
+        // Profile sync is best-effort — see signInWithEmail.
+      }
       return userModel;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthError(e);
@@ -66,26 +77,41 @@ class AuthService {
       final firebaseUser = await _auth.signInWithCredential(credential);
       if (firebaseUser.user == null) return null;
       final userModel = await _createUserModel(firebaseUser.user!);
-      await _syncUserToFirestore(userModel);
+      try {
+        await _syncUserToFirestore(userModel);
+      } catch (_) {
+        // Profile sync is best-effort — see signInWithEmail.
+      }
       return userModel;
     } catch (e) {
       throw Exception('Google sign-in failed: $e');
     }
   }
 
-  Future<void> _syncUserToFirestore(UserModel user) async {
+  /// Persist the user record so admin role changes, preferences, and
+  /// future Firestore-backed features can resolve them. Failures used
+  /// to be swallowed by [debugPrint] — that hid the path where a user
+  /// signs in but has no Firestore profile, so admin demotions never
+  /// reach them and the `users/{uid}.role` legacy fallback doesn't
+  /// fire either. Re-throw so [AuthCubit] can surface a
+  /// "profile couldn't be saved" error and the caller can retry.
+  ///
+  /// Returns true when the sync succeeded, false when the user already
+  /// existed (a no-op success). Throws on any network / Firestore error.
+  Future<bool> _syncUserToFirestore(UserModel user) async {
     try {
       final existingUser = await _firestoreService.getUserById(user.id);
       if (existingUser == null) {
         await _firestoreService.createUser(user);
+        return true;
       }
       // Do NOT overwrite role here. roles/{uid} is the source of truth;
       // the previous behaviour of calling updateUserRole() on every login
       // would silently undo admin demotions and re-promote anyone whose
       // email happened to start with "admin" or "premium".
+      return false;
     } catch (e) {
-      // Don't fail auth if Firestore sync fails
-      debugPrint('Failed to sync user to Firestore: $e');
+      throw Exception('Failed to sync user profile to Firestore: $e');
     }
   }
 

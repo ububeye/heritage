@@ -217,10 +217,17 @@ class _DetailScreenState extends State<DetailScreen> {
         }
 
         final site = state.site!;
+        // Note: uiLanguage, isPremium, and the audio language are read
+        // *inside* the relevant callbacks below — the previous build-time
+        // capture meant a user upgrading mid-session would still hear the
+        // 30s preview until they rebuilt the screen, and a language pick
+        // on this screen could race with an older closure.
         final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
-        final isPremium = context.read<AuthCubit>().state.isPremium;
         final locState = context.read<LocalizationCubit>().state;
+        // Needed for the upgrade banner and other build-time conditions.
+        final isPremium = context.read<AuthCubit>().state.isPremium;
         final allImages = site.allImages;
+        final isRtl = Directionality.of(context) == TextDirection.rtl;
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -369,14 +376,26 @@ class _DetailScreenState extends State<DetailScreen> {
                       // than one image. Tap-to-cycle works regardless of
                       // whether horizontal swipe is consumed by the parent
                       // CustomScrollView's vertical drag.
+                      //
+                      // Both icons and geometric positions are mirrored in
+                      // RTL so the visual "next" arrow still points forward
+                      // in reading order (`Directionality.of(context)` is
+                      // set by app.dart for AR, HE, FA, UR). Without this,
+                      // Arabic users tapping the visually-left button get
+                      // "next" instead of "previous" — a top RTL complaint.
                       if (allImages.length > 1) ...[
                         Positioned(
-                          left: 8,
+                          // In LTR, prev sits on the left; in RTL it's
+                          // on the right. `isRtl` was captured at the top
+                          // of build(); rebuilding on locale change is
+                          // handled by the surrounding BlocBuilder.
+                          left: isRtl ? null : 8,
+                          right: isRtl ? 8 : null,
                           top: 0,
                           bottom: 0,
                           child: Center(
                             child: _GalleryArrow(
-                              icon: Icons.chevron_left,
+                              icon: isRtl ? Icons.chevron_right : Icons.chevron_left,
                               semanticsLabel: locState.translations['previous_image'] ?? 'Previous image',
                               onTap: _currentImageIndex > 0
                                   ? () => _pageController.previousPage(
@@ -388,12 +407,13 @@ class _DetailScreenState extends State<DetailScreen> {
                           ),
                         ),
                         Positioned(
-                          right: 8,
+                          right: isRtl ? null : 8,
+                          left: isRtl ? 8 : null,
                           top: 0,
                           bottom: 0,
                           child: Center(
                             child: _GalleryArrow(
-                              icon: Icons.chevron_right,
+                              icon: isRtl ? Icons.chevron_left : Icons.chevron_right,
                               semanticsLabel: locState.translations['next_image'] ?? 'Next image',
                               onTap: _currentImageIndex < allImages.length - 1
                                   ? () => _pageController.nextPage(
@@ -495,11 +515,19 @@ class _DetailScreenState extends State<DetailScreen> {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            final audioLang = context.read<LanguageCubit>().state.audioLanguage;
-                            final isPremium = context.read<AuthCubit>().state.isPremium;
+                            // Read live values inside the callback so an
+                            // upgrade or audio-language flip on another
+                            // path is picked up by this very tap — the
+                            // previous build-time capture meant a user who
+                            // upgraded mid-session still got the 30s
+                            // preview until they rebuilt the screen.
+                            final audioLang =
+                                context.read<LanguageCubit>().state.audioLanguage;
+                            final liveIsPremium =
+                                context.read<AuthCubit>().state.isPremium;
                             context.read<SiteDetailCubit>().playAudio(
                                   audioLang,
-                                  isPremium: isPremium,
+                                  isPremium: liveIsPremium,
                                 );
                           },
                           icon: const Icon(Icons.play_arrow),
@@ -561,30 +589,53 @@ class _DetailScreenState extends State<DetailScreen> {
                   .watch<LanguageCubit>()
                   .state
                   .audioLanguage;
+              // Same logic for premium: a purchase that lands while the
+              // sheet is mounted should not require rebuilding the whole
+              // Scaffold to apply. The play callback closes over
+              // `audioLang`/`isPremium` from this build, but we re-read
+              // both inside the closure so the very next tap picks up
+              // any freshly-purchased premium state.
+              final liveIsPremium = sheetContext.read<AuthCubit>().state.isPremium;
               return AudioPlayerBar(
                 audioState: state.audioState,
                 audioLanguageCode: audioLang,
-                isPremium: isPremium,
+                isPremium: liveIsPremium,
                 onPlayPause: () {
                   final a = state.audioState;
+                  // Re-read inside the callback so a premium purchase
+                  // that landed during the current tap is honoured
+                  // (the user upgrading mid-session previously kept
+                  // hearing the 30s preview until they restarted).
+                  final freshLang =
+                      sheetContext.read<LanguageCubit>().state.audioLanguage;
+                  final freshPremium =
+                      sheetContext.read<AuthCubit>().state.isPremium;
                   if (a.isPlaying) {
                     context.read<SiteDetailCubit>().pauseAudio();
                   } else if (a.isPaused) {
                     context.read<SiteDetailCubit>().resumeAudio();
                   } else {
                     context.read<SiteDetailCubit>().playAudio(
-                          audioLang,
-                          isPremium: isPremium,
+                          freshLang,
+                          isPremium: freshPremium,
                         );
                   }
                 },
                 onLanguageTap: () =>
-                    _showAudioLanguagePicker(sheetContext, isPremium),
+                    _showAudioLanguagePicker(sheetContext, liveIsPremium),
                 onReplay: () async {
                   final cubit = context.read<SiteDetailCubit>();
+                  // Read live values BEFORE the await so we never use
+                  // sheetContext across an async gap (lint rule). The
+                  // values are looked up again on the next tap if
+                  // anything has changed.
+                  final freshLang =
+                      sheetContext.read<LanguageCubit>().state.audioLanguage;
+                  final freshPremium =
+                      sheetContext.read<AuthCubit>().state.isPremium;
                   await cubit.stopAudio();
                   if (!mounted) return;
-                  await cubit.playAudio(audioLang, isPremium: isPremium);
+                  await cubit.playAudio(freshLang, isPremium: freshPremium);
                 },
               );
             },

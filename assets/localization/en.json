@@ -177,5 +177,32 @@
   "arrival_alerts": "Arrival alerts",
   "arrival_alerts_subtitle": "Show a welcome card when you reach a heritage site",
 
-  "replay": "Replay"
+  "replay": "Replay",
+  "no_results": "No results",
+
+  "play": "Play",
+  "pause": "Pause",
+
+  "location_permission_required": "Location permission required",
+  "action_open_settings": "Open Settings",
+
+  "routing_api_key_invalid": "OpenRouteService API key is invalid. Check app_constants.dart and rebuild.",
+
+  "turn_left": "Turn left",
+  "turn_right": "Turn right",
+  "turn_slight_left": "Keep slightly left",
+  "turn_slight_right": "Keep slightly right",
+  "turn_sharp_left": "Sharp left",
+  "turn_sharp_right": "Sharp right",
+  "continue_straight": "Continue straight",
+  "keep_left": "Keep left",
+  "keep_right": "Keep right",
+  "make_uturn": "Make a U-turn",
+  "enter_roundabout": "Enter the roundabout",
+  "at_the_fork": "At the fork",
+  "merge_ahead": "Merge",
+  "arrive_at_destination": "Arrive at destination",
+  "continue_on": "Continue on",
+  "onto": "onto",
+  "routing_offline": "Routing offline — direct line."
 }

@@ -60,89 +60,111 @@ class AudioPlayerBar extends StatelessWidget {
         ],
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            // Circular play / pause button — accent fill, dark icon.
-            GestureDetector(
-              onTap: onPlayPause,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Icon(
-                  isPlaying ? Icons.pause : Icons.play_arrow,
-                  size: 32,
-                  color: AppColors.textOnAccent,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      _LanguageChip(
-                        code: audioLanguageCode,
-                        onTap: onLanguageTap,
+        child: BlocBuilder<LocalizationCubit, LocalizationState>(
+          // Single BlocBuilder for the whole bar — previously only the
+          // replay tooltip subscribed, so a language switch during
+          // playback left the rest of the bar with whatever labels it
+          // was built with. Now everything (play/pause label, replay
+          // tooltip) updates together.
+          builder: (context, locState) {
+            final playPauseLabel = locState.translations[
+                    isPlaying ? 'pause' : 'play'] ??
+                (isPlaying ? 'Pause' : 'Play');
+            return Row(
+              children: [
+                // Circular play / pause button — accent fill, dark icon.
+                // Wrapped in Semantics so TalkBack / VoiceOver can read
+                // what the button does (WCAG 2.1 SC 4.1.2). The label
+                // flips between 'Play' and 'Pause' in the active UI
+                // language. Localized tooltip pops up on long-press /
+                // hover for sighted users.
+                Semantics(
+                  label: playPauseLabel,
+                  button: true,
+                  child: GestureDetector(
+                    onTap: onPlayPause,
+                    child: Tooltip(
+                      message: playPauseLabel,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        child: Icon(
+                          isPlaying ? Icons.pause : Icons.play_arrow,
+                          size: 32,
+                          color: AppColors.textOnAccent,
+                        ),
                       ),
-                      if (showPreviewBadge) ...[
-                        const SizedBox(width: 6),
-                        const _PreviewBadge(),
-                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _LanguageChip(
+                            code: audioLanguageCode,
+                            onTap: onLanguageTap,
+                          ),
+                          if (showPreviewBadge) ...[
+                            const SizedBox(width: 6),
+                            const _PreviewBadge(),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      // While the engine is preparing (speak() dispatching,
+                      // voice switching, first progress callback not yet
+                      // fired) render an indeterminate bar instead of a
+                      // zero-fill determinate one — the previous behaviour
+                      // looked like a frozen 00:00 / 00:00 bar for the
+                      // first ~50-100 ms of every play.
+                      if (audioState.isLoading)
+                        const LinearProgressIndicator(
+                          backgroundColor:
+                              Color(0xFFE5DCC8), // AppColors.border
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(AppColors.accent),
+                          minHeight: 4,
+                        )
+                      else
+                        LinearProgressIndicator(
+                          value: audioState.progress.clamp(0.0, 1.0),
+                          backgroundColor: AppColors.border,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.accent,
+                          ),
+                          minHeight: 4,
+                        ),
+                      const SizedBox(height: 8),
+                      Text(
+                        audioState.isLoading
+                            ? 'Loading…'
+                            : '${audioState.positionText} / ${audioState.durationText}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  // While the engine is preparing (speak() dispatching,
-                  // voice switching, first progress callback not yet
-                  // fired) render an indeterminate bar instead of a
-                  // zero-fill determinate one — the previous behaviour
-                  // looked like a frozen 00:00 / 00:00 bar for the
-                  // first ~50-100 ms of every play.
-                  if (audioState.isLoading)
-                    const LinearProgressIndicator(
-                      backgroundColor: Color(0xFFE5DCC8), // AppColors.border
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.accent),
-                      minHeight: 4,
-                    )
-                  else
-                    LinearProgressIndicator(
-                      value: audioState.progress.clamp(0.0, 1.0),
-                      backgroundColor: AppColors.border,
-                      valueColor:
-                          const AlwaysStoppedAnimation<Color>(AppColors.accent),
-                      minHeight: 4,
-                    ),
-                  const SizedBox(height: 8),
-                  Text(
-                    audioState.isLoading
-                        ? 'Loading…'
-                        : '${audioState.positionText} / ${audioState.durationText}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (showReplay)
-              BlocBuilder<LocalizationCubit, LocalizationState>(
-                builder: (context, locState) {
-                  return IconButton(
+                ),
+                if (showReplay)
+                  IconButton(
                     tooltip: locState.translations['replay'] ?? 'Replay',
                     onPressed: onReplay,
                     icon: const Icon(Icons.replay, color: AppColors.primary),
-                  );
-                },
-              ),
-          ],
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );

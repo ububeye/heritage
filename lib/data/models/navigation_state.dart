@@ -18,6 +18,7 @@ class NavigationState extends Equatable {
     this.estimatedTime,
     this.hasArrived = false,
     this.errorMessage,
+    this.errorCode,
   });
   final NavigationStatus status;
   final Position? currentPosition;
@@ -26,6 +27,15 @@ class NavigationState extends Equatable {
   final bool hasArrived;
   final String? errorMessage;
 
+  /// Machine-readable error code, set together with [errorMessage].
+  /// Known values:
+  ///   * `'permission_denied'` — the user hasn't granted location
+  ///     permission. The UI should render a localized SnackBar with
+  ///     an "Open Settings" CTA pointing at `Geolocator.openAppSettings()`.
+  ///   * `'destination_out_of_bounds'` — the site is outside Stone Town.
+  ///   * `'gps_error'` — anything else (Geolocator stream error).
+  final String? errorCode;
+
   NavigationState copyWith({
     NavigationStatus? status,
     Position? currentPosition,
@@ -33,6 +43,7 @@ class NavigationState extends Equatable {
     Duration? estimatedTime,
     bool? hasArrived,
     String? errorMessage,
+    String? errorCode,
   }) {
     return NavigationState(
       status: status ?? this.status,
@@ -41,6 +52,7 @@ class NavigationState extends Equatable {
       estimatedTime: estimatedTime ?? this.estimatedTime,
       hasArrived: hasArrived ?? this.hasArrived,
       errorMessage: errorMessage,
+      errorCode: errorCode,
     );
   }
 
@@ -52,5 +64,6 @@ class NavigationState extends Equatable {
         estimatedTime,
         hasArrived,
         errorMessage,
+        errorCode,
       ];
 }

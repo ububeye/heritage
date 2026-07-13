@@ -102,8 +102,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           children: [
                             const Icon(Icons.search_off, size: 48, color: AppColors.textHint),
                             const SizedBox(height: 16),
+                            // The previous copy here showed the
+                            // search-hint string ('Search places…'),
+                            // which is misleading under a magnifier-off
+                            // icon — there's nothing to search, the
+                            // filter has no matches.
                             Text(
-                              _tr(locState, 'search_places'),
+                              _tr(locState, 'no_results'),
                               style: const TextStyle(
                                 fontSize: 18,
                                 color: AppColors.textSecondary,

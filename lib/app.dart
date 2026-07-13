@@ -67,11 +67,15 @@ class StoneTownApp extends StatelessWidget {
         // PremiumCubit depends on AuthCubit for post-purchase user refresh
         // and on the billing provider for store calls. Both are picked up
         // lazily inside the create callback so the AuthCubit instance above
-        // is the same one used by the rest of the app.
+        // is the same one used by the rest of the app. ttsService is
+        // injected so a successful purchase can flip TtsService.isPremium
+        // synchronously — without it, the user would still hear the 30s
+        // preview chunk on the next speak() until they restarted the app.
         BlocProvider<PremiumCubit>(
           create: (ctx) => PremiumCubit(
             billing: billing,
             auth: ctx.read<AuthCubit>(),
+            ttsService: ttsService,
           )..initialize(),
         ),
         BlocProvider<ExploreCubit>(create: (_) => ExploreCubit()),
@@ -80,10 +84,12 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       ],
       child: BlocListener<LocalizationCubit, LocalizationState>(
-        // Listen for three distinct TTS signals from LocalizationCubit:
+        // Listen for four distinct signals from LocalizationCubit:
         //   1. ttsFallback — the requested voice isn't installed
         //   2. ttsPreviewEndedAt — free-tier playback hit its time cap
         //   3. ttsEngineError — native TTS plugin reported a failure
+        //   4. invalidLanguageNotice — a setLanguage() call asked for an
+        //      unsupported code; we silently fell back to English
         // Each emits a one-shot SnackBar; we clear the signal after so
         // rebuilds don't re-fire the listener.
         listenWhen: (prev, curr) {
@@ -153,6 +159,25 @@ class StoneTownApp extends StatelessWidget {
                 ),
               );
             locCubit.clearTtsFallback();
+            return;
+          }
+
+          // Catch up on any invalid-language notice that setLanguage
+          // queued. Belt-and-braces: this fires from a BlocListener
+          // (which only re-fires on a state change), so a notice set
+          // between state changes is read on the next emit.
+          final invalid = locCubit.consumeInvalidLanguageNotice();
+          if (invalid != null) {
+            messenger
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '"$invalid" is not supported — using English.',
+                  ),
+                  duration: const Duration(seconds: 4),
+                ),
+              );
           }
         },
         child: BlocBuilder<LocalizationCubit, LocalizationState>(
