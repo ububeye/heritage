@@ -80,22 +80,43 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
       ],
       child: BlocListener<LocalizationCubit, LocalizationState>(
-        // Listen for two distinct TTS signals from LocalizationCubit:
+        // Listen for three distinct TTS signals from LocalizationCubit:
         //   1. ttsFallback — the requested voice isn't installed
         //   2. ttsPreviewEndedAt — free-tier playback hit its time cap
-        // Either emits a one-shot SnackBar; we clear the signal after so
+        //   3. ttsEngineError — native TTS plugin reported a failure
+        // Each emits a one-shot SnackBar; we clear the signal after so
         // rebuilds don't re-fire the listener.
         listenWhen: (prev, curr) {
           final fallbackFired =
               curr.ttsFallback != null && prev.ttsFallback != curr.ttsFallback;
           final previewFired = curr.ttsPreviewEndedAt != null &&
               prev.ttsPreviewEndedAt != curr.ttsPreviewEndedAt;
-          return fallbackFired || previewFired;
+          final engineErrorFired = curr.ttsEngineError != null &&
+              prev.ttsEngineError != curr.ttsEngineError;
+          return fallbackFired || previewFired || engineErrorFired;
         },
         listener: (context, locState) {
           final messenger = _rootMessengerKey.currentState;
           if (messenger == null) return;
           final locCubit = context.read<LocalizationCubit>();
+
+          // Engine errors take priority — they're the most actionable
+          // ("no network", "voice unavailable") and shouldn't be
+          // obscured by a softer fallback message.
+          if (locState.ttsEngineError != null) {
+            messenger
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Audio playback failed: ${locState.ttsEngineError}',
+                  ),
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+            locCubit.clearTtsEngineError();
+            return;
+          }
 
           if (locState.ttsPreviewEndedAt != null) {
             messenger

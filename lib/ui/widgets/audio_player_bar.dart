@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/colors.dart';
 import '../../core/utils/language_meta.dart';
+import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/audio_state.dart';
 
 /// Bottom-sheet audio player used on the site detail screen.
@@ -96,16 +98,32 @@ class AudioPlayerBar extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  LinearProgressIndicator(
-                    value: audioState.progress.clamp(0.0, 1.0),
-                    backgroundColor: AppColors.border,
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(AppColors.accent),
-                    minHeight: 4,
-                  ),
+                  // While the engine is preparing (speak() dispatching,
+                  // voice switching, first progress callback not yet
+                  // fired) render an indeterminate bar instead of a
+                  // zero-fill determinate one — the previous behaviour
+                  // looked like a frozen 00:00 / 00:00 bar for the
+                  // first ~50-100 ms of every play.
+                  if (audioState.isLoading)
+                    const LinearProgressIndicator(
+                      backgroundColor: Color(0xFFE5DCC8), // AppColors.border
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColors.accent),
+                      minHeight: 4,
+                    )
+                  else
+                    LinearProgressIndicator(
+                      value: audioState.progress.clamp(0.0, 1.0),
+                      backgroundColor: AppColors.border,
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                      minHeight: 4,
+                    ),
                   const SizedBox(height: 8),
                   Text(
-                    '${audioState.positionText} / ${audioState.durationText}',
+                    audioState.isLoading
+                        ? 'Loading…'
+                        : '${audioState.positionText} / ${audioState.durationText}',
                     style: TextStyle(
                       fontSize: 12,
                       color: scheme.onSurfaceVariant,
@@ -115,10 +133,14 @@ class AudioPlayerBar extends StatelessWidget {
               ),
             ),
             if (showReplay)
-              IconButton(
-                tooltip: 'Replay',
-                onPressed: onReplay,
-                icon: const Icon(Icons.replay, color: AppColors.primary),
+              BlocBuilder<LocalizationCubit, LocalizationState>(
+                builder: (context, locState) {
+                  return IconButton(
+                    tooltip: locState.translations['replay'] ?? 'Replay',
+                    onPressed: onReplay,
+                    icon: const Icon(Icons.replay, color: AppColors.primary),
+                  );
+                },
               ),
           ],
         ),

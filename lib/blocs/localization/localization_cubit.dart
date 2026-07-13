@@ -7,7 +7,14 @@ import '../../data/services/tts_service.dart';
 class LocalizationCubit extends Cubit<LocalizationState> {
   LocalizationCubit({required TtsService ttsService})
       : _ttsService = ttsService,
-        super(const LocalizationState());
+        super(const LocalizationState()) {
+    // Forward native TTS engine errors into the same SnackBar channel as
+    // voice-fallback and preview-ended. Without this, a "no network" or
+    // missing-voice failure shows as a silent dead bar.
+    _ttsService.setOnError((message) {
+      reportTtsEngineError(message);
+    });
+  }
 
   final TtsService _ttsService;
 
@@ -21,14 +28,22 @@ class LocalizationCubit extends Cubit<LocalizationState> {
       final translations = await _loadJsonFile(languageCode);
       // Sync the TTS voice to the persisted UI language on startup so a
       // user who set Swahili last session hears Swahili when they hit play,
-      // not whatever voice the engine booted with.
-      final ttsFallback = await _ttsService.setLanguage(languageCode);
+      // not whatever voice the engine booted with. We only surface a
+      // fallback signal when the requested voice is unavailable AND the
+      // engine's active voice is genuinely different from what the user
+      // asked for — otherwise the SnackBar would say e.g. "English voice
+      // not installed — playing in English", which is useless.
+      final outcome = await _ttsService.setLanguage(languageCode);
+      final activeCode = _ttsService.currentLanguage.split('-').first;
+      final isGenuineFallback =
+          outcome == SetLanguageOutcome.voiceUnavailable &&
+              activeCode != languageCode;
       emit(state.copyWith(
         status: LocalizationStatus.loaded,
         currentLanguage: languageCode,
         translations: translations,
-        ttsFallback: ttsFallback,
-        ttsFallbackRequested: ttsFallback == null ? null : languageCode,
+        ttsFallback: isGenuineFallback ? activeCode : null,
+        ttsFallbackRequested: isGenuineFallback ? languageCode : null,
       ),);
     } catch (e) {
       emit(state.copyWith(status: LocalizationStatus.error));
@@ -40,25 +55,32 @@ class LocalizationCubit extends Cubit<LocalizationState> {
 
     try {
       final translations = await _loadJsonFile(languageCode);
-      // Mirror the UI language onto the TTS engine. If the device doesn't
-      // have a matching voice, ttsFallback carries the language code that
-      // is actually being spoken — UI listens for that and shows a SnackBar.
-      final ttsFallback = await _ttsService.setLanguage(languageCode);
+      // Mirror the UI language onto the TTS engine. Only emit a fallback
+      // signal when the engine ended up speaking something different from
+      // what the user asked for; otherwise the SnackBar is misleading.
+      final outcome = await _ttsService.setLanguage(languageCode);
+      final activeCode = _ttsService.currentLanguage.split('-').first;
+      final isGenuineFallback =
+          outcome == SetLanguageOutcome.voiceUnavailable &&
+              activeCode != languageCode;
       emit(state.copyWith(
         currentLanguage: languageCode,
         translations: translations,
-        ttsFallback: ttsFallback,
-        ttsFallbackRequested: ttsFallback == null ? null : languageCode,
+        ttsFallback: isGenuineFallback ? activeCode : null,
+        ttsFallbackRequested: isGenuineFallback ? languageCode : null,
       ),);
     } catch (e) {
       // Fallback to English
       final translations = await _loadJsonFile('en');
-      final ttsFallback = await _ttsService.setLanguage('en');
+      final outcome = await _ttsService.setLanguage('en');
+      final activeCode = _ttsService.currentLanguage.split('-').first;
+      final isGenuineFallback =
+          outcome == SetLanguageOutcome.voiceUnavailable && activeCode != 'en';
       emit(state.copyWith(
         currentLanguage: 'en',
         translations: translations,
-        ttsFallback: ttsFallback,
-        ttsFallbackRequested: ttsFallback == null ? null : 'en',
+        ttsFallback: isGenuineFallback ? activeCode : null,
+        ttsFallbackRequested: isGenuineFallback ? 'en' : null,
       ),);
     }
   }
@@ -95,6 +117,20 @@ class LocalizationCubit extends Cubit<LocalizationState> {
     }
   }
 
+  /// Surface a native-TTS engine error (network failure, plugin
+  /// exception, missing voice). The root listener shows a SnackBar and
+  /// then calls [clearTtsEngineError] so rebuilds don't re-trigger.
+  void reportTtsEngineError(String message) {
+    emit(state.copyWith(ttsEngineError: message));
+  }
+
+  /// Reset the engine-error signal after the SnackBar has fired.
+  void clearTtsEngineError() {
+    if (state.ttsEngineError != null) {
+      emit(state.copyWith(clearTtsEngineError: true));
+    }
+  }
+
   /// Manually clear the ttsFallback signal after the UI has shown the
   /// SnackBar so the same state isn't redisplayed on rebuild.
   void clearTtsFallback() {
@@ -127,6 +163,7 @@ class LocalizationState {
     this.ttsFallback,
     this.ttsFallbackRequested,
     this.ttsPreviewEndedAt,
+    this.ttsEngineError,
   });
   final LocalizationStatus status;
   final String currentLanguage;
@@ -150,6 +187,12 @@ class LocalizationState {
   /// the SnackBar ("30-second preview ended…").
   final int? ttsPreviewEndedAt;
 
+  /// Set to the native-engine error message when the TTS plugin reports
+  /// a failure (network down, missing voice, plugin exception). Cleared
+  /// by the listener after the SnackBar has fired so rebuilds don't
+  /// re-trigger.
+  final String? ttsEngineError;
+
   LocalizationState copyWith({
     LocalizationStatus? status,
     String? currentLanguage,
@@ -157,8 +200,10 @@ class LocalizationState {
     String? ttsFallback,
     String? ttsFallbackRequested,
     int? ttsPreviewEndedAt,
+    String? ttsEngineError,
     bool clearTtsFallback = false,
     bool clearTtsPreviewEnded = false,
+    bool clearTtsEngineError = false,
   }) {
     return LocalizationState(
       status: status ?? this.status,
@@ -171,6 +216,8 @@ class LocalizationState {
       ttsPreviewEndedAt: clearTtsPreviewEnded
           ? null
           : (ttsPreviewEndedAt ?? this.ttsPreviewEndedAt),
+      ttsEngineError:
+          clearTtsEngineError ? null : (ttsEngineError ?? this.ttsEngineError),
     );
   }
 }

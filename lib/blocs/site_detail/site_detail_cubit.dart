@@ -128,12 +128,18 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // Switch the TTS voice to the requested language *before* speak so
       // we can detect a missing voice and surface it via LocalizationCubit
       // (the same SnackBar listener that handles UI-language changes).
-      final fallback = await _ttsService.setLanguage(languageCode);
-      if (fallback != null) {
-        _localizationCubit?.reportTtsFallback(
-          requestedCode: languageCode,
-          spokenCode: fallback,
-        );
+      // Only report a fallback when the engine actually ended up speaking
+      // a different language — otherwise the SnackBar would say e.g.
+      // "English voice not installed — playing in English".
+      final outcome = await _ttsService.setLanguage(languageCode);
+      if (outcome == SetLanguageOutcome.voiceUnavailable) {
+        final activeCode = _ttsService.currentLanguage.split('-').first;
+        if (activeCode != languageCode) {
+          _localizationCubit?.reportTtsFallback(
+            requestedCode: languageCode,
+            spokenCode: activeCode,
+          );
+        }
       }
       // Compute the chunk ourselves so we can hand the same string to
       // startReportingPosition — the engine's progress callback fires
@@ -203,9 +209,16 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     final point = state.audioState.pausedResumePoint;
     if (point == null) {
       // iOS path — the engine kept its own position. Native resume()
-      // picks up exactly where it stopped. Re-install the reporter
-      // without a baseline so emitted positions start from zero.
+      // picks up exactly where it stopped, but its emitted char offsets
+      // are into the original chunk (not from zero), so the bar would
+      // jump backwards without a baseline. Derive the baseline from the
+      // last-seen position using the currently calibrated chars/sec rate
+      // — falls back to the seed rate (80 ms/char) before any callback
+      // has been observed for the current speak().
       await _ttsService.resume();
+      final lastPosition = state.audioState.position;
+      final resumeOffsetChars =
+          (lastPosition.inMilliseconds / _ttsService.currentMsPerChar).round();
       emit(state.copyWith(
         audioState: state.audioState.copyWith(
           isPlaying: true,
@@ -213,7 +226,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         ),
       ),);
       _reinstallProgressReporter(
-        baseline: 0,
+        baseline: resumeOffsetChars,
         spokenText: state.audioState.spokenText,
       );
       return;

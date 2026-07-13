@@ -7,6 +7,27 @@ import '../models/audio_state.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
+/// What [TtsService.setLanguage] actually did. Replaces the previous
+/// `String?` return contract, which conflated "voice unavailable" with
+/// "engine kept the previous voice, which happens to equal what the
+/// caller asked for" — letting SnackBars lie about the language being
+/// spoken.
+enum SetLanguageOutcome {
+  /// The requested voice was found and is now active.
+  ok,
+
+  /// The voice isn't installed on this device. The engine kept its
+  /// previous voice (which may or may not match the requested code).
+  /// Callers should warn the user; the engine's active voice is
+  /// whatever it was before this call.
+  voiceUnavailable,
+
+  /// The requested code isn't in our supported map at all. Engine
+  /// state is unchanged. Callers should treat this as a programming
+  /// error or guard against unsupported codes up-front.
+  unsupportedCode,
+}
+
 /// What [TtsService.speak] decided to actually read out. Truncation is
 /// exposed as a first-class field so callers can prompt the user to
 /// upgrade instead of silently playing a clipped preview.
@@ -56,6 +77,19 @@ class TtsService {
   /// text (not just the offset) so it can re-speak the suffix.
   String? _activeSpokenText;
 
+  /// Optional sink for native-engine errors (network failures, missing
+  /// voices, plugin exceptions). The cubit routes these through the
+  /// localization SnackBar channel so the user sees a real message
+  /// instead of a silent dead bar. Set once via [setOnError]; may be
+  /// null when no listener is attached (e.g. in unit tests).
+  ValueChanged<String>? _onError;
+
+  /// Install a callback to receive native-engine error messages. Replaces
+  /// any previously-installed callback; pass null to detach.
+  void setOnError(ValueChanged<String>? onError) {
+    _onError = onError;
+  }
+
   /// Char offset added to every observed progress event. Set non-zero on
   /// Android resume so the visible position jumps forward to where the
   /// engine actually picks up, instead of resetting to 0.
@@ -90,6 +124,17 @@ class TtsService {
 
     _flutterTts.setErrorHandler((msg) {
       _state = TtsState.stopped;
+      // Forward native-engine errors to a registered listener. On
+      // Android the most common failure mode is "no network" for
+      // Google TTS voices — previously the user just saw a dead bar.
+      // Empty messages (some platforms fire a blank error on cancel)
+      // are suppressed so the cubit doesn't show an empty SnackBar.
+      // The plugin types this parameter as dynamic; coerce defensively.
+      final raw = msg is String ? msg : '';
+      final trimmed = raw.trim();
+      if (trimmed.isNotEmpty) {
+        _onError?.call(trimmed);
+      }
     });
 
     // Install once; the handler routes through the *_active* fields
@@ -118,15 +163,16 @@ class TtsService {
 
   /// Switch the TTS voice to the locale matching [languageCode].
   ///
-  /// Returns `null` on success. If the device does not have a voice for the
-  /// requested language, the call falls back to the default voice
-  /// (typically en-US) and returns the language code that is actually being
-  /// used — letting callers surface a "voice for X not installed" message
-  /// instead of silently playing in a different language.
+  /// Returns a [SetLanguageOutcome] describing what happened. Callers
+  /// should warn the user on [SetLanguageOutcome.voiceUnavailable] —
+  /// the engine keeps its previous voice, which may or may not match
+  /// the requested code. To find the engine's active voice, read
+  /// [currentLanguage] after the call.
   ///
-  /// If [languageCode] is not in our supported map at all, returns 'en'.
-  Future<String?> setLanguage(String languageCode) async {
-    final languageMap = {
+  /// [SetLanguageOutcome.unsupportedCode] means the code isn't in our
+  /// supported map at all; the engine is untouched.
+  Future<SetLanguageOutcome> setLanguage(String languageCode) async {
+    const languageMap = {
       'en': 'en-US',
       'sw': 'sw-KE',
       'fr': 'fr-FR',
@@ -138,22 +184,20 @@ class TtsService {
 
     final ttsLanguage = languageMap[languageCode];
     if (ttsLanguage == null) {
-      // Unknown code — keep the previous voice but report the fallback
-      // we'd ideally have used so the caller can warn.
-      return _currentLanguage.split('-').first;
+      return SetLanguageOutcome.unsupportedCode;
     }
 
     final availableLanguages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     if (!availableLanguages.contains(ttsLanguage)) {
       // Voice not installed. Don't switch; the engine keeps its previous
-      // (or default) voice. Report the previously-active language code so
-      // the caller can show a SnackBar.
-      return _currentLanguage.split('-').first;
+      // (or default) voice. Caller can read `currentLanguage` to find out
+      // what's actually playing.
+      return SetLanguageOutcome.voiceUnavailable;
     }
 
     await _flutterTts.setLanguage(ttsLanguage);
     _currentLanguage = ttsLanguage;
-    return null;
+    return SetLanguageOutcome.ok;
   }
 
   Future<List<String>> getAvailableLanguages() async {
