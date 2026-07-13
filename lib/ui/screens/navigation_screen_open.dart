@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/services/shared_prefs_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -266,9 +267,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           }
         }
 
-        // 4. Show arrival overlay once.
+        // 4. Show arrival overlay once. Gated by the arrival-alerts preference
+//    so users who turned off the welcome card in Settings don't get a
+//    surprise modal as they walk through Stone Town.
         if (navState.status == nav_model.NavigationStatus.arrived &&
-            !_showArrivalOverlay) {
+            !_showArrivalOverlay &&
+            SharedPrefsService.instance.arrivalAlertsEnabled) {
           setState(() => _showArrivalOverlay = true);
         }
 

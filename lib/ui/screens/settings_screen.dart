@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/language_meta.dart';
 import '../../core/utils/nav_guard.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -10,6 +10,7 @@ import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../blocs/theme/theme_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
+import '../../data/services/tile_cache_service.dart';
 import 'login_screen.dart';
 import 'upgrade_screen.dart';
 import 'user_profile_screen.dart';
@@ -22,6 +23,11 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  /// Localized display name for an audio-language dropdown item. Uses
+  /// the same in-language names as the audio bar's language chip so the
+  /// two pickers stay in sync.
+  static String _audioLanguageLabel(String code) => LanguageMeta.name(code);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,8 +51,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: _tr(locState, 'app_language'),
                         subtitle: _tr(locState, 'choose_language'),
                         value: locState.currentLanguage,
-                        items: const ['en', 'sw'],
-                        labels: [_tr(locState, 'english'), _tr(locState, 'swahili')],
+                        items: AppConstants.uiLanguages,
+                        labels: AppConstants.uiLanguages
+                            .map((c) => _tr(locState, c == 'en' ? 'english' : 'swahili'))
+                            .toList(),
                         onChanged: (value) {
                           if (value != null) {
                             context.read<LocalizationCubit>().setLanguage(value);
@@ -64,9 +72,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         items: authState.isPremium
                             ? AppConstants.ttsLanguages
                             : AppConstants.freeTtsLanguages,
-                        labels: authState.isPremium
-                            ? const ['English', 'Swahili', 'French', 'German', 'Arabic', 'Italian', 'Spanish']
-                            : const ['English', 'Swahili'],
+                        labels: (authState.isPremium
+                                ? AppConstants.ttsLanguages
+                                : AppConstants.freeTtsLanguages)
+                            .map(_audioLanguageLabel)
+                            .toList(),
                         enabled: authState.isPremium,
                         onChanged: (value) {
                           if (value != null && authState.isPremium) {
@@ -79,25 +89,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _SectionTitle(title: 'Map provider'),
+                  _SectionTitle(title: _tr(locState, 'map_provider')),
                   _SettingsCard(
                     children: [
                       _MapProviderTile(),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _SectionTitle(title: 'Appearance'),
+                  _SectionTitle(title: _tr(locState, 'appearance')),
                   _SettingsCard(
                     children: [
                       BlocBuilder<ThemeCubit, ThemeMode>(
                         builder: (context, themeMode) {
                           return _DropdownTile(
                             icon: Icons.palette,
-                            title: 'Theme',
-                            subtitle: 'Choose app color theme',
+                            title: _tr(locState, 'theme'),
+                            subtitle: _tr(locState, 'choose_theme'),
                             value: themeMode.toString().split('.').last,
                             items: const ['light', 'dark', 'system'],
-                            labels: const ['Light (White)', 'Dark', 'System Default'],
+                            labels: [
+                              _tr(locState, 'theme_light'),
+                              _tr(locState, 'theme_dark'),
+                              _tr(locState, 'theme_system'),
+                            ],
                             onChanged: (value) {
                               if (value != null) {
                                 ThemeMode newMode;
@@ -119,6 +133,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                         },
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _SectionTitle(title: _tr(locState, 'storage')),
+                  _SettingsCard(
+                    children: [
+                      _ClearMapCacheTile(),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _SectionTitle(title: _tr(locState, 'notifications')),
+                  _SettingsCard(
+                    children: [
+                      _ArrivalAlertsTile(),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -190,20 +218,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: _buildLocalizedText('version'),
                         trailing: const Text('1.0.0'),
                       ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.privacy_tip_outlined, color: AppColors.primary),
-                        title: _buildLocalizedText('privacy_policy'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _openUrl('https://stonetownguide.com/privacy'),
-                      ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.description_outlined, color: AppColors.primary),
-                        title: _buildLocalizedText('terms_of_service'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => _openUrl('https://stonetownguide.com/terms'),
-                      ),
+                      // Privacy Policy and Terms of Service tiles were
+                      // removed — the placeholder URLs pointed at pages
+                      // that don't exist (stonetownguide.com/{privacy,
+                      // terms}) and would 404. They will return once real
+                      // pages are hosted.
                     ],
                   ),
                 ],
@@ -278,13 +297,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }
 
@@ -384,42 +396,240 @@ class _DropdownTile extends StatelessWidget {
   }
 }
 
-/// "Map provider" tile — switches between the open-source path (default)
-/// and the Google Maps path. The Google option is greyed out when no API
-/// key has been configured in `app_constants.dart`.
-class _MapProviderTile extends StatelessWidget {
-
+/// "Map provider" tile — reflects the active provider and lets the user
+/// swap to Google when an API key is configured. When `googleMapsApiKey`
+/// is null the Google row is rendered disabled with an inline hint so the
+/// user understands why they can't select it.
+class _MapProviderTile extends StatefulWidget {
   const _MapProviderTile();
 
   @override
+  State<_MapProviderTile> createState() => _MapProviderTileState();
+}
+
+class _MapProviderTileState extends State<_MapProviderTile> {
+  late String _active;
+
+  @override
+  void initState() {
+    super.initState();
+    _active = SharedPrefsService.instance.mapProvider;
+  }
+
+  void _selectProvider(String provider) {
+    if (provider == _active) return;
+    setState(() => _active = provider);
+    SharedPrefsService.instance.setMapProvider(provider);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.map, color: AppColors.primary),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Text(
-                  'Map provider',
-                  style: TextStyle(fontSize: 16),
+    return BlocBuilder<LocalizationCubit, LocalizationState>(
+      builder: (context, locState) {
+        String tr(String key) => locState.translations[key] ?? key;
+        final googleEnabled = AppConstants.googleMapsApiKey != null &&
+            AppConstants.googleMapsApiKey!.isNotEmpty;
+
+        return Column(
+          children: [
+            RadioListTile<String>(
+              value: AppConstants.mapProviderOpen,
+              groupValue: _active,
+              onChanged: (v) {
+                if (v != null) _selectProvider(v);
+              },
+              title: Text(tr('map_provider_open')),
+              subtitle: Text(
+                tr('map_provider_open_subtitle'),
+                style: const TextStyle(fontSize: 12),
+              ),
+              secondary: const Icon(Icons.public, color: AppColors.primary),
+            ),
+            const Divider(height: 1),
+            RadioListTile<String>(
+              value: AppConstants.mapProviderGoogle,
+              groupValue: _active,
+              // Force-disable when no API key has been configured so the
+              // user can't pick a path that will crash on launch.
+              onChanged: googleEnabled
+                  ? (v) {
+                      if (v != null) _selectProvider(v);
+                    }
+                  : null,
+              title: Text(
+                tr('map_provider_google'),
+                style: TextStyle(
+                  color: googleEnabled
+                      ? null
+                      : AppColors.textHint,
                 ),
+              ),
+              subtitle: Text(
+                googleEnabled
+                    ? tr('map_provider_google_subtitle')
+                    : tr('map_provider_google_disabled'),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: googleEnabled
+                      ? AppColors.textSecondary
+                      : AppColors.textHint,
+                ),
+              ),
+              secondary: Icon(
+                Icons.map,
+                color: googleEnabled ? AppColors.primary : AppColors.textHint,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// "Storage → Clear map cache" tile. Reads the current disk-cache size
+/// on first build, refreshes it after a clear, and shows the user the
+/// freed-up space in a human-readable form (e.g. "12.4 MB"). Surfaced
+/// under Appearance → Storage in the Settings tree.
+class _ClearMapCacheTile extends StatefulWidget {
+  const _ClearMapCacheTile();
+
+  @override
+  State<_ClearMapCacheTile> createState() => _ClearMapCacheTileState();
+}
+
+class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
+  int _bytes = -1; // -1 == unknown / not yet calculated
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshSize();
+  }
+
+  Future<void> _refreshSize() async {
+    if (!TileCacheService.instance.isReady) {
+      // The service is best-effort — silently show "0" when the FS
+      // cache wasn't initialised.
+      setState(() => _bytes = 0);
+      return;
+    }
+    final size = await TileCacheService.instance.getTotalSizeBytes();
+    if (mounted) setState(() => _bytes = size);
+  }
+
+  Future<void> _onClear() async {
+    if (!TileCacheService.instance.isReady) return;
+    await TileCacheService.instance.clear();
+    if (!mounted) return;
+    setState(() => _bytes = 0);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(_trFromLoc(context, 'cache_cleared')),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LocalizationCubit, LocalizationState>(
+      builder: (context, locState) {
+        String tr(String key) => locState.translations[key] ?? key;
+        final sizeLabel = _bytes < 0
+            ? tr('cache_size_unknown')
+            : _formatBytes(_bytes);
+        return ListTile(
+          leading: const Icon(Icons.cleaning_services, color: AppColors.primary),
+          title: Text(tr('clear_map_cache')),
+          subtitle: Text(
+            tr('clear_map_cache_subtitle'),
+            style: const TextStyle(fontSize: 12),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                sizeLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: _bytes > 0
+                      ? AppColors.textSecondary
+                      : AppColors.textHint,
+                ),
+              ),
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: _bytes > 0 ? _onClear : null,
+                child: Text(tr('clear_map_cache')),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: const Text(
-              'OpenStreetMap — free and works without an API key.\nThe map covers Stone Town only.',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-            ),
+        );
+      },
+    );
+  }
+}
+
+/// Helper: read a localization key outside of a BlocBuilder context —
+/// used by [SnackBar] callbacks fired from imperative handlers.
+String _trFromLoc(BuildContext context, String key) {
+  try {
+    return context.read<LocalizationCubit>().translate(key);
+  } catch (_) {
+    return key;
+  }
+}
+
+/// "Notifications → Arrival alerts" tile. Toggle is persisted via
+/// SharedPrefs and read at the navigation-screen arrival-detection
+/// site so users who turn it off don't see the welcome modal.
+class _ArrivalAlertsTile extends StatefulWidget {
+  const _ArrivalAlertsTile();
+
+  @override
+  State<_ArrivalAlertsTile> createState() => _ArrivalAlertsTileState();
+}
+
+class _ArrivalAlertsTileState extends State<_ArrivalAlertsTile> {
+  late bool _enabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = SharedPrefsService.instance.arrivalAlertsEnabled;
+  }
+
+  Future<void> _toggle(bool value) async {
+    setState(() => _enabled = value);
+    await SharedPrefsService.instance.setArrivalAlertsEnabled(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LocalizationCubit, LocalizationState>(
+      builder: (context, locState) {
+        String tr(String key) => locState.translations[key] ?? key;
+        return SwitchListTile(
+          secondary: const Icon(Icons.notifications_active, color: AppColors.primary),
+          title: Text(tr('arrival_alerts')),
+          subtitle: Text(
+            tr('arrival_alerts_subtitle'),
+            style: const TextStyle(fontSize: 12),
           ),
-        ],
-      ),
+          value: _enabled,
+          onChanged: _toggle,
+        );
+      },
     );
   }
 }

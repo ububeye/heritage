@@ -170,4 +170,19 @@ class SharedPrefsService {
   Future<void> setThemeMode(String mode) async {
     await _preferences.setString(AppConstants.keyThemeMode, mode);
   }
+
+  // Arrival alerts. When true (the default) the navigation screen
+  // surfaces an ArrivalOverlay modal when the user enters a site's
+  // entry radius. When false the GPS-driven arrival detection is
+  // suppressed — the map continues to update position, but no
+  // modal pops up.
+  bool get arrivalAlertsEnabled =>
+      _preferences.getBool(AppConstants.keyArrivalAlertsEnabled) ?? true;
+
+  Future<void> setArrivalAlertsEnabled(bool enabled) async {
+    await _preferences.setBool(
+      AppConstants.keyArrivalAlertsEnabled,
+      enabled,
+    );
+  }
 }

@@ -154,5 +154,28 @@
   "delete_site_a11y": "Futa eneo",
   "delete_user_a11y": "Futa mtumiaji",
   "previous_image": "Picha iliyotangulia",
-  "next_image": "Picha inayofuata"
+  "next_image": "Picha inayofuata",
+
+  "map_provider": "Mtoa ramani",
+  "appearance": "Mwonekano",
+  "theme": "Mandhari",
+  "theme_light": "Mwanga",
+  "theme_dark": "Giza",
+  "theme_system": "Chaguo-msingi la mfumo",
+  "choose_theme": "Chagua mandhari ya rangi ya programu",
+  "map_provider_open": "OpenStreetMap",
+  "map_provider_google": "Google Maps",
+  "map_provider_open_subtitle": "Bure, inafanya kazi bila ufunguo wa API. Inafunika Stone Town peke yake.",
+  "map_provider_google_subtitle": "Inahitaji ufunguo wa Google Maps API katika app_constants.dart",
+  "map_provider_google_disabled": "Ongeza ufunguo wa API katika app_constants.dart ili kuwezesha",
+  "storage": "Hifadhi",
+  "clear_map_cache": "Futa kabla ya ramani",
+  "clear_map_cache_subtitle": "Punguza nafasi kwa kuondoa vigae vya ramani vilivyopakuliwa",
+  "cache_size_unknown": "Inakokotoa…",
+  "cache_cleared": "Kabla ya ramani imefutwa",
+  "notifications": "Arifa",
+  "arrival_alerts": "Arifa za kufika",
+  "arrival_alerts_subtitle": "Onyesha kadi ya kukaribisha unapofika kwenye eneo la urithi",
+
+  "replay": "Rudia"
 }

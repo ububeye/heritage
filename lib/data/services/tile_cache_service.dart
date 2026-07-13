@@ -230,6 +230,47 @@ class TileCacheService {
     }
     return '${layer.path}/$y.png';
   }
+
+  /// Total size of the on-disk tile cache in bytes. Returns 0 when the
+  /// service isn't initialised or the directory is missing. Walks the
+  /// tree with `Directory.list` rather than a recursive file scan so
+  /// it stays cheap on large caches.
+  Future<int> getTotalSizeBytes() async {
+    final dir = _rootDir;
+    if (dir == null || !await dir.exists()) return 0;
+    var total = 0;
+    try {
+      await for (final entity in dir.list(recursive: true)) {
+        if (entity is File) {
+          try {
+            total += await entity.length();
+          } catch (_) {
+            // File vanished between list and stat — ignore.
+          }
+        }
+      }
+    } catch (_) {
+      // Directory traversal failed — return what we have so far.
+    }
+    return total;
+  }
+
+  /// Wipe the on-disk cache and the in-memory hot cache. The in-flight
+  /// dedup map is left alone (those fetches will still complete; the
+  /// bytes just won't be written to disk anymore). Safe to call when
+  /// the service hasn't been initialised — it's a no-op.
+  Future<void> clear() async {
+    _hot.clear();
+    final dir = _rootDir;
+    if (dir == null || !await dir.exists()) return;
+    try {
+      await dir.delete(recursive: true);
+      // Re-create the root so subsequent writes don't have to.
+      await dir.create(recursive: true);
+    } catch (_) {
+      // Best-effort. The next tile fetch will recreate the directory.
+    }
+  }
 }
 
 /// flutter_map `TileProvider` subclass that delegates every tile

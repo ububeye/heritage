@@ -154,5 +154,28 @@
   "delete_site_a11y": "Delete site",
   "delete_user_a11y": "Delete user",
   "previous_image": "Previous image",
-  "next_image": "Next image"
+  "next_image": "Next image",
+
+  "map_provider": "Map provider",
+  "appearance": "Appearance",
+  "theme": "Theme",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+  "theme_system": "System default",
+  "choose_theme": "Choose app color theme",
+  "map_provider_open": "OpenStreetMap",
+  "map_provider_google": "Google Maps",
+  "map_provider_open_subtitle": "Free, works without an API key. Coverage is Stone Town only.",
+  "map_provider_google_subtitle": "Requires a Google Maps API key in app_constants.dart",
+  "map_provider_google_disabled": "Add an API key in app_constants.dart to enable",
+  "storage": "Storage",
+  "clear_map_cache": "Clear map cache",
+  "clear_map_cache_subtitle": "Free up space by removing downloaded map tiles",
+  "cache_size_unknown": "Calculating…",
+  "cache_cleared": "Map cache cleared",
+  "notifications": "Notifications",
+  "arrival_alerts": "Arrival alerts",
+  "arrival_alerts_subtitle": "Show a welcome card when you reach a heritage site",
+
+  "replay": "Replay"
 }
