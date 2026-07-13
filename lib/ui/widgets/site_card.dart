@@ -87,26 +87,39 @@ class SiteCard extends StatelessWidget {
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: GestureDetector(
-                        onTap: onToggleFavorite,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 4,
+                      child: BlocBuilder<LocalizationCubit, LocalizationState>(
+                        builder: (context, locState) {
+                          final label = isFavorite
+                              ? (locState.translations['remove_from_favorites'] ??
+                                  'Remove from favorites')
+                              : (locState.translations['add_to_favorites'] ??
+                                  'Add to favorites');
+                          return Semantics(
+                            label: label,
+                            button: true,
+                            child: GestureDetector(
+                              onTap: onToggleFavorite,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.2),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                                  color: isFavorite ? Colors.red : AppColors.textSecondary,
+                                  size: 20,
+                                ),
                               ),
-                            ],
-                          ),
-                          child: Icon(
-                            isFavorite ? Icons.favorite : Icons.favorite_border,
-                            color: isFavorite ? Colors.red : AppColors.textSecondary,
-                            size: 20,
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
 
