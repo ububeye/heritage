@@ -508,8 +508,15 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             initialLat: lat,
             initialLng: lng,
             onLocationPicked: (pickedLat, pickedLng) {
-              _latController.text = pickedLat.toStringAsFixed(6);
-              _lngController.text = pickedLng.toStringAsFixed(6);
+              // setState so the lat/lng text inputs below the map re-render
+              // with the freshly-picked coordinates. Without this the inputs
+              // keep showing the previous values until the user taps into
+              // them (assigning to TextEditingController.text doesn't
+              // notify the framework).
+              setState(() {
+                _latController.text = pickedLat.toStringAsFixed(6);
+                _lngController.text = pickedLng.toStringAsFixed(6);
+              });
             },
           ),
         ),
