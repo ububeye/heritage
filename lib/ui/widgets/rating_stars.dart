@@ -1,5 +1,6 @@
+import '../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
-import '../../core/constants/colors.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class RatingStars extends StatelessWidget {
@@ -69,7 +70,7 @@ class RatingBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppConstants.buttonBorderRadius),
+        borderRadius: BorderRadius.circular(AppRadius.button),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

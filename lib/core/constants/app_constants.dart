@@ -12,13 +12,7 @@ class AppConstants {
   static const int locationUpdateIntervalMs = 5000;
   static const double locationAccuracyMeters = 10.0;
 
-  // UI
-  static const double cardBorderRadius = 12.0;
-  static const double buttonBorderRadius = 8.0;
-  static const double minTouchTarget = 48.0;
-  static const double elevationLow = 2.0;
-  static const double elevationMedium = 4.0;
-  static const double elevationHigh = 8.0;
+  // UI constants moved to app_radius.dart and app_shadows.dart
 
   // Image Transformations
   static const String cloudinaryThumb = 'w_500,c_fill,q_auto,f_auto';
@@ -41,11 +35,7 @@ class AppConstants {
     'Mastercard',
   ];
 
-  // Animation Durations (ms)
-  static const int animationFast = 200;
-  static const int animationNormal = 300;
-  static const int animationSlow = 500;
-
+  // Animation Durations moved to app_durations.dart
   // Map
   static const double defaultZoom = 15.0;
   static const double markerZoom = 17.0;
@@ -72,9 +62,7 @@ class AppConstants {
   static const double stoneTownMinZoom = 14.0;
   static const double stoneTownMaxZoom = 19.0;
 
-  // Navigation camera animation duration (ms).
-  static const int navigationAnimationMs = 220;
-
+  // Navigation camera animation duration moved to app_durations.dart
   // Routing providers. Defaults can be overridden at build time via
   // --dart-define so secrets (API keys) never have to live in source
   // control. Both URLs are open-source endpoints that work without

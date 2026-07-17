@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/colors.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/utils/debouncer.dart';
 
 /// A debounced search input with a prefix search icon and a suffix clear

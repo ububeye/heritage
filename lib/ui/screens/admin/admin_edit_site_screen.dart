@@ -1,3 +1,4 @@
+import '../../../core/theme/app_spacing.dart';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -5,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/constants/colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
@@ -456,7 +457,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
             ),
             const SizedBox(height: 32),
             SizedBox(
-              height: AppConstants.minTouchTarget,
+              height: AppSpacing.xxl,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _updateSite,
                 child: _isLoading

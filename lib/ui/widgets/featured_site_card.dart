@@ -1,6 +1,7 @@
+import '../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/constants/colors.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
 
@@ -28,7 +29,7 @@ class FeaturedSiteCard extends StatelessWidget {
         height: 200,
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
             BoxShadow(
               color: AppColors.textPrimary.withValues(alpha: 0.15),
@@ -40,7 +41,7 @@ class FeaturedSiteCard extends StatelessWidget {
         child: Stack(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               child: CachedNetworkImage(
                 imageUrl: site.getTransformedImageUrl(
                   transformation: 'w_800,c_fill,q_auto,f_auto',
@@ -68,7 +69,7 @@ class FeaturedSiteCard extends StatelessWidget {
             ),
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 gradient: AppColors.heroGradient,
               ),
             ),

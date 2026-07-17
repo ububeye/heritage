@@ -1,7 +1,8 @@
+import '../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/constants/colors.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
@@ -35,7 +36,7 @@ class SiteCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
             BoxShadow(
               color: AppColors.textPrimary.withValues(alpha: 0.1),
@@ -54,7 +55,7 @@ class SiteCard extends StatelessWidget {
                   // Image
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppConstants.cardBorderRadius),
+                      top: Radius.circular(AppRadius.card),
                     ),
                     child: CachedNetworkImage(
                       imageUrl: site.getTransformedImageUrl(

@@ -1,3 +1,4 @@
+import '../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -58,7 +59,7 @@ class PricingCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
@@ -66,7 +67,7 @@ class PricingCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           borderRadius:
-              BorderRadius.circular(AppConstants.cardBorderRadius),
+              BorderRadius.circular(AppRadius.card),
           border: Border.all(color: borderColor, width: borderWidth),
           boxShadow: isPrimary
               ? [

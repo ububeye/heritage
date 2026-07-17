@@ -17,7 +17,8 @@ import '../../blocs/navigation/navigation_cubit.dart';
 import '../../blocs/navigation/navigation_state.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/constants/colors.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_durations.dart';
 import '../../core/utils/polyline_snap.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
@@ -136,7 +137,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   }
 
   /// Animate the camera from its current centre to [target] in
-  /// [AppConstants.navigationAnimationMs], preserving zoom and rotation.
+  /// [AppDurations.navigation.inMilliseconds], preserving zoom and rotation.
   void _animateCameraTo(LatLng target) {
     final clamped = StoneTownBounds.contains(target)
         ? target
@@ -160,7 +161,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     _cameraTickerEnd = clamped;
     _cameraTicker = createTicker((elapsed) {
       final t = (elapsed.inMicroseconds / 1000.0 /
-              AppConstants.navigationAnimationMs)
+              AppDurations.navigation.inMilliseconds)
           .clamp(0.0, 1.0);
       final eased = Curves.easeInOut.transform(t);
       final lat = _lerp(

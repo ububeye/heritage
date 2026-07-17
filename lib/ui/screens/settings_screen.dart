@@ -1,9 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/constants/colors.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/language_meta.dart';
-import '../../core/utils/nav_guard.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
@@ -23,220 +26,215 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  /// Localized display name for an audio-language dropdown item. Uses
-  /// the same in-language names as the audio bar's language chip so the
-  /// two pickers stay in sync.
   static String _audioLanguageLabel(String code) => LanguageMeta.name(code);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: _buildLocalizedText('settings'),
-      ),
       body: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {
           return BlocBuilder<LocalizationCubit, LocalizationState>(
             builder: (context, locState) {
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _SectionTitle(title: _tr(locState, 'app_language')),
-                  _SettingsCard(
-                    children: [
-                      _DropdownTile(
-                        icon: Icons.language,
-                        title: _tr(locState, 'app_language'),
-                        subtitle: _tr(locState, 'choose_language'),
-                        value: locState.currentLanguage,
-                        items: AppConstants.uiLanguages,
-                        labels: AppConstants.uiLanguages
-                            .map((c) => _tr(locState, c == 'en' ? 'english' : 'swahili'))
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            context.read<LocalizationCubit>().setLanguage(value);
-                          }
-                        },
-                      ),
-                      const Divider(height: 1),
-                      // Wrapped in its own BlocBuilder so this dropdown
-                      // reacts to audio-language changes made on other
-                      // screens (e.g. the modal picker on the site
-                      // detail). Without it, the dropdown only rebuilt
-                      // when LocalizationCubit emitted — audio-language
-                      // flips that don't go through LocalizationCubit
-                      // were invisible here.
-                      BlocBuilder<LanguageCubit, LanguageState>(
-                        builder: (context, langState) {
-                          return _DropdownTile(
-                            icon: Icons.record_voice_over,
-                            title: _tr(locState, 'audio_language'),
-                            subtitle: authState.isPremium
-                                ? _tr(locState, 'benefit_audio_tours')
-                                : _tr(locState, 'upgrade_for_full_audio'),
-                            value: langState.audioLanguage,
-                            items: authState.isPremium
-                                ? AppConstants.ttsLanguages
-                                : AppConstants.freeTtsLanguages,
-                            labels: (authState.isPremium
-                                    ? AppConstants.ttsLanguages
-                                    : AppConstants.freeTtsLanguages)
-                                .map(_audioLanguageLabel)
-                                .toList(),
-                            enabled: authState.isPremium,
-                            onChanged: (value) {
-                              if (value != null && authState.isPremium) {
-                                context
-                                    .read<LanguageCubit>()
-                                    .setAudioLanguage(value);
-                              } else if (!authState.isPremium) {
-                                _showUpgradeDialog(context, locState);
-                              }
-                            },
-                          );
-                        },
-                      ),
-                    ],
+              return CustomScrollView(
+                slivers: [
+                  SliverAppBar.large(
+                    automaticallyImplyLeading: false,
+                    title: _buildLocalizedText('settings'),
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
                   ),
-                  const SizedBox(height: 24),
-                  _SectionTitle(title: _tr(locState, 'map_provider')),
-                  _SettingsCard(
-                    children: [
-                      _MapProviderTile(),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _SectionTitle(title: _tr(locState, 'appearance')),
-                  _SettingsCard(
-                    children: [
-                      BlocBuilder<ThemeCubit, ThemeMode>(
-                        builder: (context, themeMode) {
-                          return _DropdownTile(
-                            icon: Icons.palette,
-                            title: _tr(locState, 'theme'),
-                            subtitle: _tr(locState, 'choose_theme'),
-                            value: themeMode.toString().split('.').last,
-                            items: const ['light', 'dark', 'system'],
-                            labels: [
-                              _tr(locState, 'theme_light'),
-                              _tr(locState, 'theme_dark'),
-                              _tr(locState, 'theme_system'),
-                            ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                ThemeMode newMode;
-                                switch (value) {
-                                  case 'dark':
-                                    newMode = ThemeMode.dark;
-                                    break;
-                                  case 'system':
-                                    newMode = ThemeMode.system;
-                                    break;
-                                  case 'light':
-                                  default:
-                                    newMode = ThemeMode.light;
-                                    break;
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _SectionTitle(title: _tr(locState, 'app_language')),
+                        _SettingsCard(
+                          children: [
+                            _ModernDropdownTile(
+                              icon: Icons.language,
+                              iconColor: AppColors.info,
+                              title: _tr(locState, 'app_language'),
+                              subtitle: _tr(locState, 'choose_language'),
+                              value: locState.currentLanguage,
+                              items: AppConstants.uiLanguages,
+                              labels: AppConstants.uiLanguages
+                                  .map((c) => _tr(locState, c == 'en' ? 'english' : 'swahili'))
+                                  .toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  context.read<LocalizationCubit>().setLanguage(value);
                                 }
-                                context.read<ThemeCubit>().setThemeMode(newMode);
-                              }
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _SectionTitle(title: _tr(locState, 'storage')),
-                  _SettingsCard(
-                    children: [
-                      _ClearMapCacheTile(),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _SectionTitle(title: _tr(locState, 'notifications')),
-                  _SettingsCard(
-                    children: [
-                      _ArrivalAlertsTile(),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _SectionTitle(title: _tr(locState, 'account')),
-                  _SettingsCard(
-                    children: [
-                      if (authState.isAuthenticated) ...[
-                        ListTile(
-                          leading: const Icon(Icons.person, color: AppColors.primary),
-                          title: Text(authState.user?.email ?? ''),
-                          subtitle: Text(
-                            authState.isPremium ? 'Premium User' : 'Free User',
-                            style: TextStyle(
-                              color: authState.isPremium ? AppColors.success : AppColors.textSecondary,
+                              },
                             ),
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const UserProfileScreen()),
-                          ),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.logout, color: AppColors.error),
-                          title: _buildLocalizedText('logout'),
-                          onTap: () => _showLogoutDialog(context, locState),
-                        ),
-                      ] else
-                        ListTile(
-                          leading: const Icon(Icons.person_outline, color: AppColors.primary),
-                          title: _buildLocalizedText('login'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (!authState.isPremium) ...[
-                    _SectionTitle(title: _tr(locState, 'upgrade_to_premium')),
-                    _SettingsCard(
-                      children: [
-                        ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.accent.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
+                            const _CardDivider(),
+                            BlocBuilder<LanguageCubit, LanguageState>(
+                              builder: (context, langState) {
+                                return _ModernDropdownTile(
+                                  icon: Icons.record_voice_over,
+                                  iconColor: AppColors.warning,
+                                  title: _tr(locState, 'audio_language'),
+                                  subtitle: authState.isPremium
+                                      ? _tr(locState, 'benefit_audio_tours')
+                                      : _tr(locState, 'upgrade_for_full_audio'),
+                                  value: langState.audioLanguage,
+                                  items: authState.isPremium
+                                      ? AppConstants.ttsLanguages
+                                      : AppConstants.freeTtsLanguages,
+                                  labels: (authState.isPremium
+                                          ? AppConstants.ttsLanguages
+                                          : AppConstants.freeTtsLanguages)
+                                      .map(_audioLanguageLabel)
+                                      .toList(),
+                                  enabled: authState.isPremium,
+                                  onChanged: (value) {
+                                    if (value != null && authState.isPremium) {
+                                      context.read<LanguageCubit>().setAudioLanguage(value);
+                                    } else if (!authState.isPremium) {
+                                      _showUpgradeDialog(context, locState);
+                                    }
+                                  },
+                                );
+                              },
                             ),
-                            child: const Icon(Icons.workspace_premium, color: AppColors.accent),
-                          ),
-                          title: _buildLocalizedText('upgrade_to_premium'),
-                          subtitle: _buildLocalizedText('unlock_premium'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-                          ),
+                          ],
                         ),
-                      ],
+                        const SizedBox(height: AppSpacing.lg),
+                        _SectionTitle(title: _tr(locState, 'map_provider')),
+                        _SettingsCard(
+                          children: [
+                            _MapProviderTile(),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _SectionTitle(title: _tr(locState, 'appearance')),
+                        _SettingsCard(
+                          children: [
+                            BlocBuilder<ThemeCubit, ThemeMode>(
+                              builder: (context, themeMode) {
+                                return _ModernDropdownTile(
+                                  icon: Icons.palette,
+                                  iconColor: Colors.deepPurpleAccent,
+                                  title: _tr(locState, 'theme'),
+                                  subtitle: _tr(locState, 'choose_theme'),
+                                  value: themeMode.toString().split('.').last,
+                                  items: const ['light', 'dark', 'system'],
+                                  labels: [
+                                    _tr(locState, 'theme_light'),
+                                    _tr(locState, 'theme_dark'),
+                                    _tr(locState, 'theme_system'),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      ThemeMode newMode;
+                                      switch (value) {
+                                        case 'dark':
+                                          newMode = ThemeMode.dark;
+                                          break;
+                                        case 'system':
+                                          newMode = ThemeMode.system;
+                                          break;
+                                        case 'light':
+                                        default:
+                                          newMode = ThemeMode.light;
+                                          break;
+                                      }
+                                      context.read<ThemeCubit>().setThemeMode(newMode);
+                                    }
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _SectionTitle(title: _tr(locState, 'storage')),
+                        _SettingsCard(
+                          children: [
+                            _ClearMapCacheTile(),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _SectionTitle(title: _tr(locState, 'notifications')),
+                        _SettingsCard(
+                          children: [
+                            _ArrivalAlertsTile(),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        _SectionTitle(title: _tr(locState, 'account')),
+                        _SettingsCard(
+                          children: [
+                            if (authState.isAuthenticated) ...[
+                              _ModernListTile(
+                                icon: Icons.person,
+                                iconColor: AppColors.primary,
+                                title: authState.user?.email ?? '',
+                                subtitle: authState.isPremium ? 'Premium User' : 'Free User',
+                                trailing: const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.textHint),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+                                ),
+                              ),
+                              const _CardDivider(),
+                              _ModernListTile(
+                                icon: Icons.logout,
+                                iconColor: AppColors.error,
+                                title: _tr(locState, 'logout'),
+                                onTap: () => _showLogoutDialog(context, locState),
+                              ),
+                            ] else
+                              _ModernListTile(
+                                icon: Icons.person_outline,
+                                iconColor: AppColors.primary,
+                                title: _tr(locState, 'login'),
+                                trailing: const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.textHint),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        if (!authState.isPremium) ...[
+                          _SectionTitle(title: _tr(locState, 'upgrade_to_premium')),
+                          _SettingsCard(
+                            children: [
+                              _ModernListTile(
+                                icon: Icons.workspace_premium,
+                                iconColor: AppColors.accent,
+                                title: _tr(locState, 'upgrade_to_premium'),
+                                subtitle: _tr(locState, 'unlock_premium'),
+                                trailing: const Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.textHint),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                        ],
+                        _SectionTitle(title: _tr(locState, 'about')),
+                        _SettingsCard(
+                          children: [
+                            _ModernListTile(
+                              icon: Icons.info_outline,
+                              iconColor: Colors.teal,
+                              title: _tr(locState, 'version'),
+                              trailing: const Text(
+                                '1.0.0',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xxl),
+                      ]),
                     ),
-                    const SizedBox(height: 24),
-                  ],
-                  _SectionTitle(title: _tr(locState, 'about')),
-                  _SettingsCard(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.info_outline, color: AppColors.primary),
-                        title: _buildLocalizedText('version'),
-                        trailing: const Text('1.0.0'),
-                      ),
-                      // Privacy Policy and Terms of Service tiles were
-                      // removed — the placeholder URLs pointed at pages
-                      // that don't exist (stonetownguide.com/{privacy,
-                      // terms}) and would 404. They will return once real
-                      // pages are hosted.
-                    ],
                   ),
                 ],
               );
@@ -250,7 +248,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildLocalizedText(String key) {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, state) {
-        return Text(state.translations[key] ?? key);
+        return Text(
+          state.translations[key] ?? key,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        );
       },
     );
   }
@@ -263,7 +264,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(_tr(locState, 'unlock_premium')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: Text(_tr(locState, 'unlock_premium'), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Text(_tr(locState, 'benefit_audio_tours')),
         actions: [
           TextButton(
@@ -277,6 +279,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 MaterialPageRoute(builder: (_) => const UpgradeScreen()),
               );
             },
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
+            ),
             child: Text(_tr(locState, 'go_premium')),
           ),
         ],
@@ -288,7 +293,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(_tr(locState, 'logout')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: Text(_tr(locState, 'logout'), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Text('${_tr(locState, 'logout')}?'),
         actions: [
           TextButton(
@@ -304,7 +310,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (route) => false,
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.textOnPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.button)),
+            ),
             child: Text(_tr(locState, 'logout')),
           ),
         ],
@@ -314,20 +324,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 class _SectionTitle extends StatelessWidget {
-
   const _SectionTitle({required this.title});
   final String title;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsets.only(left: 8, bottom: 8, top: 8),
       child: Text(
-        title,
+        title.toUpperCase(),
         style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: AppColors.textHint,
         ),
       ),
     );
@@ -335,7 +345,6 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _SettingsCard extends StatelessWidget {
-
   const _SettingsCard({required this.children});
   final List<Widget> children;
 
@@ -344,18 +353,92 @@ class _SettingsCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.cardBorderRadius),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: AppShadows.low,
       ),
-      child: Column(children: children),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        clipBehavior: Clip.antiAlias,
+        child: Column(children: children),
+      ),
     );
   }
 }
 
-class _DropdownTile extends StatelessWidget {
+class _CardDivider extends StatelessWidget {
+  const _CardDivider();
 
-  const _DropdownTile({
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 56), // Align with text
+      child: Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
+    );
+  }
+}
+
+class _ModernIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _ModernIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, color: color, size: 20),
+    );
+  }
+}
+
+class _ModernListTile extends StatelessWidget {
+  const _ModernListTile({
     required this.icon,
+    required this.iconColor,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+      leading: _ModernIcon(icon: icon, color: iconColor),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 12,
+              ),
+            )
+          : null,
+      trailing: trailing,
+      onTap: onTap,
+    );
+  }
+}
+
+class _ModernDropdownTile extends StatelessWidget {
+  const _ModernDropdownTile({
+    required this.icon,
+    required this.iconColor,
     required this.title,
     this.subtitle,
     required this.value,
@@ -364,7 +447,9 @@ class _DropdownTile extends StatelessWidget {
     this.enabled = true,
     required this.onChanged,
   });
+
   final IconData icon;
+  final Color iconColor;
   final String title;
   final String? subtitle;
   final String value;
@@ -376,12 +461,16 @@ class _DropdownTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: enabled ? AppColors.primary : AppColors.textHint),
-      title: Text(title),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+      leading: _ModernIcon(icon: icon, color: enabled ? iconColor : AppColors.textHint),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: subtitle != null
           ? Text(
               subtitle!,
-              style: TextStyle(color: enabled ? AppColors.textSecondary : AppColors.textHint, fontSize: 12),
+              style: TextStyle(
+                color: enabled ? Theme.of(context).colorScheme.onSurfaceVariant : AppColors.textHint,
+                fontSize: 12,
+              ),
             )
           : null,
       trailing: Row(
@@ -395,6 +484,12 @@ class _DropdownTile extends StatelessWidget {
           DropdownButton<String>(
             value: items.contains(value) ? value : items.first,
             underline: const SizedBox(),
+            icon: const Icon(CupertinoIcons.chevron_down, size: 16),
+            style: TextStyle(
+              color: enabled ? Theme.of(context).colorScheme.onSurface : AppColors.textHint,
+              fontWeight: FontWeight.w500,
+              fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+            ),
             items: items.asMap().entries.map((e) {
               return DropdownMenuItem<String>(
                 value: e.value,
@@ -409,10 +504,6 @@ class _DropdownTile extends StatelessWidget {
   }
 }
 
-/// "Map provider" tile — reflects the active provider and lets the user
-/// swap to Google when an API key is configured. When `googleMapsApiKey`
-/// is null the Google row is rendered disabled with an inline hint so the
-/// user understands why they can't select it.
 class _MapProviderTile extends StatefulWidget {
   const _MapProviderTile();
 
@@ -446,24 +537,24 @@ class _MapProviderTileState extends State<_MapProviderTile> {
         return Column(
           children: [
             RadioListTile<String>(
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               value: AppConstants.mapProviderOpen,
               groupValue: _active,
               onChanged: (v) {
                 if (v != null) _selectProvider(v);
               },
-              title: Text(tr('map_provider_open')),
+              title: Text(tr('map_provider_open'), style: const TextStyle(fontWeight: FontWeight.w500)),
               subtitle: Text(
                 tr('map_provider_open_subtitle'),
-                style: const TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
-              secondary: const Icon(Icons.public, color: AppColors.primary),
+              secondary: const _ModernIcon(icon: Icons.public, color: AppColors.primary),
             ),
-            const Divider(height: 1),
+            const _CardDivider(),
             RadioListTile<String>(
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               value: AppConstants.mapProviderGoogle,
               groupValue: _active,
-              // Force-disable when no API key has been configured so the
-              // user can't pick a path that will crash on launch.
               onChanged: googleEnabled
                   ? (v) {
                       if (v != null) _selectProvider(v);
@@ -472,25 +563,20 @@ class _MapProviderTileState extends State<_MapProviderTile> {
               title: Text(
                 tr('map_provider_google'),
                 style: TextStyle(
-                  color: googleEnabled
-                      ? null
-                      : AppColors.textHint,
+                  fontWeight: FontWeight.w500,
+                  color: googleEnabled ? null : AppColors.textHint,
                 ),
               ),
               subtitle: Text(
-                googleEnabled
-                    ? tr('map_provider_google_subtitle')
-                    : tr('map_provider_google_disabled'),
+                googleEnabled ? tr('map_provider_google_subtitle') : tr('map_provider_google_disabled'),
                 style: TextStyle(
                   fontSize: 12,
-                  color: googleEnabled
-                      ? AppColors.textSecondary
-                      : AppColors.textHint,
+                  color: googleEnabled ? Theme.of(context).colorScheme.onSurfaceVariant : AppColors.textHint,
                 ),
               ),
-              secondary: Icon(
-                Icons.map,
-                color: googleEnabled ? AppColors.primary : AppColors.textHint,
+              secondary: _ModernIcon(
+                icon: Icons.map,
+                color: googleEnabled ? Colors.green : AppColors.textHint,
               ),
             ),
           ],
@@ -500,10 +586,6 @@ class _MapProviderTileState extends State<_MapProviderTile> {
   }
 }
 
-/// "Storage → Clear map cache" tile. Reads the current disk-cache size
-/// on first build, refreshes it after a clear, and shows the user the
-/// freed-up space in a human-readable form (e.g. "12.4 MB"). Surfaced
-/// under Appearance → Storage in the Settings tree.
 class _ClearMapCacheTile extends StatefulWidget {
   const _ClearMapCacheTile();
 
@@ -512,7 +594,7 @@ class _ClearMapCacheTile extends StatefulWidget {
 }
 
 class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
-  int _bytes = -1; // -1 == unknown / not yet calculated
+  int _bytes = -1;
 
   @override
   void initState() {
@@ -522,8 +604,6 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
 
   Future<void> _refreshSize() async {
     if (!TileCacheService.instance.isReady) {
-      // The service is best-effort — silently show "0" when the FS
-      // cache wasn't initialised.
       setState(() => _bytes = 0);
       return;
     }
@@ -558,15 +638,15 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, locState) {
         String tr(String key) => locState.translations[key] ?? key;
-        final sizeLabel = _bytes < 0
-            ? tr('cache_size_unknown')
-            : _formatBytes(_bytes);
+        final sizeLabel = _bytes < 0 ? tr('cache_size_unknown') : _formatBytes(_bytes);
+        
         return ListTile(
-          leading: const Icon(Icons.cleaning_services, color: AppColors.primary),
-          title: Text(tr('clear_map_cache')),
+          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+          leading: const _ModernIcon(icon: CupertinoIcons.trash, color: Colors.blueGrey),
+          title: Text(tr('clear_map_cache'), style: const TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text(
             tr('clear_map_cache_subtitle'),
-            style: const TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -575,16 +655,17 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
                 sizeLabel,
                 style: TextStyle(
                   fontSize: 12,
-                  color: _bytes > 0
-                      ? AppColors.textSecondary
-                      : AppColors.textHint,
+                  fontWeight: FontWeight.w600,
+                  color: _bytes > 0 ? Theme.of(context).colorScheme.primary : AppColors.textHint,
                 ),
               ),
-              const SizedBox(width: 12),
-              TextButton(
-                onPressed: _bytes > 0 ? _onClear : null,
-                child: Text(tr('clear_map_cache')),
-              ),
+              const SizedBox(width: 8),
+              if (_bytes > 0)
+                IconButton(
+                  icon: const Icon(CupertinoIcons.clear_circled_solid, color: AppColors.error, size: 20),
+                  onPressed: _onClear,
+                  tooltip: tr('clear_map_cache'),
+                ),
             ],
           ),
         );
@@ -593,8 +674,6 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
   }
 }
 
-/// Helper: read a localization key outside of a BlocBuilder context —
-/// used by [SnackBar] callbacks fired from imperative handlers.
 String _trFromLoc(BuildContext context, String key) {
   try {
     return context.read<LocalizationCubit>().translate(key);
@@ -603,9 +682,6 @@ String _trFromLoc(BuildContext context, String key) {
   }
 }
 
-/// "Notifications → Arrival alerts" tile. Toggle is persisted via
-/// SharedPrefs and read at the navigation-screen arrival-detection
-/// site so users who turn it off don't see the welcome modal.
 class _ArrivalAlertsTile extends StatefulWidget {
   const _ArrivalAlertsTile();
 
@@ -632,14 +708,16 @@ class _ArrivalAlertsTileState extends State<_ArrivalAlertsTile> {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, locState) {
         String tr(String key) => locState.translations[key] ?? key;
-        return SwitchListTile(
-          secondary: const Icon(Icons.notifications_active, color: AppColors.primary),
-          title: Text(tr('arrival_alerts')),
+        return SwitchListTile.adaptive(
+          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+          secondary: const _ModernIcon(icon: CupertinoIcons.bell_solid, color: Colors.amber),
+          title: Text(tr('arrival_alerts'), style: const TextStyle(fontWeight: FontWeight.w500)),
           subtitle: Text(
             tr('arrival_alerts_subtitle'),
-            style: const TextStyle(fontSize: 12),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           value: _enabled,
+          activeColor: Theme.of(context).colorScheme.primary,
           onChanged: _toggle,
         );
       },

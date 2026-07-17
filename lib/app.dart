@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_breakpoints.dart';
 import 'core/utils/language_meta.dart';
 import 'core/utils/rtl.dart';
 import 'blocs/auth/auth_cubit.dart';
@@ -196,9 +198,17 @@ class StoneTownApp extends StatelessWidget {
                   // directionality wrapper makes alignment, scroll direction and
                   // icon mirroring behave correctly.
                   builder: (context, child) {
-                    return Directionality(
-                      textDirection: directionFor(locState.currentLanguage),
-                      child: child ?? const SizedBox.shrink(),
+                    return ResponsiveBreakpoints.builder(
+                      child: Directionality(
+                        textDirection: directionFor(locState.currentLanguage),
+                        child: child ?? const SizedBox.shrink(),
+                      ),
+                      breakpoints: [
+                        const Breakpoint(start: 0, end: AppBreakpoints.mobile, name: MOBILE),
+                        const Breakpoint(start: AppBreakpoints.mobile + 1, end: AppBreakpoints.tablet, name: TABLET),
+                        const Breakpoint(start: AppBreakpoints.tablet + 1, end: AppBreakpoints.desktop, name: DESKTOP),
+                        const Breakpoint(start: AppBreakpoints.desktop + 1, end: double.infinity, name: '4K'),
+                      ],
                     );
                   },
                   home: const _SystemBarsRoot(child: SplashScreen()),
