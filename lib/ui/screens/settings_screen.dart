@@ -301,14 +301,17 @@ class _ProfileHeroAppBar extends StatelessWidget {
         style: Theme.of(context).textTheme.titleLarge,
       ),
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsetsDirectional.only(
-          start: AppSpacing.md,
-          bottom: AppSpacing.md,
-        ),
-        title: SafeArea(
-          top: false,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+        background: SafeArea(
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: AppSpacing.md,
+              bottom: AppSpacing.md,
+              end: AppSpacing.md,
+            ),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               UserAvatar(
                 photoUrl: user?.photoUrl,
@@ -367,6 +370,8 @@ class _ProfileHeroAppBar extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      ),
       ),
     );
   }
