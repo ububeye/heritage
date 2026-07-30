@@ -14,6 +14,19 @@ import '../../widgets/settings/settings_section_title.dart';
 import '../../widgets/settings/settings_tile.dart';
 import '../../screens/login_screen.dart';
 
+/// Admin settings surface. The body is a vertical list of four labelled
+/// sections, each a [SettingsCard] or a single tile:
+///
+///   • Tour catalogue  — admin-side defaults that affect what users see.
+///   • Operational     — placeholder; Phase 3 wires the analytics
+///                       shortcut and the maintenance-mode toggle here.
+///   • App info        — version / engine / backend rows, read-only.
+///   • Account         — sign-out tile.
+///
+/// The grouping is intentional: the previous version used three flat
+/// sections and mixed admin defaults (language) with app metadata and
+/// account actions, which made it unclear what an admin could actually
+/// change. Sections keep related actions together.
 class AdminSettingsScreen extends StatelessWidget {
   const AdminSettingsScreen({super.key});
 
@@ -40,9 +53,9 @@ class AdminSettingsScreen extends StatelessWidget {
                   vertical: 8,
                 ),
                 children: [
-                  // ── Preferences (admin defaults) ─────────────────────
+                  // ── Tour catalogue (admin-side defaults) ──────────────
                   SettingsSectionTitle(
-                    label: _tr(locState, 'preferences'),
+                    label: _tr(locState, 'admin_section_tour_catalogue'),
                   ),
                   SettingsCard(children: [
                     SettingsDropdownTile<String>(
@@ -84,8 +97,20 @@ class AdminSettingsScreen extends StatelessWidget {
                   ],),
                   const SizedBox(height: 16),
 
+                  // ── Operational ───────────────────────────────────────
+                  // Header-only placeholder. The Phase 3 commit adds the
+                  // analytics-shortcut tile and the maintenance-mode
+                  // toggle here. Keeping the section header now means the
+                  // layout is stable when those tiles arrive.
+                  SettingsSectionTitle(
+                    label: _tr(locState, 'admin_section_operational'),
+                  ),
+                  const SizedBox(height: 16),
+
                   // ── App info ──────────────────────────────────────────
-                  SettingsSectionTitle(label: _tr(locState, 'app_info')),
+                  SettingsSectionTitle(
+                    label: _tr(locState, 'app_info'),
+                  ),
                   SettingsCard(children: [
                     _InfoRow(
                       icon: Icons.info_outline,
@@ -107,17 +132,23 @@ class AdminSettingsScreen extends StatelessWidget {
                   ],),
                   const SizedBox(height: 24),
 
-                  // ── Footer sign-out (matches user settings) ───────────
-                  SettingsTile(
-                    icon: Icons.logout,
-                    iconColor: AppColors.error,
-                    title: _tr(locState, 'logout'),
-                    subtitle: authState.user?.email ?? '',
-                    onTap: () => _showLogoutDialog(context, locState),
+                  // ── Account ───────────────────────────────────────────
+                  SettingsSectionTitle(
+                    label: _tr(locState, 'admin_section_account'),
                   ),
-
-                  const SizedBox(height: 32),
-                  Center(child: _AdminFooter(locState: locState)),
+                  SettingsCard(children: [
+                    SettingsTile(
+                      icon: Icons.logout,
+                      iconColor: AppColors.error,
+                      title: _tr(locState, 'logout'),
+                      subtitle: authState.user?.email ?? '',
+                      // Suppress the default chevron — this is an action
+                      // tile, not a navigation cue. An empty SizedBox is
+                      // cheaper than a custom trailing widget.
+                      trailing: const SizedBox.shrink(),
+                      onTap: () => _showLogoutDialog(context, locState),
+                    ),
+                  ],),
                   const SizedBox(height: 32),
                 ],
               );
@@ -186,37 +217,6 @@ class _InfoRow extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-    );
-  }
-}
-
-class _AdminFooter extends StatelessWidget {
-  const _AdminFooter({required this.locState});
-  final LocalizationState locState;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Icon(
-          Icons.admin_panel_settings,
-          size: 36,
-          color: AppColors.textHint,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Stone Town Guide Admin',
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 13,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          '2024',
-          style: const TextStyle(color: AppColors.textHint, fontSize: 11),
-        ),
-      ],
     );
   }
 }
