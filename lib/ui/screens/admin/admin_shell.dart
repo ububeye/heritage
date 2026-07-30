@@ -11,6 +11,7 @@ import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/services/runtime_config_service.dart';
 import '../maintenance_screen.dart';
+import '../user_profile_screen.dart';
 import 'admin_sites_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_settings_screen.dart';
@@ -131,24 +132,18 @@ class _AdminDashboard extends StatelessWidget {
           context.read<SiteListCubit>().loadSites();
           context.read<UserCubit>().loadUsers();
         },
-        color: Theme.of(context).colorScheme.secondary,
+        color: Theme.of(context).colorScheme.primary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: AppInsets.card,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _WelcomeCard(locState: locState, tr: tr),
-              const SizedBox(height: 20),
-              _StatsSection(locState: locState, tr: tr),
-              const SizedBox(height: 24),
-              _MenuSection(
-                locState: locState,
-                tr: tr,
-                onNavigateToTab: onNavigateToTab,
-              ),
-              const SizedBox(height: 24),
-              _QuickActionsSection(
+              _WelcomeHeader(locState: locState, tr: tr),
+              const SizedBox(height: 32),
+              _StatsRowContainer(locState: locState, tr: tr),
+              const SizedBox(height: 40),
+              _QuickActionsGrid(
                 locState: locState,
                 tr: tr,
                 onNavigateToTab: onNavigateToTab,
@@ -161,8 +156,8 @@ class _AdminDashboard extends StatelessWidget {
   }
 }
 
-class _WelcomeCard extends StatelessWidget {
-  const _WelcomeCard({required this.locState, required this.tr});
+class _WelcomeHeader extends StatelessWidget {
+  const _WelcomeHeader({required this.locState, required this.tr});
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
 
@@ -170,183 +165,139 @@ class _WelcomeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.primaryContainer,
-                Theme.of(context).colorScheme.primary,
-              ],
-            ),
-            borderRadius: AppRadius.lgBorder,
-            boxShadow: AppShadows.brandHaloFor(
-              Theme.of(context).brightness,
-              primaryColor: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onPrimary.withValues(alpha: 0.2),
-                  borderRadius: AppRadius.badgeBorder,
-                ),
-                child: Icon(
-                  Icons.admin_panel_settings,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  size: 32,
-                ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              tr(locState, 'admin_welcome'),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w400,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr(locState, 'admin_welcome'),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      authState.user?.email ?? '',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onPrimary.withValues(alpha: 0.8),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              authState.user?.email ?? 'Admin',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         );
       },
     );
   }
 }
 
-class _StatsSection extends StatelessWidget {
-  const _StatsSection({required this.locState, required this.tr});
+class _StatsRowContainer extends StatelessWidget {
+  const _StatsRowContainer({required this.locState, required this.tr});
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadius.lgBorder,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: BlocBuilder<SiteListCubit, SiteListState>(
+                builder: (context, state) {
+                  return _StatItem(
+                    value: state.sites.length.toString(),
+                    label: tr(locState, 'best_places'),
+                  );
+                },
+              ),
+            ),
+            VerticalDivider(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.2),
+              thickness: 1,
+              width: 1,
+            ),
+            Expanded(
+              child: BlocBuilder<UserCubit, UserState>(
+                builder: (context, state) {
+                  return _StatItem(
+                    value: state.totalUsers.toString(),
+                    label: tr(locState, 'user_management'),
+                  );
+                },
+              ),
+            ),
+            VerticalDivider(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.2),
+              thickness: 1,
+              width: 1,
+            ),
+            Expanded(
+              child: BlocBuilder<UserCubit, UserState>(
+                builder: (context, state) {
+                  return _StatItem(
+                    value: state.premiumUsers.toString(),
+                    label: tr(locState, 'upgrade_to_premium'),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  const _StatItem({required this.value, required this.label});
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(
-          child: BlocBuilder<SiteListCubit, SiteListState>(
-            builder: (context, state) {
-              return _StatCard(
-                icon: Icons.location_city,
-                value: state.sites.length.toString(),
-                label: tr(locState, 'best_places'),
-                color: Theme.of(context).colorScheme.primary,
-              );
-            },
+        Text(
+          value,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) {
-              return _StatCard(
-                icon: Icons.people,
-                value: state.totalUsers.toString(),
-                label: tr(locState, 'user_management'),
-                color: Theme.of(context).colorScheme.secondary,
-              );
-            },
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) {
-              return _StatCard(
-                icon: Icons.workspace_premium,
-                value: state.premiumUsers.toString(),
-                label: tr(locState, 'upgrade_to_premium'),
-                color: context.semanticColors.success,
-              );
-            },
-          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: AppInsets.card,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.mdBorder,
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-        boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineLarge?.copyWith(fontSize: 22, color: color),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontSize: 11,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuSection extends StatelessWidget {
-  const _MenuSection({
+class _QuickActionsGrid extends StatelessWidget {
+  const _QuickActionsGrid({
     required this.locState,
     required this.tr,
     required this.onNavigateToTab,
@@ -360,211 +311,107 @@ class _MenuSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title: tr(locState, 'admin_dashboard_subtitle')),
-        const SizedBox(height: 12),
-        _MenuCard(
-          icon: Icons.location_on,
-          title: tr(locState, 'best_places'),
-          subtitle: tr(locState, 'admin_tab_sites'),
-          color: Theme.of(context).colorScheme.primary,
-          // Switch to the Sites tab (index 1) instead of pushing a new
-          // AdminSitesScreen instance — the bottom nav stays in sync.
-          onTap: () => onNavigateToTab(1),
+        Text(
+          tr(locState, 'start_audio_guide'), // Quick Actions title equivalent
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
         ),
-        const SizedBox(height: 12),
-        _MenuCard(
-          icon: Icons.people,
-          title: tr(locState, 'user_management'),
-          subtitle: tr(locState, 'admin_tab_users'),
-          color: Theme.of(context).colorScheme.secondary,
-          onTap: () => onNavigateToTab(2),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 2.5,
+          children: [
+            _QuickActionTile(
+              icon: Icons.add_location,
+              label: tr(locState, 'add_site'),
+              onTap: () => onNavigateToTab(1), // Nav to Sites
+            ),
+            _QuickActionTile(
+              icon: Icons.analytics,
+              label: tr(locState, 'analytics'),
+              onTap:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AdminAnalyticsScreen(),
+                    ),
+                  ),
+            ),
+            _QuickActionTile(
+              icon: Icons.person,
+              label:
+                  tr(locState, 'profile') == 'profile'
+                      ? 'My Profile'
+                      : tr(locState, 'profile'),
+              onTap:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const UserProfileScreen(),
+                    ),
+                  ),
+            ),
+            _QuickActionTile(
+              icon: Icons.settings,
+              label: tr(locState, 'admin_tab_settings'),
+              onTap: () => onNavigateToTab(3), // Nav to Settings
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
-    );
-  }
-}
-
-class _MenuCard extends StatelessWidget {
-  const _MenuCard({
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({
     required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
+    required this.label,
     required this.onTap,
   });
   final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
+  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: AppRadius.lgBorder,
+      borderRadius: AppRadius.mdBorder,
       child: Container(
-        padding: AppInsets.card,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.lgBorder,
-          border: Border.all(color: Theme.of(context).colorScheme.outline),
-          boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
+          borderRadius: AppRadius.mdBorder,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: AppRadius.mdBorder,
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             Icon(
-              Icons.chevron_right,
-              color: Theme.of(context).colorScheme.outline,
-              size: 24,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickActionsSection extends StatelessWidget {
-  const _QuickActionsSection({
-    required this.locState,
-    required this.tr,
-    required this.onNavigateToTab,
-  });
-  final LocalizationState locState;
-  final String Function(LocalizationState, String) tr;
-  final ValueChanged<int> onNavigateToTab;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionHeader(title: tr(locState, 'start_audio_guide')),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickActionButton(
-                icon: Icons.add_location,
-                label: tr(locState, 'add_site'),
-                color: Theme.of(context).colorScheme.primary,
-                // Drop the redundant AdminSitesScreen(addNew:true) push —
-                // jump to the Sites tab and rely on its own FAB for "+".
-                onTap: () => onNavigateToTab(1),
-              ),
+              icon,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _QuickActionButton(
-                icon: Icons.analytics,
-                label: tr(locState, 'analytics'),
-                color: Theme.of(context).colorScheme.secondary,
-                // Analytics is a pushed screen (not a tab). Pre-existing
-                // behaviour — keep it so the chip stays useful.
-                onTap:
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const AdminAnalyticsScreen(),
-                      ),
-                    ),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickActionButton extends StatelessWidget {
-  const _QuickActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      button: true,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadius.mdBorder,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: AppRadius.mdBorder,
-            border: Border.all(color: color.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
