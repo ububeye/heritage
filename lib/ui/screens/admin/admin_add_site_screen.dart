@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
+import '../../../data/models/activity_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
@@ -145,6 +146,15 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       );
 
       await _firestoreService.addSite(site);
+      await _firestoreService.logActivity(
+        ActivityModel(
+          id: '',
+          type: 'site_updated',
+          title: 'New Site Added',
+          subtitle: 'Admin added "${site.nameEn}".',
+          timestamp: DateTime.now(),
+        ),
+      );
 
       if (mounted) {
         context.read<SiteListCubit>().loadSites();

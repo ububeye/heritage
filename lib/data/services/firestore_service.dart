@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/site_model.dart';
 import '../models/user_model.dart';
+import '../models/activity_model.dart';
 import '../../core/constants/app_constants.dart';
 
 class FirestoreService {
@@ -21,6 +23,10 @@ class FirestoreService {
   // updated_at }`. Only admins can write; users and admins can read.
   CollectionReference get _rolesCollection =>
       _firestore.collection(AppConstants.rolesCollection);
+
+  // Activities Collection
+  CollectionReference get _activitiesCollection =>
+      _firestore.collection(AppConstants.activitiesCollection);
 
   Future<List<SiteModel>> getAllSites() async {
     try {
@@ -298,4 +304,33 @@ class FirestoreService {
       return 0;
     }
   }
+
+  // --- Activities ---
+
+  Future<void> logActivity(ActivityModel activity) async {
+    try {
+      await _activitiesCollection.add(activity.toMap());
+    } catch (e) {
+      // Activity logging is strictly fire-and-forget; don't bring down
+      // the caller if it fails.
+      debugPrint('Failed to log activity: $e');
+    }
+  }
+
+  Future<List<ActivityModel>> getRecentActivities({int limit = 10}) async {
+    try {
+      final snapshot = await _activitiesCollection
+          .orderBy('timestamp', descending: true)
+          .limit(limit)
+          .get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return ActivityModel.fromMap(data, doc.id);
+      }).toList();
+    } catch (e) {
+      debugPrint('Failed to fetch recent activities: $e');
+      return [];
+    }
+  }
+
 }

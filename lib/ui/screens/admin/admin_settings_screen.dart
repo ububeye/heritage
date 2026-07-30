@@ -154,18 +154,7 @@ class AdminSettingsScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      const SettingsDivider(),
-                      SettingsTile(
-                        icon: Icons.bar_chart,
-                        iconColor: Theme.of(context).colorScheme.secondary,
-                        title: _tr(locState, 'admin_view_analytics'),
-                        onTap:
-                            () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const AdminAnalyticsScreen(),
-                              ),
-                            ),
-                      ),
+
                     ],
                   ),
                   const SizedBox(height: 16),

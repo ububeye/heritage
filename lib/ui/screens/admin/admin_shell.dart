@@ -8,6 +8,8 @@ import '../../../blocs/user/user_cubit.dart';
 import '../../../blocs/auth/auth_cubit.dart';
 import '../../../blocs/auth/auth_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
+import '../../../blocs/activity/activity_cubit.dart';
+import '../../../blocs/activity/activity_state.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/services/runtime_config_service.dart';
 import '../maintenance_screen.dart';
@@ -28,6 +30,12 @@ class AdminShell extends StatefulWidget {
 
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<ActivityCubit>().loadActivities();
+  }
 
   String _tr(LocalizationState state, String key) {
     return state.translations[key] ?? key;
@@ -131,6 +139,7 @@ class _AdminDashboard extends StatelessWidget {
         onRefresh: () async {
           context.read<SiteListCubit>().loadSites();
           context.read<UserCubit>().loadUsers();
+          context.read<ActivityCubit>().loadActivities();
         },
         color: Theme.of(context).colorScheme.primary,
         child: SingleChildScrollView(
@@ -348,19 +357,7 @@ class _QuickActionsGrid extends StatelessWidget {
                     ),
                   ),
             ),
-            _QuickActionTile(
-              icon: Icons.person,
-              label:
-                  tr(locState, 'profile') == 'profile'
-                      ? 'My Profile'
-                      : tr(locState, 'profile'),
-              onTap:
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const UserProfileScreen(),
-                    ),
-                  ),
-            ),
+
             _QuickActionTile(
               icon: Icons.settings,
               label: tr(locState, 'admin_tab_settings'),
@@ -443,42 +440,84 @@ class _RecentActivities extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: AppRadius.lgBorder,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-            ),
-            boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
-          ),
-          child: ListView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            children: [
-              _ActivityTile(
-                icon: Icons.person_add,
-                title: 'New user registered',
-                subtitle: 'johndoe@example.com joined the app.',
-                time: '10 mins ago',
+        BlocBuilder<ActivityCubit, ActivityState>(
+          builder: (context, state) {
+            if (state.status == ActivityStatus.loading && state.activities.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state.activities.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: AppRadius.lgBorder,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Text(
+                  'No recent activities.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              );
+            }
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: AppRadius.lgBorder,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                ),
+                boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
               ),
-              const Divider(height: 1),
-              _ActivityTile(
-                icon: Icons.edit_location_alt,
-                title: 'Site updated',
-                subtitle: 'Admin updated "Forodhani Gardens" details.',
-                time: '2 hours ago',
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: state.activities.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final activity = state.activities[index];
+                  IconData icon;
+                  switch (activity.type) {
+                    case 'user_registered':
+                      icon = Icons.person_add;
+                      break;
+                    case 'site_updated':
+                      icon = Icons.edit_location_alt;
+                      break;
+                    case 'premium_upgrade':
+                      icon = Icons.star;
+                      break;
+                    default:
+                      icon = Icons.notifications;
+                  }
+                  
+                  // Simple relative time formatter
+                  final difference = DateTime.now().difference(activity.timestamp);
+                  String timeAgo = 'Just now';
+                  if (difference.inDays > 0) {
+                    timeAgo = '${difference.inDays}d ago';
+                  } else if (difference.inHours > 0) {
+                    timeAgo = '${difference.inHours}h ago';
+                  } else if (difference.inMinutes > 0) {
+                    timeAgo = '${difference.inMinutes}m ago';
+                  }
+
+                  return _ActivityTile(
+                    icon: icon,
+                    title: activity.title,
+                    subtitle: activity.subtitle,
+                    time: timeAgo,
+                  );
+                },
               ),
-              const Divider(height: 1),
-              _ActivityTile(
-                icon: Icons.star,
-                title: 'Premium upgrade',
-                subtitle: 'User purchased the offline map bundle.',
-                time: '1 day ago',
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
@@ -510,13 +549,17 @@ class _ActivityTile extends StatelessWidget {
           ),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        child: Icon(
+          icon,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
       title: Text(
         title,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 4.0),
@@ -531,12 +574,6 @@ class _ActivityTile extends StatelessWidget {
         time,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-          ],
         ),
       ),
     );

@@ -6,6 +6,7 @@ import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
+import '../../../data/models/activity_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../widgets/search_bar_widget.dart';
 import 'admin_add_site_screen.dart';
@@ -192,6 +193,15 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
   Future<void> _deleteSite(SiteModel site, LocalizationState loc) async {
     try {
       await _firestoreService.deleteSite(site.id);
+      await _firestoreService.logActivity(
+        ActivityModel(
+          id: '', // Firestore auto-generates
+          type: 'site_updated',
+          title: 'Site deleted',
+          subtitle: 'Admin deleted "${site.nameEn}".',
+          timestamp: DateTime.now(),
+        ),
+      );
       if (mounted) {
         context.read<SiteListCubit>().loadSites();
         final messenger = ScaffoldMessenger.maybeOf(context);

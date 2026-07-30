@@ -10,6 +10,8 @@ import 'blocs/auth/auth_cubit.dart';
 import 'blocs/site_list/site_list_cubit.dart';
 import 'blocs/site_detail/site_detail_cubit.dart';
 import 'blocs/navigation/navigation_cubit.dart';
+import 'blocs/activity/activity_cubit.dart';
+import 'data/services/firestore_service.dart';
 import 'blocs/language/language_cubit.dart';
 import 'blocs/localization/localization_cubit.dart';
 import 'blocs/premium/premium_cubit.dart';
@@ -94,6 +96,9 @@ class StoneTownApp extends StatelessWidget {
         // read from. Initialised here so any descendant can subscribe
         // without an extra Provider indirection.
         BlocProvider<RuntimeConfigCubit>(create: (_) => RuntimeConfigCubit()),
+        BlocProvider<ActivityCubit>(
+          create: (_) => ActivityCubit(firestoreService: FirestoreService()),
+        ),
       ],
       child: BlocListener<LocalizationCubit, LocalizationState>(
         // Listen for four distinct signals from LocalizationCubit:

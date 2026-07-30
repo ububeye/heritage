@@ -11,6 +11,7 @@ import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
+import '../../../data/models/activity_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
 import '../../widgets/heritage_map.dart';
@@ -189,6 +190,15 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
       );
 
       await _firestoreService.updateSite(widget.site.id, site);
+      await _firestoreService.logActivity(
+        ActivityModel(
+          id: '',
+          type: 'site_updated',
+          title: 'Site Updated',
+          subtitle: 'Admin updated "${site.nameEn}".',
+          timestamp: DateTime.now(),
+        ),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -155,6 +155,7 @@ class AppConstants {
   static const String sitesCollection = 'sites';
   static const String usersCollection = 'users';
   static const String rolesCollection = 'roles';
+  static const String activitiesCollection = 'activities';
 
   // Site Categories
   static const List<String> siteCategories = [
