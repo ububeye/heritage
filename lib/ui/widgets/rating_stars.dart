@@ -6,7 +6,6 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class RatingStars extends StatelessWidget {
-
   const RatingStars({
     super.key,
     required this.rating,
@@ -34,21 +33,17 @@ class RatingStars extends StatelessWidget {
             icon = Icons.star_border;
           }
 
-          return Icon(
-            icon,
-            size: size,
-            color: context.semanticColors.rating,
-          );
+          return Icon(icon, size: size, color: context.semanticColors.rating);
         }),
         if (showValue) ...[
           const SizedBox(width: 4),
           Text(
             rating.toStringAsFixed(1),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: size * 0.875,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+              fontSize: size * 0.875,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ],
@@ -57,12 +52,7 @@ class RatingStars extends StatelessWidget {
 }
 
 class RatingBadge extends StatelessWidget {
-
-  const RatingBadge({
-    super.key,
-    required this.rating,
-    this.label,
-  });
+  const RatingBadge({super.key, required this.rating, this.label});
   final double rating;
   final String? label;
 
@@ -79,27 +69,23 @@ class RatingBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.star,
-            size: 14,
-            color: context.semanticColors.rating,
-          ),
+          Icon(Icons.star, size: 14, color: context.semanticColors.rating),
           const SizedBox(width: 4),
           Text(
             rating.toStringAsFixed(1),
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.semanticColors.onImage,
-                ),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: context.semanticColors.onImage,
+            ),
           ),
           if (label != null) ...[
             const SizedBox(width: 4),
             Text(
               label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: context.semanticColors.onImageMuted,
-                  ),
+                color: context.semanticColors.onImageMuted,
+              ),
             ),
           ],
         ],

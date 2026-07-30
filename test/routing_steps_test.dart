@@ -187,7 +187,7 @@ void main() {
     });
 
     test('unknown modifier falls back to Icons.straight', () {
-      expect(ManeuverIcon.forManeuver('continue'), Icons.straight,);
+      expect(ManeuverIcon.forManeuver('continue'), Icons.straight);
     });
   });
 

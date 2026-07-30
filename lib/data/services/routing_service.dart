@@ -23,7 +23,6 @@ import 'runtime_config_service.dart';
 /// We persist this whole list to Firestore so cold starts don't have to
 /// re-hit OSRM just to render instructions.
 class RouteStep {
-
   const RouteStep({
     required this.maneuver,
     required this.name,
@@ -59,8 +58,7 @@ class RouteStep {
     if (main == 'arrive') return tr('arrive_at_destination');
 
     final modifierKey = _modifierTranslationKey(main, modifier);
-    final prettyModifier =
-        modifierKey != null ? tr(modifierKey) : null;
+    final prettyModifier = modifierKey != null ? tr(modifierKey) : null;
 
     if (name.isNotEmpty) {
       return prettyModifier != null
@@ -179,7 +177,6 @@ class ManeuverIcon {
 
 /// Result of a routing request.
 class RouteResult {
-
   const RouteResult({
     required this.points,
     required this.distanceMeters,
@@ -189,6 +186,7 @@ class RouteResult {
     this.provider = 'none',
     this.steps = const [],
   });
+
   /// Ordered list of coordinates forming the route polyline.
   final List<LatLng> points;
 
@@ -258,13 +256,12 @@ enum _RoutingProvider {
 /// Both providers return GeoJSON LineString geometry of the same shape,
 /// so a single parser handles both responses.
 class RoutingService {
-
   RoutingService({
     http.Client? client,
     RouteCacheService? routeCache,
     this.timeout = const Duration(seconds: 6),
-  })  : _client = client ?? http.Client(),
-        _routeCache = routeCache;
+  }) : _client = client ?? http.Client(),
+       _routeCache = routeCache;
   final http.Client _client;
   final RouteCacheService? _routeCache;
   final Duration timeout;
@@ -325,8 +322,7 @@ class RoutingService {
       if (cached != null) {
         // Also warm the in-memory cache so the next refetch in the same
         // session skips the Firestore round-trip too.
-        _cache[_cacheKey(from, to)] =
-            _CacheEntry(cached, DateTime.now());
+        _cache[_cacheKey(from, to)] = _CacheEntry(cached, DateTime.now());
         return cached;
       }
     }
@@ -345,9 +341,13 @@ class RoutingService {
     // burn the timeout twice for nothing. The key is read fresh on each
     // call so admin-side runtime changes take effect on the next request
     // without recreating this service.
-    final providers = RuntimeConfigService.instance.orsApiKey.isNotEmpty
-        ? const [_RoutingProvider.openRouteService, _RoutingProvider.osrmDemo]
-        : const [_RoutingProvider.osrmDemo];
+    final providers =
+        RuntimeConfigService.instance.orsApiKey.isNotEmpty
+            ? const [
+              _RoutingProvider.openRouteService,
+              _RoutingProvider.osrmDemo,
+            ]
+            : const [_RoutingProvider.osrmDemo];
 
     Object? lastError;
     for (final provider in providers) {
@@ -459,9 +459,10 @@ class RoutingService {
       // errorMessage now carries enough signal for the banner to
       // surface "check your ORS API key" specifically.
       final authFailure = resp.statusCode == 401 || resp.statusCode == 403;
-      final errorMessage = authFailure
-          ? 'routing_api_key_invalid' // localized key; UI swaps to text
-          : 'HTTP ${resp.statusCode}';
+      final errorMessage =
+          authFailure
+              ? 'routing_api_key_invalid' // localized key; UI swaps to text
+              : 'HTTP ${resp.statusCode}';
       return RouteResult.fallback(
         from: from,
         to: to,
@@ -556,14 +557,15 @@ class RoutingService {
       );
     }
 
-    final points = coords.map<LatLng>((c) {
-      final pair = c as List<dynamic>;
-      // GeoJSON convention is [lng, lat]; latlong2 wants LatLng(lat, lng).
-      return LatLng(
-        (pair[1] as num).toDouble(),
-        (pair[0] as num).toDouble(),
-      );
-    }).toList();
+    final points =
+        coords.map<LatLng>((c) {
+          final pair = c as List<dynamic>;
+          // GeoJSON convention is [lng, lat]; latlong2 wants LatLng(lat, lng).
+          return LatLng(
+            (pair[1] as num).toDouble(),
+            (pair[0] as num).toDouble(),
+          );
+        }).toList();
 
     final engineDistance = (first['distance'] as num?)?.toDouble();
     final engineDuration = (first['duration'] as num?)?.toDouble();
@@ -616,32 +618,30 @@ class RoutingService {
         final type = maneuver?['type'] as String? ?? 'continue';
         final modifier = maneuver?['modifier'] as String?;
         final maneuverString =
-            modifier != null && modifier.isNotEmpty
-                ? '$type $modifier'
-                : type;
+            modifier != null && modifier.isNotEmpty ? '$type $modifier' : type;
         final name = step['name'] as String? ?? '';
         final distance = (step['distance'] as num?)?.toDouble() ?? 0;
         final duration = (step['duration'] as num?)?.toDouble();
         final loc = maneuver?['location'] as List<dynamic>?;
-        final startLatLng = (loc != null && loc.length >= 2)
-            ? LatLng(
-                (loc[1] as num).toDouble(),
-                (loc[0] as num).toDouble(),
-              )
-            : LatLng(0, 0);
+        final startLatLng =
+            (loc != null && loc.length >= 2)
+                ? LatLng((loc[1] as num).toDouble(), (loc[0] as num).toDouble())
+                : LatLng(0, 0);
         // The end of step N is the start of step N+1, by construction.
         // For the last step we approximate with the same start location —
         // exact arrival coords aren't needed for instruction rendering.
-        result.add(RouteStep(
-          maneuver: maneuverString,
-          name: name,
-          distanceMeters: distance,
-          durationSeconds: duration,
-          startLocation: startLatLng,
-          endLocation: startLatLng, // populated below in a second pass
-          bearingBefore: (maneuver?['bearing_before'] as num?)?.toInt(),
-          bearingAfter: (maneuver?['bearing_after'] as num?)?.toInt(),
-        ),);
+        result.add(
+          RouteStep(
+            maneuver: maneuverString,
+            name: name,
+            distanceMeters: distance,
+            durationSeconds: duration,
+            startLocation: startLatLng,
+            endLocation: startLatLng, // populated below in a second pass
+            bearingBefore: (maneuver?['bearing_before'] as num?)?.toInt(),
+            bearingAfter: (maneuver?['bearing_after'] as num?)?.toInt(),
+          ),
+        );
       }
       // Second pass: end of step N = start of step N+1.
       for (var i = 0; i < result.length - 1; i++) {
@@ -733,13 +733,14 @@ class RoutingService {
         );
       }
 
-      final points = coords.map<LatLng>((c) {
-        final pair = c as List<dynamic>;
-        return LatLng(
-          (pair[1] as num).toDouble(),
-          (pair[0] as num).toDouble(),
-        );
-      }).toList();
+      final points =
+          coords.map<LatLng>((c) {
+            final pair = c as List<dynamic>;
+            return LatLng(
+              (pair[1] as num).toDouble(),
+              (pair[0] as num).toDouble(),
+            );
+          }).toList();
 
       final props = first['properties'] as Map<String, dynamic>?;
       final summary = props?['summary'] as Map<String, dynamic>?;
@@ -786,7 +787,8 @@ class RoutingService {
     final dLng = _toRad(b.longitude - a.longitude);
     final lat1 = _toRad(a.latitude);
     final lat2 = _toRad(b.latitude);
-    final h = (1 - math.cos(dLat)) / 2 +
+    final h =
+        (1 - math.cos(dLat)) / 2 +
         math.cos(lat1) * math.cos(lat2) * (1 - math.cos(dLng)) / 2;
     return 2 * earthRadius * math.asin(h.clamp(0.0, 1.0));
   }

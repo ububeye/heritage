@@ -5,12 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class UpgradeBanner extends StatelessWidget {
-
-  const UpgradeBanner({
-    super.key,
-    required this.onUpgrade,
-    this.message,
-  });
+  const UpgradeBanner({super.key, required this.onUpgrade, this.message});
   final VoidCallback onUpgrade;
   final String? message;
 
@@ -37,7 +32,9 @@ class UpgradeBanner extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onError.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onError.withValues(alpha: 0.2),
                 borderRadius: AppRadius.smBorder,
               ),
               child: Icon(
@@ -54,15 +51,15 @@ class UpgradeBanner extends StatelessWidget {
                   Text(
                     'Upgrade for Full Audio',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.textOnPrimary,
-                        ),
+                      color: AppColors.textOnPrimary,
+                    ),
                   ),
                   if (message != null)
                     Text(
                       message!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textOnPrimary.withValues(alpha: 0.8),
-                          ),
+                        color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                      ),
                     ),
                 ],
               ),

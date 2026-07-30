@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/localization/localization_cubit.dart';
 
 class LocalizedText extends StatelessWidget {
-
   const LocalizedText(
     this.translationKey, {
     super.key,
@@ -19,11 +18,7 @@ class LocalizedText extends StatelessWidget {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, state) {
         final text = state.translations[translationKey] ?? translationKey;
-        return Text(
-          text,
-          style: style,
-          textAlign: textAlign,
-        );
+        return Text(text, style: style, textAlign: textAlign);
       },
     );
   }
@@ -36,7 +31,6 @@ String tr(BuildContext context, String key) {
 
 // Localized version of common widgets
 class LocalizedListTile extends StatelessWidget {
-
   const LocalizedListTile({
     super.key,
     this.leadingIcon,
@@ -54,9 +48,10 @@ class LocalizedListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: leadingIcon != null
-          ? Icon(leadingIcon, color: Theme.of(context).primaryColor)
-          : null,
+      leading:
+          leadingIcon != null
+              ? Icon(leadingIcon, color: Theme.of(context).primaryColor)
+              : null,
       title: LocalizedText(titleKey),
       subtitle: subtitleKey != null ? LocalizedText(subtitleKey!) : null,
       trailing: trailing,
@@ -66,7 +61,6 @@ class LocalizedListTile extends StatelessWidget {
 }
 
 class LocalizedButton extends StatelessWidget {
-
   const LocalizedButton({
     super.key,
     required this.labelKey,
@@ -84,19 +78,19 @@ class LocalizedButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
       style: style,
-      child: isLoading
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : LocalizedText(labelKey),
+      child:
+          isLoading
+              ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+              : LocalizedText(labelKey),
     );
   }
 }
 
 class LocalizedAppBar extends StatelessWidget implements PreferredSizeWidget {
-
   const LocalizedAppBar({
     super.key,
     required this.titleKey,

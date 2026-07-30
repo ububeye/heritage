@@ -7,7 +7,6 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_durations.dart';
 
 class ArrivalOverlay extends StatefulWidget {
-
   const ArrivalOverlay({
     super.key,
     required this.site,
@@ -81,7 +80,9 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                         borderRadius: AppRadius.sheetBorderSmBorder,
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondary.withValues(alpha: 0.5),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -94,22 +95,30 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                             transformation: 'w_400,c_fill,q_auto,f_auto',
                           ),
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: Theme.of(context).colorScheme.surfaceContainer,
-                            child: Icon(
-                              Icons.image,
-                              color: Theme.of(context).colorScheme.outline,
-                              size: 48,
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: Theme.of(context).colorScheme.surfaceContainer,
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: Theme.of(context).colorScheme.outline,
-                              size: 48,
-                            ),
-                          ),
+                          placeholder:
+                              (context, url) => Container(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
+                                child: Icon(
+                                  Icons.image,
+                                  color: Theme.of(context).colorScheme.outline,
+                                  size: 48,
+                                ),
+                              ),
+                          errorWidget:
+                              (context, url, error) => Container(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: Theme.of(context).colorScheme.outline,
+                                  size: 48,
+                                ),
+                              ),
                         ),
                       ),
                     ),
@@ -117,17 +126,16 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                     Text(
                       'You have arrived at',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            // Subtitle over the scrim — onImageMuted.
-                            color: context.semanticColors.onImageMuted,
-                          ),
+                        // Subtitle over the scrim — onImageMuted.
+                        color: context.semanticColors.onImageMuted,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       widget.site.getName(widget.uiLanguage),
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: context.semanticColors.onImage,
-                          ),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(color: context.semanticColors.onImage),
                     ),
                     const SizedBox(height: 40),
                     ScaleTransition(
@@ -142,7 +150,9 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                             borderRadius: AppRadius.heroGreetingBorder,
                             boxShadow: [
                               BoxShadow(
-                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.secondary.withValues(alpha: 0.5),
                                 blurRadius: 20,
                                 spreadRadius: 5,
                               ),
@@ -160,9 +170,9 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                     Text(
                       'Tap to start audio guide',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            // Hint over scrim — onImageMuted.
-                            color: context.semanticColors.onImageMuted,
-                          ),
+                        // Hint over scrim — onImageMuted.
+                        color: context.semanticColors.onImageMuted,
+                      ),
                     ),
                   ],
                 ),

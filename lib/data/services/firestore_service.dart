@@ -4,9 +4,8 @@ import '../models/user_model.dart';
 import '../../core/constants/app_constants.dart';
 
 class FirestoreService {
-
   FirestoreService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
 
   // Sites Collection
@@ -50,9 +49,8 @@ class FirestoreService {
 
   Future<List<SiteModel>> getSitesByCategory(String category) async {
     try {
-      final snapshot = await _sitesCollection
-          .where('category', isEqualTo: category)
-          .get();
+      final snapshot =
+          await _sitesCollection.where('category', isEqualTo: category).get();
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
@@ -88,15 +86,17 @@ class FirestoreService {
             data['id'] = doc.id;
             return data;
           })
-          .where((data) =>
-              matches(data, 'name_en') ||
-              matches(data, 'name_sw') ||
-              matches(data, 'name_fr') ||
-              matches(data, 'name_de') ||
-              matches(data, 'name_ar') ||
-              matches(data, 'name_it') ||
-              matches(data, 'name_es') ||
-              matches(data, 'address'),)
+          .where(
+            (data) =>
+                matches(data, 'name_en') ||
+                matches(data, 'name_sw') ||
+                matches(data, 'name_fr') ||
+                matches(data, 'name_de') ||
+                matches(data, 'name_ar') ||
+                matches(data, 'name_it') ||
+                matches(data, 'name_es') ||
+                matches(data, 'address'),
+          )
           .map((data) => SiteModel.fromMap(data))
           .toList();
     } catch (e) {
@@ -221,8 +221,9 @@ class FirestoreService {
     final ids = uids.toList();
     if (ids.isEmpty) return {};
     try {
-      final snaps =
-          await Future.wait(ids.map((id) => _rolesCollection.doc(id).get()));
+      final snaps = await Future.wait(
+        ids.map((id) => _rolesCollection.doc(id).get()),
+      );
       final out = <String, UserRole>{};
       for (var i = 0; i < ids.length; i++) {
         if (!snaps[i].exists) continue;

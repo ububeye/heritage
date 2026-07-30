@@ -93,8 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
     // an active maintenance window still lands on the maintenance
     // screen instead of their cached route.
     final inMaintenance = RuntimeConfigService.instance.maintenanceMode;
-    final isAdmin =
-        authState.user?.role == UserRole.admin;
+    final isAdmin = authState.user?.role == UserRole.admin;
     if (inMaintenance && !isAdmin) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MaintenanceScreen()),
@@ -106,12 +105,15 @@ class _SplashScreenState extends State<SplashScreen>
     // user sees the app intro before any sign-in screen.
     if (SharedPrefsService.instance.isFirstLaunch) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen(isFirstLaunch: true)),
+        MaterialPageRoute(
+          builder: (_) => const OnboardingScreen(isFirstLaunch: true),
+        ),
       );
       return;
     }
 
-    if (authState.status == AuthStatus.authenticated && authState.user != null) {
+    if (authState.status == AuthStatus.authenticated &&
+        authState.user != null) {
       // User is logged in - navigate to appropriate screen
       if (authState.user!.role == UserRole.admin) {
         Navigator.of(context).pushReplacement(
@@ -195,11 +197,16 @@ class _SplashScreenState extends State<SplashScreen>
                           offset: Offset(0, _slideAnimation.value),
                           child: Text(
                             'Stone Town Guide',
-                            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                  fontSize: 32,
-                                  color: Theme.of(context).textTheme.displayLarge?.color,
-                                  letterSpacing: 1.2,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.displayMedium?.copyWith(
+                              fontSize: 32,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.displayLarge?.color,
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -207,10 +214,16 @@ class _SplashScreenState extends State<SplashScreen>
                           offset: Offset(0, _slideAnimation.value),
                           child: Text(
                             'Explore Zanzibar\'s Heritage',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
-                                  letterSpacing: 0.5,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.8),
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 80),

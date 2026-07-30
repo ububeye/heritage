@@ -51,8 +51,10 @@ class _TranscriptSectionState extends State<TranscriptSection>
       duration: AppDurations.navigation,
       value: widget.defaultExpanded ? 1.0 : 0.0,
     );
-    _expandCurve =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _expandCurve = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -102,15 +104,18 @@ class _TranscriptSectionState extends State<TranscriptSection>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Row(
                 children: [
-                  Icon(Icons.subtitles_outlined,
-                      size: 18, color: scheme.onSurfaceVariant,),
+                  Icon(
+                    Icons.subtitles_outlined,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       widget.title,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: scheme.onSurface,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelLarge?.copyWith(color: scheme.onSurface),
                     ),
                   ),
                   Text(
@@ -142,10 +147,10 @@ class _TranscriptSectionState extends State<TranscriptSection>
                 child: SelectableText(
                   trailingText,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 15,
-                        height: 1.6,
-                        color: scheme.onSurface,
-                      ),
+                    fontSize: 15,
+                    height: 1.6,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
             ),

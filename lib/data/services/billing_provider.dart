@@ -60,5 +60,5 @@ abstract class BillingProvider {
   /// account. The cubit calls this on `initialize`. Returns `null` when
   /// the user has never bought anything.
   Future<({PlanId planId, DateTime? trialActiveUntil, String receiptId})?>
-      currentEntitlement();
+  currentEntitlement();
 }

@@ -146,7 +146,8 @@ class TtsService {
   }
 
   Future<void> _setDefaultLanguage() async {
-    final languages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
+    final languages =
+        (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     if (languages.contains('en-US')) {
       await _flutterTts.setLanguage('en-US');
       _currentLanguage = 'en-US';
@@ -201,7 +202,8 @@ class TtsService {
       return SetLanguageOutcome.unsupportedCode;
     }
 
-    final availableLanguages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
+    final availableLanguages =
+        (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     if (!availableLanguages.contains(ttsLanguage)) {
       // Voice not installed. Don't switch; the engine keeps its previous
       // (or default) voice. Caller can read `currentLanguage` to find out
@@ -215,7 +217,8 @@ class TtsService {
   }
 
   Future<List<String>> getAvailableLanguages() async {
-    final languages = (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
+    final languages =
+        (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
     final supported = <String>[];
 
     final languageMap = {
@@ -316,7 +319,8 @@ class TtsService {
 
     if (lastTerminatorIndex != null && lastTerminatorIndex > 0) {
       // Truncate at the last sentence boundary within the budget.
-      final truncated = buffer.toString().substring(0, lastTerminatorIndex).trimRight();
+      final truncated =
+          buffer.toString().substring(0, lastTerminatorIndex).trimRight();
       return TtsChunk(text: truncated, wasCut: true);
     }
 
@@ -446,7 +450,8 @@ class TtsService {
   /// via self-calibration.
   void _onProgress(String text, int start, int end, String word) {
     final fp = _fingerprint(text);
-    if (fp != _activeFingerprint) return; // stale callback from a previous speak()
+    if (fp != _activeFingerprint)
+      return; // stale callback from a previous speak()
     if (end <= 0) return;
 
     final nowMs = DateTime.now().millisecondsSinceEpoch;
@@ -479,8 +484,7 @@ class TtsService {
   Duration _offsetToDuration(int charOffset) {
     if (charOffset <= 0) return Duration.zero;
     return Duration(
-      milliseconds:
-          ((charOffset + _activeResumeBaseline) * _msPerChar).round(),
+      milliseconds: ((charOffset + _activeResumeBaseline) * _msPerChar).round(),
     );
   }
 

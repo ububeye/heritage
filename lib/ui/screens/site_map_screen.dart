@@ -11,7 +11,6 @@ import '../../core/theme/app_radius.dart';
 /// on an OpenStreetMap tile layer, with a Navigate FAB that pushes the
 /// live-navigation screen.
 class SiteMapScreen extends StatelessWidget {
-
   const SiteMapScreen({super.key, required this.site});
   final SiteModel site;
 
@@ -46,24 +45,28 @@ class SiteMapScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 20),
+                    Icon(
+                      Icons.location_on,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         site.displayAddress,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                     Text(
                       '${site.latitude.toStringAsFixed(4)}, ${site.longitude.toStringAsFixed(4)}',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            fontSize: 11,
-                            color: AppColors.textHint,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+                        fontSize: 11,
+                        color: AppColors.textHint,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ],
                 ),

@@ -48,7 +48,9 @@ class AudioPlayerBar extends StatelessWidget {
     final isPlaying = audioState.isPlaying;
     final showReplay = isPremium && audioState.duration > Duration.zero;
     final showPreviewBadge =
-        audioState.wasTruncated && !isPremium && audioState.duration > Duration.zero;
+        audioState.wasTruncated &&
+        !isPremium &&
+        audioState.duration > Duration.zero;
 
     return Container(
       padding: AppInsets.card,
@@ -71,8 +73,8 @@ class AudioPlayerBar extends StatelessWidget {
           // was built with. Now everything (play/pause label, replay
           // tooltip) updates together.
           builder: (context, locState) {
-            final playPauseLabel = locState.translations[
-                    isPlaying ? 'pause' : 'play'] ??
+            final playPauseLabel =
+                locState.translations[isPlaying ? 'pause' : 'play'] ??
                 (isPlaying ? 'Pause' : 'Play');
             return Row(
               children: [
@@ -134,16 +136,18 @@ class AudioPlayerBar extends StatelessWidget {
                         LinearProgressIndicator(
                           backgroundColor:
                               Theme.of(context).colorScheme.outline,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.secondary,
+                          ),
                           minHeight: 4,
                         )
                       else
                         LinearProgressIndicator(
                           value: audioState.progress.clamp(0.0, 1.0),
-                          backgroundColor: Theme.of(context).colorScheme.outline,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.outline,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.secondary,
+                            Theme.of(context).colorScheme.secondary,
                           ),
                           minHeight: 4,
                         ),
@@ -152,9 +156,8 @@ class AudioPlayerBar extends StatelessWidget {
                         audioState.isLoading
                             ? 'Loading…'
                             : '${audioState.positionText} / ${audioState.durationText}',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -163,7 +166,10 @@ class AudioPlayerBar extends StatelessWidget {
                   IconButton(
                     tooltip: locState.translations['replay'] ?? 'Replay',
                     onPressed: onReplay,
-                    icon: Icon(Icons.replay, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(
+                      Icons.replay,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
               ],
             );
@@ -201,9 +207,9 @@ class _LanguageChip extends StatelessWidget {
             Text(
               LanguageMeta.name(code),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(width: 2),
             Icon(
@@ -234,9 +240,9 @@ class _PreviewBadge extends StatelessWidget {
       ),
       child: Text(
         'PREVIEW',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textOnAccent,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: AppColors.textOnAccent),
       ),
     );
   }

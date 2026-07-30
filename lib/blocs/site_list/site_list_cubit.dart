@@ -7,10 +7,9 @@ import '../../data/services/firestore_service.dart';
 import 'site_list_state.dart';
 
 class SiteListCubit extends Cubit<SiteListState> {
-
   SiteListCubit({SiteRepository? siteRepository})
-      : _siteRepository = siteRepository ?? SiteRepository(),
-        super(const SiteListState()) {
+    : _siteRepository = siteRepository ?? SiteRepository(),
+      super(const SiteListState()) {
     // Reflect "loading" on the very first frame so the UI doesn't sit on
     // a stale empty list if the snapshot is slow to arrive.
     if (state.sites.isEmpty) {
@@ -23,30 +22,35 @@ class SiteListCubit extends Cubit<SiteListState> {
         // Preserve current filter/search when a new snapshot arrives.
         // Only re-filter when the filter inputs or the site list actually
         // changed — otherwise every snapshot triggers an O(n) walk.
-        final filtered = (_hasReceivedFirstSnapshot &&
-                _sameList(sites, state.sites) &&
-                state.searchQuery.isEmpty &&
-                state.selectedCategory == null)
-            ? state.filteredSites
-            : _applyFilters(
-                sites,
-                state.searchQuery,
-                state.selectedCategory,
-              );
+        final filtered =
+            (_hasReceivedFirstSnapshot &&
+                    _sameList(sites, state.sites) &&
+                    state.searchQuery.isEmpty &&
+                    state.selectedCategory == null)
+                ? state.filteredSites
+                : _applyFilters(
+                  sites,
+                  state.searchQuery,
+                  state.selectedCategory,
+                );
         _hasReceivedFirstSnapshot = true;
-        final sitesById = { for (var s in sites) s.id: s };
-        emit(state.copyWith(
-          status: SiteListStatus.loaded,
-          sites: sites,
-          sitesById: sitesById,
-          filteredSites: filtered,
-        ),);
+        final sitesById = {for (var s in sites) s.id: s};
+        emit(
+          state.copyWith(
+            status: SiteListStatus.loaded,
+            sites: sites,
+            sitesById: sitesById,
+            filteredSites: filtered,
+          ),
+        );
       },
       onError: (e) {
-        emit(state.copyWith(
-          status: SiteListStatus.error,
-          errorMessage: e.toString(),
-        ),);
+        emit(
+          state.copyWith(
+            status: SiteListStatus.error,
+            errorMessage: e.toString(),
+          ),
+        );
       },
     );
   }
@@ -60,20 +64,28 @@ class SiteListCubit extends Cubit<SiteListState> {
 
     try {
       final sites = await _siteRepository.getAllSites();
-      final filtered = _applyFilters(sites, state.searchQuery, state.selectedCategory);
+      final filtered = _applyFilters(
+        sites,
+        state.searchQuery,
+        state.selectedCategory,
+      );
       _hasReceivedFirstSnapshot = true;
-      final sitesById = { for (var s in sites) s.id: s };
-      emit(state.copyWith(
-        status: SiteListStatus.loaded,
-        sites: sites,
-        sitesById: sitesById,
-        filteredSites: filtered,
-      ),);
+      final sitesById = {for (var s in sites) s.id: s};
+      emit(
+        state.copyWith(
+          status: SiteListStatus.loaded,
+          sites: sites,
+          sitesById: sitesById,
+          filteredSites: filtered,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        status: SiteListStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(
+          status: SiteListStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
     }
   }
 
@@ -89,42 +101,41 @@ class SiteListCubit extends Cubit<SiteListState> {
 
   void filterByCategory(String? category) {
     if (category == null || category.isEmpty) {
-      final filtered = state.searchQuery.isEmpty
-          ? state.sites
-          : _filterBySearch(state.sites, state.searchQuery);
-      emit(state.copyWith(
-        selectedCategory: null,
-        filteredSites: filtered,
-      ),);
+      final filtered =
+          state.searchQuery.isEmpty
+              ? state.sites
+              : _filterBySearch(state.sites, state.searchQuery);
+      emit(state.copyWith(selectedCategory: null, filteredSites: filtered));
     } else {
-      final byCategory = state.sites.where((site) => site.category == category).toList();
-      final filtered = state.searchQuery.isEmpty
-          ? byCategory
-          : _filterBySearch(byCategory, state.searchQuery);
-      emit(state.copyWith(
-        selectedCategory: category,
-        filteredSites: filtered,
-      ),);
+      final byCategory =
+          state.sites.where((site) => site.category == category).toList();
+      final filtered =
+          state.searchQuery.isEmpty
+              ? byCategory
+              : _filterBySearch(byCategory, state.searchQuery);
+      emit(state.copyWith(selectedCategory: category, filteredSites: filtered));
     }
   }
 
   void search(String query) {
-    final base = state.selectedCategory != null
-        ? state.sites.where((site) => site.category == state.selectedCategory).toList()
-        : state.sites;
+    final base =
+        state.selectedCategory != null
+            ? state.sites
+                .where((site) => site.category == state.selectedCategory)
+                .toList()
+            : state.sites;
     final filtered = query.isEmpty ? base : _filterBySearch(base, query);
-    emit(state.copyWith(
-      searchQuery: query,
-      filteredSites: filtered,
-    ),);
+    emit(state.copyWith(searchQuery: query, filteredSites: filtered));
   }
 
   void clearFilters() {
-    emit(state.copyWith(
-      searchQuery: '',
-      selectedCategory: null,
-      filteredSites: state.sites,
-    ),);
+    emit(
+      state.copyWith(
+        searchQuery: '',
+        selectedCategory: null,
+        filteredSites: state.sites,
+      ),
+    );
   }
 
   /// Flip the `featured` flag on the site with [siteId]. Only one site is

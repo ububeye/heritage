@@ -7,7 +7,6 @@ import '../../../core/theme/app_colors.dart';
 /// reusable from screens that don't share the same key namespace, e.g.
 /// admin settings).
 class SettingsSectionTitle extends StatelessWidget {
-
   const SettingsSectionTitle({super.key, required this.label});
   final String label;
 
@@ -26,10 +25,10 @@ class SettingsSectionTitle extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: color,
-            ),
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: color,
+        ),
       ),
     );
   }

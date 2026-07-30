@@ -25,11 +25,7 @@ enum UpgradeMode {
 /// and [PremiumOfferScreen] (onboarding) render this — only the AppBar
 /// and the bottom dismiss link differ by [mode].
 class UpgradeContent extends StatelessWidget {
-  const UpgradeContent({
-    super.key,
-    required this.mode,
-    this.onSuccessDismiss,
-  });
+  const UpgradeContent({super.key, required this.mode, this.onSuccessDismiss});
 
   final UpgradeMode mode;
   final VoidCallback? onSuccessDismiss;
@@ -42,10 +38,11 @@ class UpgradeContent extends StatelessWidget {
     final onSurfaceMuted = onSurface.withValues(alpha: 0.75);
 
     return BlocConsumer<PremiumCubit, PremiumState>(
-      listenWhen: (prev, next) =>
-          prev.lastOutcome != next.lastOutcome ||
-          (next.lastOutcome == PurchaseOutcome.success &&
-              next.lastReceiptId != prev.lastReceiptId),
+      listenWhen:
+          (prev, next) =>
+              prev.lastOutcome != next.lastOutcome ||
+              (next.lastOutcome == PurchaseOutcome.success &&
+                  next.lastReceiptId != prev.lastReceiptId),
       listener: (context, state) {
         if (state.lastOutcome == PurchaseOutcome.success) {
           _showSuccessDialog(context);
@@ -108,7 +105,8 @@ class UpgradeContent extends StatelessWidget {
                       price: AppConstants.yearlyPrice,
                       priceSubtitle: '/year',
                       badge: 'Save 50%',
-                      secondaryLine: 'Just \$${_yearlyMonthlyEquivalent().toStringAsFixed(2)} / month',
+                      secondaryLine:
+                          'Just \$${_yearlyMonthlyEquivalent().toStringAsFixed(2)} / month',
                       selected: state.selectedPlanId == PlanId.yearly,
                       onTap: () => cubit.selectPlan(PlanId.yearly),
                     ),
@@ -125,25 +123,28 @@ class UpgradeContent extends StatelessWidget {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: state.isPremium || state.isLoading
-                      ? null
-                      : () => cubit.purchase(),
+                  onPressed:
+                      state.isPremium || state.isLoading
+                          ? null
+                          : () => cubit.purchase(),
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.lgBorder,
                     ),
                   ),
-                  child: state.isLoading
-                      ? _LoadingCta(
-                          label: state.lastOutcome == PurchaseOutcome.pending
-                              ? 'Waiting for payment...'
-                              : 'Connecting payment...',
-                        )
-                      : Text(
-                          state.isPremium
-                              ? 'Premium active'
-                              : _ctaLabel(state.selectedPlanId),
-                        ),
+                  child:
+                      state.isLoading
+                          ? _LoadingCta(
+                            label:
+                                state.lastOutcome == PurchaseOutcome.pending
+                                    ? 'Waiting for payment...'
+                                    : 'Connecting payment...',
+                          )
+                          : Text(
+                            state.isPremium
+                                ? 'Premium active'
+                                : _ctaLabel(state.selectedPlanId),
+                          ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -182,25 +183,27 @@ class UpgradeContent extends StatelessWidget {
 
   // --------------------------- helpers --------------------------------
 
-  double _afterPrice(PlanId id) => id == PlanId.yearly
-      ? AppConstants.yearlyPrice
-      : AppConstants.monthlyPrice;
+  double _afterPrice(PlanId id) =>
+      id == PlanId.yearly
+          ? AppConstants.yearlyPrice
+          : AppConstants.monthlyPrice;
 
   String _afterPriceSubtitle(PlanId id) =>
       id == PlanId.yearly ? '/year' : '/month';
 
-  double _yearlyMonthlyEquivalent() =>
-      AppConstants.yearlyPrice / 12.0;
+  double _yearlyMonthlyEquivalent() => AppConstants.yearlyPrice / 12.0;
 
-  String _ctaLabel(PlanId id) => id == PlanId.yearly
-      ? 'Start your 3-day free trial'
-      : 'Start your 3-day free trial';
+  String _ctaLabel(PlanId id) =>
+      id == PlanId.yearly
+          ? 'Start your 3-day free trial'
+          : 'Start your 3-day free trial';
 
   String _legalCopy(PlanId id) {
     final unit = id == PlanId.yearly ? '/year' : '/month';
-    final price = id == PlanId.yearly
-        ? AppConstants.yearlyPrice
-        : AppConstants.monthlyPrice;
+    final price =
+        id == PlanId.yearly
+            ? AppConstants.yearlyPrice
+            : AppConstants.monthlyPrice;
     return 'Then \$${price.toStringAsFixed(2)}$unit after the trial. '
         'Cancel anytime in Google Play.';
   }
@@ -269,12 +272,18 @@ class UpgradeContent extends StatelessWidget {
                   color: scheme.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.check_rounded, size: 48, color: scheme.primary),
+                child: Icon(
+                  Icons.check_rounded,
+                  size: 48,
+                  color: scheme.primary,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
                 'Welcome to Premium',
-                style: Theme.of(dialogContext).textTheme.headlineLarge?.copyWith(
+                style: Theme.of(
+                  dialogContext,
+                ).textTheme.headlineLarge?.copyWith(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
@@ -425,7 +434,13 @@ class _BenefitsList extends StatelessWidget {
                     thickness: 1,
                     color: Theme.of(context).dividerColor,
                   ),
-                _BenefitRow(icon: items[i].$1, text: items[i].$2, scheme: scheme, fg: scheme.onSurface, mutedFg: onSurfaceMuted),
+                _BenefitRow(
+                  icon: items[i].$1,
+                  text: items[i].$2,
+                  scheme: scheme,
+                  fg: scheme.onSurface,
+                  mutedFg: onSurfaceMuted,
+                ),
               ],
             ],
           ),

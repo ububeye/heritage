@@ -10,7 +10,12 @@ void main() {
       final lat2 = -6.1620;
       final lng2 = 39.1891;
 
-      final distance = DistanceCalculator.calculateDistance(lat1, lng1, lat2, lng2);
+      final distance = DistanceCalculator.calculateDistance(
+        lat1,
+        lng1,
+        lat2,
+        lng2,
+      );
       // It should be around 160 meters
       expect(distance, greaterThan(100));
       expect(distance, lessThan(300));

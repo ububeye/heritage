@@ -58,8 +58,12 @@ void main() {
       expect(snapped.longitude, 39.1936);
       // Latitude is one of the polyline vertices (not the doorway).
       final lats = polyline.map((p) => p.latitude).toSet();
-      expect(lats.contains(snapped.latitude), isTrue,
-          reason: 'snapped latitude ${snapped.latitude} must be a polyline vertex',);
+      expect(
+        lats.contains(snapped.latitude),
+        isTrue,
+        reason:
+            'snapped latitude ${snapped.latitude} must be a polyline vertex',
+      );
       expect(snapped.latitude, isNot(equals(doorway.latitude)));
     });
   });

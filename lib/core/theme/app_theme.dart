@@ -128,7 +128,9 @@ class AppTheme {
           elevation: AppShadows.elevationLow,
           padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -141,7 +143,9 @@ class AppTheme {
           side: BorderSide(color: scheme.primary, width: 1.5),
           padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -213,7 +217,9 @@ class AppTheme {
         backgroundColor: scheme.onSurface,
         contentTextStyle: GoogleFonts.inter(color: scheme.surface),
         behavior: SnackBarBehavior.floating,
-        shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.buttonBorder,
+        ),
       ),
     );
   }
@@ -273,7 +279,9 @@ class AppTheme {
           elevation: AppShadows.elevationLow,
           padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -286,7 +294,9 @@ class AppTheme {
           side: BorderSide(color: scheme.primary, width: 1.5),
           padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -359,7 +369,9 @@ class AppTheme {
         contentTextStyle: GoogleFonts.inter(color: scheme.onSurface),
         actionTextColor: scheme.primary,
         behavior: SnackBarBehavior.floating,
-        shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.buttonBorder,
+        ),
       ),
       dialogTheme: DialogTheme(
         backgroundColor: scheme.surfaceContainerHigh,

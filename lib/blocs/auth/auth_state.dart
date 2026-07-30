@@ -6,9 +6,11 @@ enum AuthStatus {
   loading,
   authenticated,
   unauthenticated,
+
   /// Sign-in / sign-up / role-update errors land here. errorMessage on
   /// the state carries the human-readable reason.
   error,
+
   /// Password-reset email was sent — user is still unauthenticated.
   /// The screen that triggered the reset listens for this status to
   /// show a "check your inbox" SnackBar; the previous behaviour of
@@ -17,7 +19,6 @@ enum AuthStatus {
 }
 
 class AuthState extends Equatable {
-
   const AuthState({
     this.status = AuthStatus.initial,
     this.user,
@@ -27,7 +28,8 @@ class AuthState extends Equatable {
   final UserModel? user;
   final String? errorMessage;
 
-  bool get isAuthenticated => status == AuthStatus.authenticated && user != null;
+  bool get isAuthenticated =>
+      status == AuthStatus.authenticated && user != null;
   bool get isPremium => user?.isPremium ?? false;
   bool get isAdmin => user?.isAdmin ?? false;
 

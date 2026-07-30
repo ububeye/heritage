@@ -3,7 +3,6 @@ import 'package:equatable/equatable.dart';
 enum UserRole { free, premium, admin }
 
 class UserModel extends Equatable {
-
   const UserModel({
     required this.id,
     required this.email,
@@ -22,12 +21,14 @@ class UserModel extends Equatable {
       displayName: map['display_name'],
       photoUrl: map['photo_url'],
       role: _parseRole(map['role']),
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'])
-          : null,
-      subscriptionExpiry: map['subscription_expiry'] != null
-          ? DateTime.tryParse(map['subscription_expiry'])
-          : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'])
+              : null,
+      subscriptionExpiry:
+          map['subscription_expiry'] != null
+              ? DateTime.tryParse(map['subscription_expiry'])
+              : null,
       disabled: map['disabled'] ?? false,
     );
   }
@@ -91,12 +92,12 @@ class UserModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        email,
-        displayName,
-        photoUrl,
-        role,
-        createdAt,
-        subscriptionExpiry,
-      ];
+    id,
+    email,
+    displayName,
+    photoUrl,
+    role,
+    createdAt,
+    subscriptionExpiry,
+  ];
 }

@@ -34,19 +34,18 @@ class PremiumOfferScreen extends StatelessWidget {
             child: Text(
               'Skip',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.7),
-                  ),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
             ),
           ),
           const SizedBox(width: 8),
         ],
       ),
       body: BlocListener<PremiumCubit, PremiumState>(
-        listenWhen: (prev, next) =>
-            prev.isPremium != next.isPremium && next.isPremium,
+        listenWhen:
+            (prev, next) => prev.isPremium != next.isPremium && next.isPremium,
         listener: (context, state) {
           // Once the cubit flips to premium, the success dialog has
           // already shown via UpgradeContent. Push to Home so the user

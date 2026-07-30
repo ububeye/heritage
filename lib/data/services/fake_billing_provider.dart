@@ -42,8 +42,7 @@ class FakeBillingProvider implements BillingProvider {
   /// When non-null, the next [restore] call returns this entitlement.
   /// Lets tests assert the "already a member" flow without going through
   /// purchase first.
-  ({PlanId planId, DateTime? trialActiveUntil, String receiptId})?
-      restoreStash;
+  ({PlanId planId, DateTime? trialActiveUntil, String receiptId})? restoreStash;
 
   @override
   String get name => 'fake';
@@ -107,7 +106,7 @@ class FakeBillingProvider implements BillingProvider {
 
   @override
   Future<({PlanId planId, DateTime? trialActiveUntil, String receiptId})?>
-      currentEntitlement() async {
+  currentEntitlement() async {
     await _simulateLatency();
     return restoreStash;
   }

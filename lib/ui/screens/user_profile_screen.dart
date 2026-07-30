@@ -20,7 +20,10 @@ class UserProfileScreen extends StatelessWidget {
         final user = authState.user;
 
         return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Replaced AppColors.background
+          backgroundColor:
+              Theme.of(
+                context,
+              ).scaffoldBackgroundColor, // Replaced AppColors.background
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: const Text('Profile'),
@@ -67,26 +70,30 @@ class UserProfileScreen extends StatelessWidget {
                   _ProfileMenuItem(
                     icon: Icons.workspace_premium,
                     title: 'Premium Plan',
-                    subtitle: authState.isPremium ? 'Active' : 'Upgrade for more features',
-                    trailing: authState.isPremium
-                        ? Container(
-                            padding: AppInsets.tag,
-                            decoration: BoxDecoration(
-                              color: context.semanticColors.success.withValues(alpha: 0.1),
-                              borderRadius: AppRadius.smBorder,
-                            ),
-                            child: Text(
-                              'Active',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color: AppColors.success,
-                                    fontSize: 12,
-                                  ),
-                            ),
-                          )
-                        : const Icon(Icons.chevron_right),
+                    subtitle:
+                        authState.isPremium
+                            ? 'Active'
+                            : 'Upgrade for more features',
+                    trailing:
+                        authState.isPremium
+                            ? Container(
+                              padding: AppInsets.tag,
+                              decoration: BoxDecoration(
+                                color: context.semanticColors.success
+                                    .withValues(alpha: 0.1),
+                                borderRadius: AppRadius.smBorder,
+                              ),
+                              child: Text(
+                                'Active',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.labelLarge?.copyWith(
+                                  color: AppColors.success,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            )
+                            : const Icon(Icons.chevron_right),
                     onTap: () => _showUpgradeDialog(context),
                   ),
                 ],
@@ -163,21 +170,22 @@ class UserProfileScreen extends StatelessWidget {
             radius: 36,
             // Avatar sits over the primary-tinted gradient; use a
             // translucent onPrimary fill so it reads as a glassy chip.
-            backgroundColor: Theme.of(context)
-                .colorScheme
-                .onPrimary
-                .withValues(alpha: 0.2),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onPrimary.withValues(alpha: 0.2),
             backgroundImage:
                 user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
-            child: user?.photoUrl == null
-                ? Text(
-                    user?.email[0].toUpperCase() ?? 'U',
-                    style: Theme.of(context)
-                        .textTheme
-                        .displayMedium
-                        ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
-                  )
-                : null,
+            child:
+                user?.photoUrl == null
+                    ? Text(
+                      user?.email[0].toUpperCase() ?? 'U',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.displayMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    )
+                    : null,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -194,10 +202,9 @@ class UserProfileScreen extends StatelessWidget {
                 Text(
                   user?.email ?? '',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onPrimary
-                        .withValues(alpha: 0.8),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withValues(alpha: 0.8),
                     fontSize: 13,
                   ),
                 ),
@@ -205,10 +212,9 @@ class UserProfileScreen extends StatelessWidget {
                 Container(
                   padding: AppInsets.pillTight,
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onPrimary
-                        .withValues(alpha: 0.2),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onPrimary.withValues(alpha: 0.2),
                     borderRadius: AppRadius.mdBorder,
                   ),
                   child: Text(
@@ -235,54 +241,55 @@ class UserProfileScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Profile'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Display Name',
-                border: OutlineInputBorder(),
-              ),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Edit Profile'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Display Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final newName = nameController.text.trim();
+                  if (newName.isEmpty) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Name cannot be empty')),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  try {
+                    await context.read<AuthCubit>().updateDisplayName(newName);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Profile updated')),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final newName = nameController.text.trim();
-              if (newName.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Name cannot be empty')),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              try {
-                await context.read<AuthCubit>().updateDisplayName(newName);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profile updated')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -293,190 +300,196 @@ class UserProfileScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Change Password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: newController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm New Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (newController.text != confirmController.text) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Passwords do not match')),
-                );
-                return;
-              }
-              if (newController.text.length < 6) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text('Password must be at least 6 characters'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Change Password'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Current Password',
+                    border: OutlineInputBorder(),
                   ),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              try {
-                await context.read<AuthCubit>().changePassword(
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm New Password',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (newController.text != confirmController.text) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(content: Text('Passwords do not match')),
+                    );
+                    return;
+                  }
+                  if (newController.text.length < 6) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text('Password must be at least 6 characters'),
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(ctx);
+                  try {
+                    await context.read<AuthCubit>().changePassword(
                       currentPassword: currentController.text,
                       newPassword: newController.text,
                     );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Password updated!')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Update'),
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Password updated!')),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    }
+                  }
+                },
+                child: const Text('Update'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showLanguageDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Language'),
-        content: const Text('Go to Settings to change language'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Language'),
+            content: const Text('Go to Settings to change language'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showUpgradeDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Upgrade to Premium'),
-        content: const Text(
-          'Unlock all features:\n\n'
-          '• Full audio guides in 7 languages\n'
-          '• Unlimited site access\n'
-          '• Priority support\n\n'
-          'Coming soon!',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Upgrade to Premium'),
+            content: const Text(
+              'Unlock all features:\n\n'
+              '• Full audio guides in 7 languages\n'
+              '• Unlimited site access\n'
+              '• Priority support\n\n'
+              'Coming soon!',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Logout'),
+            content: const Text('Are you sure you want to logout?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.read<AuthCubit>().signOut();
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Logout'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.read<AuthCubit>().signOut();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
-              );
-            },
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'This action cannot be undone. All your data will be permanently deleted.\n\n'
-          'Please contact support to delete your account.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete Account'),
+            content: const Text(
+              'This action cannot be undone. All your data will be permanently deleted.\n\n'
+              'Please contact support to delete your account.',
             ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please contact support to delete your account'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
                 ),
-              );
-            },
-            child: const Text('Contact Support'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please contact support to delete your account',
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Contact Support'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-
   const _SectionTitle({required this.title});
   final String title;
 
@@ -486,16 +499,15 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
       ),
     );
   }
 }
 
 class _SettingsCard extends StatelessWidget {
-
   const _SettingsCard({required this.children});
   final List<Widget> children;
 
@@ -513,7 +525,6 @@ class _SettingsCard extends StatelessWidget {
 }
 
 class _ProfileMenuItem extends StatelessWidget {
-
   const _ProfileMenuItem({
     required this.icon,
     required this.title,
@@ -538,18 +549,19 @@ class _ProfileMenuItem extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: AppColors.textPrimary,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
       ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            )
-          : null,
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle!,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              )
+              : null,
       trailing: trailing ?? const Icon(Icons.chevron_right),
       onTap: onTap,
     );

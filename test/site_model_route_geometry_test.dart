@@ -18,7 +18,8 @@ void main() {
         'cloudinary_image_url': 'https://example.com/img.jpg',
         'latitude': -6.1619,
         'longitude': 39.1936,
-        'route_geometry': '{"type":"Feature","geometry":{"type":"LineString",'
+        'route_geometry':
+            '{"type":"Feature","geometry":{"type":"LineString",'
             '"coordinates":[[39.1936,-6.1619],[39.1940,-6.1620]]}}',
         'route_geometry_updated_at': '2026-07-11T10:30:00.000Z',
       });

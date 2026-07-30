@@ -22,15 +22,9 @@ class StoneTownBounds {
   /// The strict bounding box. The map camera is clamped to this rectangle;
   /// pan/zoom operations that try to escape it are snapped back inside.
   static LatLngBounds get cameraBounds => LatLngBounds(
-        const LatLng(
-          AppConstants.stoneTownMinLat,
-          AppConstants.stoneTownMinLng,
-        ),
-        const LatLng(
-          AppConstants.stoneTownMaxLat,
-          AppConstants.stoneTownMaxLng,
-        ),
-      );
+    const LatLng(AppConstants.stoneTownMinLat, AppConstants.stoneTownMinLng),
+    const LatLng(AppConstants.stoneTownMaxLat, AppConstants.stoneTownMaxLng),
+  );
 
   /// True if [point] is inside the strict Stone Town box. Used by the
   /// routing service to reject up-front any request that lands outside

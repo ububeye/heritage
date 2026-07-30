@@ -49,9 +49,8 @@ abstract class RouteCacheService {
 
 /// Production implementation backed by Firestore.
 class FirestoreRouteCache implements RouteCacheService {
-
   FirestoreRouteCache({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
 
   CollectionReference get _sites =>
@@ -66,9 +65,8 @@ class FirestoreRouteCache implements RouteCacheService {
         'geometry': {
           'type': 'LineString',
           // GeoJSON convention: [lng, lat].
-          'coordinates': result.points
-              .map((p) => [p.longitude, p.latitude])
-              .toList(),
+          'coordinates':
+              result.points.map((p) => [p.longitude, p.latitude]).toList(),
         },
         'properties': {
           'distance': result.distanceMeters,
@@ -108,24 +106,27 @@ class FirestoreRouteCache implements RouteCacheService {
       final coords = (geometry?['coordinates'] as List<dynamic>?) ?? const [];
       if (coords.isEmpty) return null;
 
-      final points = coords.map<LatLng>((c) {
-        final pair = c as List<dynamic>;
-        return LatLng(
-          (pair[1] as num).toDouble(),
-          (pair[0] as num).toDouble(),
-        );
-      }).toList();
+      final points =
+          coords.map<LatLng>((c) {
+            final pair = c as List<dynamic>;
+            return LatLng(
+              (pair[1] as num).toDouble(),
+              (pair[0] as num).toDouble(),
+            );
+          }).toList();
 
       final props = json['properties'] as Map<String, dynamic>?;
-      final distance = (props?['distance'] as num?)?.toDouble() ??
+      final distance =
+          (props?['distance'] as num?)?.toDouble() ??
           _polylineLengthMeters(points);
       final duration = (props?['duration'] as num?)?.toDouble();
       final provider = (props?['provider'] as String?) ?? 'cache';
       final rawSteps = (props?['steps'] as List<dynamic>?) ?? const [];
-      final steps = rawSteps
-          .map((s) => _decodeStep(s as Map<String, dynamic>))
-          .whereType<RouteStep>()
-          .toList();
+      final steps =
+          rawSteps
+              .map((s) => _decodeStep(s as Map<String, dynamic>))
+              .whereType<RouteStep>()
+              .toList();
 
       return RouteResult(
         points: points,
@@ -156,26 +157,24 @@ double _polylineLengthMeters(List<LatLng> pts) {
     final lat2 = b.latitude * math.pi / 180;
     final dLat = (b.latitude - a.latitude) * math.pi / 180;
     final dLng = (b.longitude - a.longitude) * math.pi / 180;
-    final h = (1 - math.cos(dLat)) / 2 +
-        math.cos(lat1) *
-            math.cos(lat2) *
-            (1 - math.cos(dLng)) /
-            2;
+    final h =
+        (1 - math.cos(dLat)) / 2 +
+        math.cos(lat1) * math.cos(lat2) * (1 - math.cos(dLng)) / 2;
     total += 2 * r * math.asin(h.clamp(0.0, 1.0));
   }
   return total;
 }
 
 Map<String, dynamic> _encodeStep(RouteStep s) => {
-      'maneuver': s.maneuver,
-      'name': s.name,
-      'distance': s.distanceMeters,
-      if (s.durationSeconds != null) 'duration': s.durationSeconds,
-      'start': [s.startLocation.longitude, s.startLocation.latitude],
-      'end': [s.endLocation.longitude, s.endLocation.latitude],
-      if (s.bearingBefore != null) 'bearing_before': s.bearingBefore,
-      if (s.bearingAfter != null) 'bearing_after': s.bearingAfter,
-    };
+  'maneuver': s.maneuver,
+  'name': s.name,
+  'distance': s.distanceMeters,
+  if (s.durationSeconds != null) 'duration': s.durationSeconds,
+  'start': [s.startLocation.longitude, s.startLocation.latitude],
+  'end': [s.endLocation.longitude, s.endLocation.latitude],
+  if (s.bearingBefore != null) 'bearing_before': s.bearingBefore,
+  if (s.bearingAfter != null) 'bearing_after': s.bearingAfter,
+};
 
 RouteStep? _decodeStep(Map<String, dynamic> s) {
   try {

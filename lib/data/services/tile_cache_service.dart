@@ -31,7 +31,6 @@ import '../../core/constants/app_constants.dart';
 ///   several screens. This service keeps the cache layer local to the
 ///   app and pairs with whatever `flutter_map` version the project is on.
 class TileCacheService {
-
   TileCacheService._();
   static TileCacheService? _instance;
 
@@ -147,9 +146,8 @@ class TileCacheService {
       try {
         final file = File(diskPath);
         if (await file.exists()) {
-          final age = DateTime.now()
-              .difference(await file.lastModified())
-              .inDays;
+          final age =
+              DateTime.now().difference(await file.lastModified()).inDays;
           if (age < AppConstants.tileCacheMaxAgeDays) {
             final bytes = await file.readAsBytes();
             _hot[key] = bytes;
@@ -315,17 +313,18 @@ class _CachedTileProvider extends TileProvider {
       urlTemplate: template,
       coordinates: coordinates,
     );
-    unawaited(_service.getOrFetch(
-      z: coordinates.z,
-      x: coordinates.x,
-      y: coordinates.y,
-      urlTemplate: template,
-    ),);
+    unawaited(
+      _service.getOrFetch(
+        z: coordinates.z,
+        x: coordinates.x,
+        y: coordinates.y,
+        urlTemplate: template,
+      ),
+    );
     return NetworkImage(
       url,
       headers: const {
-        'User-Agent':
-            'com.example.stone_town_heritage_vt_guide/1.0 (Flutter)',
+        'User-Agent': 'com.example.stone_town_heritage_vt_guide/1.0 (Flutter)',
       },
     );
   }

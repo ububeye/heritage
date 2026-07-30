@@ -2,14 +2,14 @@ import '../models/site_model.dart';
 import '../services/firestore_service.dart';
 
 class SiteRepository {
-
   SiteRepository({FirestoreService? firestoreService})
-      : _firestoreService = firestoreService ?? FirestoreService();
+    : _firestoreService = firestoreService ?? FirestoreService();
   final FirestoreService _firestoreService;
 
   Future<List<SiteModel>> getAllSites() => _firestoreService.getAllSites();
 
-  Future<SiteModel?> getSiteById(String id) => _firestoreService.getSiteById(id);
+  Future<SiteModel?> getSiteById(String id) =>
+      _firestoreService.getSiteById(id);
 
   Future<List<SiteModel>> getSitesByCategory(String category) =>
       _firestoreService.getSitesByCategory(category);

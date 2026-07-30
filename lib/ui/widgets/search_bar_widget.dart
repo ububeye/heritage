@@ -9,7 +9,6 @@ import '../../core/theme/app_radius.dart';
 /// immediately when the user types — previously the button only updated
 /// when something else rebuilt the parent.
 class SearchBarWidget extends StatefulWidget {
-
   const SearchBarWidget({
     super.key,
     required this.controller,
@@ -60,26 +59,28 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
             onChanged: _handleChanged,
             decoration: InputDecoration(
               hintText: widget.hintText,
-              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textHint,
-                  ),
+              hintStyle: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textHint),
               prefixIcon: Icon(
                 Icons.search,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              suffixIcon: hasText
-                  ? Semantics(
-                      label: 'Clear search',
-                      button: true,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+              suffixIcon:
+                  hasText
+                      ? Semantics(
+                        label: 'Clear search',
+                        button: true,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: _clear,
                         ),
-                        onPressed: _clear,
-                      ),
-                    )
-                  : null,
+                      )
+                      : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,

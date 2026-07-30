@@ -3,7 +3,6 @@ import '../../data/models/user_model.dart';
 import '../../data/services/firestore_service.dart';
 
 class UserCubit extends Cubit<UserState> {
-
   UserCubit() : super(const UserState());
   final FirestoreService _firestoreService = FirestoreService();
 
@@ -14,28 +13,29 @@ class UserCubit extends Cubit<UserState> {
       final users = await _firestoreService.getAllUsers();
       // Roles live in roles/{uid}, not on the user profile. Enrich each
       // user with the canonical role for display in the admin table.
-      final roles = await _firestoreService
-          .bulkGetRoles(users.map((u) => u.id));
-      final enriched = users.map((u) {
-        final r = roles[u.id];
-        return r == null ? u : u.copyWith(role: r);
-      }).toList();
+      final roles = await _firestoreService.bulkGetRoles(
+        users.map((u) => u.id),
+      );
+      final enriched =
+          users.map((u) {
+            final r = roles[u.id];
+            return r == null ? u : u.copyWith(role: r);
+          }).toList();
       final total = enriched.length;
       final premium = enriched.where((u) => u.role == UserRole.premium).length;
       final admins = enriched.where((u) => u.role == UserRole.admin).length;
 
-      emit(state.copyWith(
-        status: UserStatus.loaded,
-        users: enriched,
-        totalUsers: total,
-        premiumUsers: premium,
-        adminUsers: admins,
-      ),);
+      emit(
+        state.copyWith(
+          status: UserStatus.loaded,
+          users: enriched,
+          totalUsers: total,
+          premiumUsers: premium,
+          adminUsers: admins,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        status: UserStatus.error,
-        error: e.toString(),
-      ),);
+      emit(state.copyWith(status: UserStatus.error, error: e.toString()));
     }
   }
 
@@ -63,7 +63,6 @@ class UserCubit extends Cubit<UserState> {
 }
 
 class UserState {
-
   const UserState({
     this.status = UserStatus.initial,
     this.users = const [],

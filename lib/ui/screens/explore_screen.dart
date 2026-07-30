@@ -54,7 +54,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     child: IconButton(
                       icon: Icon(state.isMapView ? Icons.list : Icons.map),
                       tooltip: label,
-                      onPressed: () => context.read<ExploreCubit>().toggleMapView(),
+                      onPressed:
+                          () => context.read<ExploreCubit>().toggleMapView(),
                     ),
                   );
                 },
@@ -68,7 +69,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: SearchBarWidget(
                   controller: _searchController,
                   hintText: _tr(locState, 'search_places'),
-                  onChanged: (query) => context.read<SiteListCubit>().search(query),
+                  onChanged:
+                      (query) => context.read<SiteListCubit>().search(query),
                 ),
               ),
               const SizedBox(height: 8),
@@ -91,7 +93,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   builder: (context, state) {
                     if (state.status == SiteListStatus.loading) {
                       return Center(
-                        child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
                       );
                     }
 
@@ -114,14 +118,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             // filter has no matches.
                             Text(
                               _tr(locState, 'no_results'),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.copyWith(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),
@@ -130,7 +134,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                     return BlocBuilder<ExploreCubit, ExploreState>(
                       builder: (context, exploreState) {
-                        final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
+                        final uiLanguage =
+                            context.read<LanguageCubit>().state.uiLanguage;
 
                         // Featured site pinning (B-08): prefer sites explicitly
                         // marked `featured: true` in Firestore, fall back to
@@ -160,8 +165,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               featuredSite: featuredSite,
                               onSiteTap: (site) => _navigateToDetail(site),
                               onNavigate: (site) => _navigateToNav(site),
-                              onFeaturedNavigate: (site) => _navigateToNav(site),
-                              onFeaturedAudio: (site) => _navigateToDetail(site),
+                              onFeaturedNavigate:
+                                  (site) => _navigateToNav(site),
+                              onFeaturedAudio:
+                                  (site) => _navigateToDetail(site),
                               locState: locState,
                             ),
                           ],
@@ -183,9 +190,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   void _navigateToDetail(SiteModel site) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => DetailScreen(siteId: site.id)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => DetailScreen(siteId: site.id)));
   }
 
   void _navigateToNav(SiteModel site) {
@@ -194,7 +201,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
 }
 
 class _ListView extends StatelessWidget {
-
   const _ListView({
     required this.sites,
     required this.uiLanguage,
@@ -281,7 +287,6 @@ class _ListView extends StatelessWidget {
 }
 
 class _SiteCardWithItinerary extends StatelessWidget {
-
   const _SiteCardWithItinerary({
     required this.site,
     required this.uiLanguage,
@@ -311,7 +316,6 @@ class _SiteCardWithItinerary extends StatelessWidget {
 }
 
 class _MapView extends StatelessWidget {
-
   const _MapView({
     required this.sites,
     required this.uiLanguage,
@@ -333,12 +337,7 @@ class _MapView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Expanded(
-          child: HeritageMap.browse(
-            sites: sites,
-            onSiteTap: onSiteTap,
-          ),
-        ),
+        Expanded(child: HeritageMap.browse(sites: sites, onSiteTap: onSiteTap)),
         Container(
           color: Theme.of(context).colorScheme.surface,
           padding: AppInsets.listItem,
@@ -355,13 +354,14 @@ class _MapView extends StatelessWidget {
                 Text(
                   '${sites.length} sites on map',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const Spacer(),
                 TextButton.icon(
-                  onPressed: () => context.read<ExploreCubit>().setMapView(false),
+                  onPressed:
+                      () => context.read<ExploreCubit>().setMapView(false),
                   icon: const Icon(Icons.view_list, size: 18),
                   label: Text(_tr(locState, 'view_list')),
                 ),

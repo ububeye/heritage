@@ -63,11 +63,23 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   @override
   void dispose() {
     for (final c in [
-      _nameEnController, _nameSwController, _nameFrController,
-      _nameDeController, _nameArController, _nameItController, _nameEsController,
-      _descEnController, _descSwController, _descFrController,
-      _descDeController, _descArController, _descItController, _descEsController,
-      _latController, _lngController, _addressController,
+      _nameEnController,
+      _nameSwController,
+      _nameFrController,
+      _nameDeController,
+      _nameArController,
+      _nameItController,
+      _nameEsController,
+      _descEnController,
+      _descSwController,
+      _descFrController,
+      _descDeController,
+      _descArController,
+      _descItController,
+      _descEsController,
+      _latController,
+      _lngController,
+      _addressController,
     ]) {
       c.dispose();
     }
@@ -102,7 +114,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
 
     try {
       setState(() => _isUploading = true);
-      final uploadedUrls = await _cloudinaryService.uploadImages(_selectedImages);
+      final uploadedUrls = await _cloudinaryService.uploadImages(
+        _selectedImages,
+      );
       if (uploadedUrls.isEmpty) {
         throw Exception('Failed to upload images');
       }
@@ -123,9 +137,10 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         latitude: double.parse(_latController.text),
         longitude: double.parse(_lngController.text),
         entryRadiusM: _entryRadius,
-        address: _addressController.text.trim().isEmpty
-            ? null
-            : _addressController.text.trim(),
+        address:
+            _addressController.text.trim().isEmpty
+                ? null
+                : _addressController.text.trim(),
         category: _selectedCategory,
         createdAt: DateTime.now(),
       );
@@ -169,119 +184,131 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         automaticallyImplyLeading: false,
         title: const Text('Add Site'),
       ),
-      body: _isLoading
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
-                  const SizedBox(height: 16),
-                  Text(
-                    _isUploading ? 'Uploading images...' : 'Saving site...',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            )
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: AppInsets.card,
-                children: [
-                  _buildSectionTitle('Photos (Required - Min 1)'),
-                  _buildPhotoSection(),
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle('Category'),
-                  _buildCategoryDropdown(),
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle('Location'),
-                  _buildLocationSection(),
-                  const SizedBox(height: 16),
-
-                  _buildSectionTitle('Entry Radius: ${_entryRadius.round()}m'),
-                  _buildRadiusSlider(),
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle('Translations (all 7 languages required)'),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Fill in the site name and description for every language. The user\'s chosen audio language will be read aloud.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildLanguageSection(
-                    code: 'en',
-                    flag: '🇬🇧',
-                    name: 'English',
-                    nameController: _nameEnController,
-                    descController: _descEnController,
-                  ),
-                  _buildLanguageSection(
-                    code: 'sw',
-                    flag: '🇹🇿',
-                    name: 'Swahili',
-                    nameController: _nameSwController,
-                    descController: _descSwController,
-                  ),
-                  _buildLanguageSection(
-                    code: 'fr',
-                    flag: '🇫🇷',
-                    name: 'French',
-                    nameController: _nameFrController,
-                    descController: _descFrController,
-                  ),
-                  _buildLanguageSection(
-                    code: 'de',
-                    flag: '🇩🇪',
-                    name: 'German',
-                    nameController: _nameDeController,
-                    descController: _descDeController,
-                  ),
-                  _buildLanguageSection(
-                    code: 'ar',
-                    flag: '🇸🇦',
-                    name: 'Arabic',
-                    nameController: _nameArController,
-                    descController: _descArController,
-                  ),
-                  _buildLanguageSection(
-                    code: 'it',
-                    flag: '🇮🇹',
-                    name: 'Italian',
-                    nameController: _nameItController,
-                    descController: _descItController,
-                  ),
-                  _buildLanguageSection(
-                    code: 'es',
-                    flag: '🇪🇸',
-                    name: 'Spanish',
-                    nameController: _nameEsController,
-                    descController: _descEsController,
-                  ),
-                  const SizedBox(height: 32),
-
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _saveSite,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.mdBorder,
-                        ),
-                      ),
-                      child: Text(
-                        'Save Site',
-                        style: Theme.of(context).textTheme.labelLarge,
+      body:
+          _isLoading
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _isUploading ? 'Uploading images...' : 'Saving site...',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                  ],
+                ),
+              )
+              : Form(
+                key: _formKey,
+                child: ListView(
+                  padding: AppInsets.card,
+                  children: [
+                    _buildSectionTitle('Photos (Required - Min 1)'),
+                    _buildPhotoSection(),
+                    const SizedBox(height: 24),
+
+                    _buildSectionTitle('Category'),
+                    _buildCategoryDropdown(),
+                    const SizedBox(height: 24),
+
+                    _buildSectionTitle('Location'),
+                    _buildLocationSection(),
+                    const SizedBox(height: 16),
+
+                    _buildSectionTitle(
+                      'Entry Radius: ${_entryRadius.round()}m',
+                    ),
+                    _buildRadiusSlider(),
+                    const SizedBox(height: 24),
+
+                    _buildSectionTitle(
+                      'Translations (all 7 languages required)',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Fill in the site name and description for every language. The user\'s chosen audio language will be read aloud.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildLanguageSection(
+                      code: 'en',
+                      flag: '🇬🇧',
+                      name: 'English',
+                      nameController: _nameEnController,
+                      descController: _descEnController,
+                    ),
+                    _buildLanguageSection(
+                      code: 'sw',
+                      flag: '🇹🇿',
+                      name: 'Swahili',
+                      nameController: _nameSwController,
+                      descController: _descSwController,
+                    ),
+                    _buildLanguageSection(
+                      code: 'fr',
+                      flag: '🇫🇷',
+                      name: 'French',
+                      nameController: _nameFrController,
+                      descController: _descFrController,
+                    ),
+                    _buildLanguageSection(
+                      code: 'de',
+                      flag: '🇩🇪',
+                      name: 'German',
+                      nameController: _nameDeController,
+                      descController: _descDeController,
+                    ),
+                    _buildLanguageSection(
+                      code: 'ar',
+                      flag: '🇸🇦',
+                      name: 'Arabic',
+                      nameController: _nameArController,
+                      descController: _descArController,
+                    ),
+                    _buildLanguageSection(
+                      code: 'it',
+                      flag: '🇮🇹',
+                      name: 'Italian',
+                      nameController: _nameItController,
+                      descController: _descItController,
+                    ),
+                    _buildLanguageSection(
+                      code: 'es',
+                      flag: '🇪🇸',
+                      name: 'Spanish',
+                      nameController: _nameEsController,
+                      descController: _descEsController,
+                    ),
+                    const SizedBox(height: 32),
+
+                    SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _saveSite,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.mdBorder,
+                          ),
+                        ),
+                        child: Text(
+                          'Save Site',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
-            ),
     );
   }
 
@@ -290,7 +317,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
       ),
     );
   }
@@ -307,9 +336,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: AppRadius.mdBorder,
-        ),
+        border: OutlineInputBorder(borderRadius: AppRadius.mdBorder),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface,
       ),
@@ -328,12 +355,13 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         child: DropdownButton<String>(
           value: _selectedCategory,
           isExpanded: true,
-          items: SiteCategories.all.map((cat) {
-            return DropdownMenuItem(
-              value: cat,
-              child: Text(SiteCategories.getLabel(cat)),
-            );
-          }).toList(),
+          items:
+              SiteCategories.all.map((cat) {
+                return DropdownMenuItem(
+                  value: cat,
+                  child: Text(SiteCategories.getLabel(cat)),
+                );
+              }).toList(),
           onChanged: (value) {
             if (value != null) {
               setState(() => _selectedCategory = value);
@@ -379,7 +407,11 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                               color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onError, size: 16),
+                            child: Icon(
+                              Icons.close,
+                              color: Theme.of(context).colorScheme.onError,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -395,10 +427,11 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                             ),
                             child: Text(
                               'Cover',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
                             ),
                           ),
                         ),
@@ -418,20 +451,31 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: AppRadius.mdBorder,
-              border: Border.all(color: Theme.of(context).colorScheme.primary, style: BorderStyle.solid),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                style: BorderStyle.solid,
+              ),
             ),
             child: Column(
               children: [
-                Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.add_photo_alternate,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Add from Gallery',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: AppColors.primary),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Select multiple photos',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -455,9 +499,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
               Expanded(
                 child: _buildTabButton('Manual', Icons.edit_location, 1),
               ),
-              Expanded(
-                child: _buildTabButton('Map', Icons.map, 0),
-              ),
+              Expanded(child: _buildTabButton('Map', Icons.map, 0)),
             ],
           ),
           Padding(
@@ -487,20 +529,33 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.transparent,
           borderRadius: AppRadius.smBorder,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant),
+            Icon(
+              icon,
+              size: 18,
+              color:
+                  isSelected
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 8),
             Text(
               label,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: isSelected ? Theme.of(context).colorScheme.onPrimary : AppColors.textSecondary,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
+                color:
+                    isSelected
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
             ),
           ],
         ),
@@ -540,9 +595,19 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _buildTextField(controller: _latController, label: 'Latitude')),
+            Expanded(
+              child: _buildTextField(
+                controller: _latController,
+                label: 'Latitude',
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildTextField(controller: _lngController, label: 'Longitude')),
+            Expanded(
+              child: _buildTextField(
+                controller: _lngController,
+                label: 'Longitude',
+              ),
+            ),
           ],
         ),
       ],
@@ -595,7 +660,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
               const Text('Entry Radius'),
               Text(
                 '${_entryRadius.round()} m',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: AppColors.primary),
               ),
             ],
           ),
@@ -605,7 +672,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             max: 200,
             divisions: 19,
             activeColor: Theme.of(context).colorScheme.primary,
-            inactiveColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+            inactiveColor: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.3),
             onChanged: (value) => setState(() => _entryRadius = value),
           ),
           Row(
@@ -613,11 +682,15 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             children: [
               Text(
                 '10m',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
               ),
               Text(
                 '200m',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
               ),
             ],
           ),
@@ -634,7 +707,8 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     required TextEditingController descController,
   }) {
     final loc = context.watch<LocalizationCubit>().state;
-    final copyLabel = loc.translations['copy_from_english'] ?? 'Copy from English';
+    final copyLabel =
+        loc.translations['copy_from_english'] ?? 'Copy from English';
     final isEnglish = code == 'en';
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -653,7 +727,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
               const SizedBox(width: 8),
               Text(
                 name,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
               ),
               const Spacer(),
               if (!isEnglish)

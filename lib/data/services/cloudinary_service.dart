@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class CloudinaryService {
-
   CloudinaryService({
     this.cloudName = 'dpmcnfbpb',
     this.uploadPreset = 'stone_town_unsigned',
@@ -14,7 +13,9 @@ class CloudinaryService {
   final String uploadPreset;
 
   /// Pick single image from gallery
-  Future<XFile?> pickSingleImage({ImageSource source = ImageSource.gallery}) async {
+  Future<XFile?> pickSingleImage({
+    ImageSource source = ImageSource.gallery,
+  }) async {
     final picker = ImagePicker();
     return picker.pickImage(source: source, imageQuality: 80);
   }
@@ -32,9 +33,12 @@ class CloudinaryService {
         'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
       );
 
-      final request = http.MultipartRequest('POST', url)
-        ..fields['upload_preset'] = uploadPreset
-        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      final request =
+          http.MultipartRequest('POST', url)
+            ..fields['upload_preset'] = uploadPreset
+            ..files.add(
+              await http.MultipartFile.fromPath('file', imageFile.path),
+            );
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -67,9 +71,10 @@ class CloudinaryService {
       final file = File(filePath);
       if (!await file.exists()) return null;
 
-      final request = http.MultipartRequest('POST', url)
-        ..fields['upload_preset'] = uploadPreset
-        ..files.add(await http.MultipartFile.fromPath('file', filePath));
+      final request =
+          http.MultipartRequest('POST', url)
+            ..fields['upload_preset'] = uploadPreset
+            ..files.add(await http.MultipartFile.fromPath('file', filePath));
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);

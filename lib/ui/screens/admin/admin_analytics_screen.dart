@@ -50,23 +50,31 @@ class AdminAnalyticsScreen extends StatelessWidget {
             children: [
               Text(
                 tr('analytics_subtitle', 'Site & user statistics'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: 16),
               _StatsRow(loc: loc),
               const SizedBox(height: 24),
-              _SectionHeader(title: tr('analytics_by_category', 'Sites by Category')),
+              _SectionHeader(
+                title: tr('analytics_by_category', 'Sites by Category'),
+              ),
               const SizedBox(height: 12),
               BlocBuilder<SiteListCubit, SiteListState>(
-                builder: (context, state) =>
-                    _CategoryBreakdown(sites: state.sites, loc: loc),
+                builder:
+                    (context, state) =>
+                        _CategoryBreakdown(sites: state.sites, loc: loc),
               ),
               const SizedBox(height: 24),
-              _SectionHeader(title: tr('analytics_top_rated', 'Top Rated Sites')),
+              _SectionHeader(
+                title: tr('analytics_top_rated', 'Top Rated Sites'),
+              ),
               const SizedBox(height: 12),
               BlocBuilder<SiteListCubit, SiteListState>(
-                builder: (context, state) =>
-                    _TopRatedList(sites: state.sites, loc: loc),
+                builder:
+                    (context, state) =>
+                        _TopRatedList(sites: state.sites, loc: loc),
               ),
               const SizedBox(height: 32),
             ],
@@ -89,34 +97,37 @@ class _StatsRow extends StatelessWidget {
       children: [
         Expanded(
           child: BlocBuilder<SiteListCubit, SiteListState>(
-            builder: (context, state) => _StatTile(
-              icon: Icons.location_city,
-              value: state.sites.length.toString(),
-              label: tr('analytics_total_sites', 'Total Sites'),
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            builder:
+                (context, state) => _StatTile(
+                  icon: Icons.location_city,
+                  value: state.sites.length.toString(),
+                  label: tr('analytics_total_sites', 'Total Sites'),
+                  color: Theme.of(context).colorScheme.primary,
+                ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) => _StatTile(
-              icon: Icons.people,
-              value: state.totalUsers.toString(),
-              label: tr('analytics_total_users', 'Total Users'),
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            builder:
+                (context, state) => _StatTile(
+                  icon: Icons.people,
+                  value: state.totalUsers.toString(),
+                  label: tr('analytics_total_users', 'Total Users'),
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) => _StatTile(
-              icon: Icons.workspace_premium,
-              value: state.premiumUsers.toString(),
-              label: tr('analytics_premium_users', 'Premium Users'),
-              color: context.semanticColors.success,
-            ),
+            builder:
+                (context, state) => _StatTile(
+                  icon: Icons.workspace_premium,
+                  value: state.premiumUsers.toString(),
+                  label: tr('analytics_premium_users', 'Premium Users'),
+                  color: context.semanticColors.success,
+                ),
           ),
         ),
       ],
@@ -125,7 +136,6 @@ class _StatsRow extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-
   const _StatTile({
     required this.icon,
     required this.value,
@@ -161,18 +171,17 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontSize: 22,
-                  color: color,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontSize: 22, color: color),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -190,13 +199,14 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
     );
   }
 }
 
 class _CategoryBreakdown extends StatelessWidget {
-
   const _CategoryBreakdown({required this.sites, required this.loc});
   final List<SiteModel> sites;
   final LocalizationState loc;
@@ -204,7 +214,9 @@ class _CategoryBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (sites.isEmpty) {
-      return _EmptyBlock(text: loc.translations['search_places'] ?? 'No data yet');
+      return _EmptyBlock(
+        text: loc.translations['search_places'] ?? 'No data yet',
+      );
     }
 
     // Group by category and count. "Uncategorized" is its own bucket so a
@@ -214,8 +226,8 @@ class _CategoryBreakdown extends StatelessWidget {
       final key = site.category ?? 'uncategorized';
       counts[key] = (counts[key] ?? 0) + 1;
     }
-    final entries = counts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final entries =
+        counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
     final maxValue = entries.first.value;
 
@@ -232,9 +244,10 @@ class _CategoryBreakdown extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: _CategoryBar(
-                label: entry.key == 'uncategorized'
-                    ? 'Uncategorized'
-                    : (SiteCategories.labels[entry.key] ?? entry.key),
+                label:
+                    entry.key == 'uncategorized'
+                        ? 'Uncategorized'
+                        : (SiteCategories.labels[entry.key] ?? entry.key),
                 count: entry.value,
                 maxValue: maxValue,
               ),
@@ -246,7 +259,6 @@ class _CategoryBreakdown extends StatelessWidget {
 }
 
 class _CategoryBar extends StatelessWidget {
-
   const _CategoryBar({
     required this.label,
     required this.count,
@@ -266,9 +278,9 @@ class _CategoryBar extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 13,
-                  color: AppColors.textPrimary,
-                ),
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -280,7 +292,9 @@ class _CategoryBar extends StatelessWidget {
               value: fraction,
               minHeight: 10,
               backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).colorScheme.secondary,
+              ),
             ),
           ),
         ),
@@ -291,9 +305,9 @@ class _CategoryBar extends StatelessWidget {
             '$count',
             textAlign: TextAlign.right,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontSize: 13,
-                  color: AppColors.textPrimary,
-                ),
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ],
@@ -302,17 +316,15 @@ class _CategoryBar extends StatelessWidget {
 }
 
 class _TopRatedList extends StatelessWidget {
-
   const _TopRatedList({required this.sites, required this.loc});
   final List<SiteModel> sites;
   final LocalizationState loc;
 
   @override
   Widget build(BuildContext context) {
-    final rated = sites
-        .where((s) => s.rating != null)
-        .toList()
-      ..sort((a, b) => b.rating!.compareTo(a.rating!));
+    final rated =
+        sites.where((s) => s.rating != null).toList()
+          ..sort((a, b) => b.rating!.compareTo(a.rating!));
     final top = rated.take(5).toList();
 
     if (top.isEmpty) {
@@ -333,10 +345,14 @@ class _TopRatedList extends StatelessWidget {
             if (i > 0) const Divider(height: 1),
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.secondary.withValues(alpha: 0.1),
                 child: Text(
                   '${i + 1}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.accent),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: AppColors.accent),
                 ),
               ),
               title: Text(
@@ -349,7 +365,11 @@ class _TopRatedList extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.star, size: 16, color: context.semanticColors.rating),
+                  Icon(
+                    Icons.star,
+                    size: 16,
+                    color: context.semanticColors.rating,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     top[i].rating!.toStringAsFixed(1),
@@ -381,11 +401,17 @@ class _EmptyBlock extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.bar_chart, size: 36, color: Theme.of(context).colorScheme.outline),
+          Icon(
+            Icons.bar_chart,
+            size: 36,
+            color: Theme.of(context).colorScheme.outline,
+          ),
           const SizedBox(height: 8),
           Text(
             text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

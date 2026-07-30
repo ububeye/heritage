@@ -82,7 +82,9 @@ class MaintenanceScreen extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: context.semanticColors.warning.withValues(alpha: 0.12),
+                    color: context.semanticColors.warning.withValues(
+                      alpha: 0.12,
+                    ),
                     borderRadius: AppRadius.fullBorder,
                   ),
                   child: Text(

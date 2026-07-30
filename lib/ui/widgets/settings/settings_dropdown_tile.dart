@@ -10,7 +10,6 @@ import 'settings_tile.dart';
 /// value and the dropdown is disabled, used to gate premium-only
 /// options.
 class SettingsDropdownTile<T extends Object> extends StatelessWidget {
-
   const SettingsDropdownTile({
     super.key,
     required this.icon,
@@ -50,47 +49,52 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
       title: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: enabled
+          fontWeight: FontWeight.w500,
+          color:
+              enabled
                   ? Theme.of(context).colorScheme.onSurface
                   : AppColors.textHint,
-            ),
+        ),
       ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: enabled
-                        ? Theme.of(context).colorScheme.onSurfaceVariant
-                        : AppColors.textHint,
-                  ),
-            )
-          : null,
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color:
+                      enabled
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : AppColors.textHint,
+                ),
+              )
+              : null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!enabled)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: Icon(Icons.lock, size: 16, color: Theme.of(context).colorScheme.outline),
+              child: Icon(
+                Icons.lock,
+                size: 16,
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
           DropdownButton<T>(
             value: effectiveValue,
             underline: const SizedBox(),
             icon: const Icon(CupertinoIcons.chevron_down, size: 16),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: enabled
+              color:
+                  enabled
                       ? Theme.of(context).colorScheme.onSurface
                       : AppColors.textHint,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
-                ),
+              fontWeight: FontWeight.w500,
+              fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+            ),
             items: [
               for (var i = 0; i < items.length; i++)
-                DropdownMenuItem<T>(
-                  value: items[i],
-                  child: Text(labels[i]),
-                ),
+                DropdownMenuItem<T>(value: items[i], child: Text(labels[i])),
             ],
             onChanged: enabled ? onChanged : null,
           ),

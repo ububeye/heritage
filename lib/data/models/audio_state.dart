@@ -4,10 +4,7 @@ import 'package:equatable/equatable.dart';
 /// `flutter_tts.pause()` is iOS-only; on Android we stop the engine and
 /// restart from this saved offset when the user resumes.
 class PausedResumePoint extends Equatable {
-  const PausedResumePoint({
-    required this.text,
-    required this.charOffset,
-  });
+  const PausedResumePoint({required this.text, required this.charOffset});
   final String text;
   final int charOffset;
 
@@ -16,7 +13,6 @@ class PausedResumePoint extends Equatable {
 }
 
 class AudioState extends Equatable {
-
   const AudioState({
     this.isPlaying = false,
     this.isPaused = false,
@@ -98,24 +94,25 @@ class AudioState extends Equatable {
       wasTruncated: wasTruncated ?? this.wasTruncated,
       maxDurationSeconds: maxDurationSeconds ?? this.maxDurationSeconds,
       spokenText: spokenText ?? this.spokenText,
-      pausedResumePoint: clearPausedResumePoint
-          ? null
-          : (pausedResumePoint ?? this.pausedResumePoint),
+      pausedResumePoint:
+          clearPausedResumePoint
+              ? null
+              : (pausedResumePoint ?? this.pausedResumePoint),
     );
   }
 
   @override
   List<Object?> get props => [
-        isPlaying,
-        isPaused,
-        position,
-        duration,
-        languageCode,
-        isLoading,
-        errorMessage,
-        wasTruncated,
-        maxDurationSeconds,
-        spokenText,
-        pausedResumePoint,
-      ];
+    isPlaying,
+    isPaused,
+    position,
+    duration,
+    languageCode,
+    isLoading,
+    errorMessage,
+    wasTruncated,
+    maxDurationSeconds,
+    spokenText,
+    pausedResumePoint,
+  ];
 }

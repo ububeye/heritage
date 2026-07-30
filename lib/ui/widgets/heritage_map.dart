@@ -20,7 +20,6 @@ import '../../core/theme/app_shadows.dart';
 /// Both variants hide the underlying `flutter_map` + `latlong2` details so the
 /// rest of the app stays decoupled from the map library.
 class HeritageMap extends StatefulWidget {
-
   const HeritageMap.browse({
     super.key,
     required this.sites,
@@ -29,8 +28,8 @@ class HeritageMap extends StatefulWidget {
     this.initialLng = 39.1936,
     this.initialZoom = 15,
     this.showLocateButton = true,
-  })  : onLocationPicked = null,
-        draggableMarker = false;
+  }) : onLocationPicked = null,
+       draggableMarker = false;
 
   const HeritageMap.picker({
     super.key,
@@ -39,21 +38,21 @@ class HeritageMap extends StatefulWidget {
     required this.onLocationPicked,
     this.initialZoom = 15,
     this.showLocateButton = true,
-  })  : sites = const [],
-        onSiteTap = null,
-        draggableMarker = true;
+  }) : sites = const [],
+       onSiteTap = null,
+       draggableMarker = true;
 
   HeritageMap.singleSite({
     super.key,
     required SiteModel site,
     this.onSiteTap,
     this.initialZoom = 17,
-  })  : sites = [site],
-        onLocationPicked = null,
-        initialLat = -6.1619,
-        initialLng = 39.1936,
-        showLocateButton = false,
-        draggableMarker = false;
+  }) : sites = [site],
+       onLocationPicked = null,
+       initialLat = -6.1619,
+       initialLng = 39.1936,
+       showLocateButton = false,
+       draggableMarker = false;
   final List<SiteModel> sites;
   final void Function(SiteModel site)? onSiteTap;
   final double initialLat;
@@ -104,9 +103,8 @@ class _HeritageMapState extends State<HeritageMap> {
     _firstFitDone = true;
 
     if (widget.sites.isNotEmpty && widget.sites.length > 1) {
-      final points = widget.sites
-          .map((s) => LatLng(s.latitude, s.longitude))
-          .toList();
+      final points =
+          widget.sites.map((s) => LatLng(s.latitude, s.longitude)).toList();
       final bounds = LatLngBounds.fromPoints(points);
       _mapController.fitCamera(
         CameraFit.bounds(
@@ -136,7 +134,10 @@ class _HeritageMapState extends State<HeritageMap> {
     final wasOutsideBox = !StoneTownBounds.contains(rawPoint);
     setState(() => _pickedPoint = clampedPoint);
     _mapController.move(clampedPoint, 17);
-    widget.onLocationPicked?.call(clampedPoint.latitude, clampedPoint.longitude);
+    widget.onLocationPicked?.call(
+      clampedPoint.latitude,
+      clampedPoint.longitude,
+    );
     if (wasOutsideBox && mounted) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         const SnackBar(
@@ -153,9 +154,8 @@ class _HeritageMapState extends State<HeritageMap> {
   /// Used by the "Reset view" button on the explore map.
   void _resetToAllSites() {
     if (widget.sites.length > 1) {
-      final points = widget.sites
-          .map((s) => LatLng(s.latitude, s.longitude))
-          .toList();
+      final points =
+          widget.sites.map((s) => LatLng(s.latitude, s.longitude)).toList();
       final bounds = LatLngBounds.fromPoints(points);
       _mapController.fitCamera(
         CameraFit.bounds(
@@ -203,7 +203,8 @@ class _HeritageMapState extends State<HeritageMap> {
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
-            initialCenter: _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng),
+            initialCenter:
+                _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng),
             initialZoom: widget.initialZoom,
             minZoom: AppConstants.stoneTownMinZoom,
             maxZoom: AppConstants.stoneTownMaxZoom,
@@ -243,12 +244,16 @@ class _HeritageMapState extends State<HeritageMap> {
                   elevation: 4,
                   borderRadius: AppRadius.smBorder,
                   child: InkWell(
-                    onTap: widget.draggableMarker
-                        ? _useCurrentLocation
-                        : _resetToAllSites,
+                    onTap:
+                        widget.draggableMarker
+                            ? _useCurrentLocation
+                            : _resetToAllSites,
                     borderRadius: AppRadius.smBorder,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
                         borderRadius: AppRadius.smBorder,
@@ -265,11 +270,15 @@ class _HeritageMapState extends State<HeritageMap> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            widget.draggableMarker ? 'My location' : 'Reset view',
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                  fontSize: 13,
-                                  color: AppColors.primary,
-                                ),
+                            widget.draggableMarker
+                                ? 'My location'
+                                : 'Reset view',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelLarge?.copyWith(
+                              fontSize: 13,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ],
                       ),
@@ -296,7 +305,10 @@ class _HeritageMapState extends State<HeritageMap> {
                   child: Column(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
+                        icon: Icon(
+                          Icons.add,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         onPressed: _zoomIn,
                         tooltip: 'Zoom In',
                       ),
@@ -306,7 +318,10 @@ class _HeritageMapState extends State<HeritageMap> {
                         color: Theme.of(context).colorScheme.outline,
                       ),
                       IconButton(
-                        icon: Icon(Icons.remove, color: Theme.of(context).colorScheme.primary),
+                        icon: Icon(
+                          Icons.remove,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         onPressed: _zoomOut,
                         tooltip: 'Zoom Out',
                       ),
@@ -394,10 +409,10 @@ class _PinMarker extends StatelessWidget {
               child: Text(
                 label!,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontSize: 9,
-                      color: AppColors.textPrimary,
-                      height: 1.0,
-                    ),
+                  fontSize: 9,
+                  color: AppColors.textPrimary,
+                  height: 1.0,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
@@ -411,7 +426,10 @@ class _PinMarker extends StatelessWidget {
             color: context.semanticColors.mapMarker,
             shape: BoxShape.circle,
             // Border over the map tile — fixed white for contrast.
-            border: Border.all(color: context.semanticColors.onImage, width: isPicker ? 4 : 3),
+            border: Border.all(
+              color: context.semanticColors.onImage,
+              width: isPicker ? 4 : 3,
+            ),
             boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
           ),
           child: Icon(

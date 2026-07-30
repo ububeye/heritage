@@ -62,7 +62,8 @@ class DistanceCalculator {
     final dLng = _toRadians(endLng - startLng);
 
     final y = math.sin(dLng) * math.cos(lat2);
-    final x = math.cos(lat1) * math.sin(lat2) -
+    final x =
+        math.cos(lat1) * math.sin(lat2) -
         math.sin(lat1) * math.cos(lat2) * math.cos(dLng);
 
     final bearing = math.atan2(y, x);
@@ -88,8 +89,12 @@ class DistanceCalculator {
     final A = math.sin((1 - fraction) * d / 6371000) / math.sin(d / 6371000);
     final B = math.sin(fraction * d / 6371000) / math.sin(d / 6371000);
 
-    final x = A * math.cos(lat1) * math.cos(lng1) + B * math.cos(lat2) * math.cos(lng2);
-    final y = A * math.cos(lat1) * math.sin(lng1) + B * math.cos(lat2) * math.sin(lng2);
+    final x =
+        A * math.cos(lat1) * math.cos(lng1) +
+        B * math.cos(lat2) * math.cos(lng2);
+    final y =
+        A * math.cos(lat1) * math.sin(lng1) +
+        B * math.cos(lat2) * math.sin(lng2);
     final z = A * math.sin(lat1) + B * math.sin(lat2);
 
     final lat = math.atan2(z, math.sqrt(x * x + y * y));

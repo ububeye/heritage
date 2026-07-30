@@ -7,7 +7,6 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_durations.dart';
 
 class CategoryChips extends StatelessWidget {
-
   const CategoryChips({
     super.key,
     required this.categories,
@@ -40,7 +39,8 @@ class CategoryChips extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final category = allCategories[index];
-              final isSelected = (category == 'all' && selectedCategory == null) ||
+              final isSelected =
+                  (category == 'all' && selectedCategory == null) ||
                   category == selectedCategory;
 
               return GestureDetector(
@@ -49,17 +49,26 @@ class CategoryChips extends StatelessWidget {
                   duration: AppDurations.fast,
                   padding: AppInsets.listItem,
                   decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
+                    color:
+                        isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.surface,
                     borderRadius: AppRadius.sheetBorderSmBorder,
                     border: Border.all(
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                      color:
+                          isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outline,
                     ),
                   ),
                   child: Text(
                     _tr(locState, category),
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: isSelected ? AppColors.textOnPrimary : AppColors.textPrimary,
-                        ),
+                      color:
+                          isSelected
+                              ? AppColors.textOnPrimary
+                              : AppColors.textPrimary,
+                    ),
                   ),
                 ),
               );

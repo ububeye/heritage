@@ -42,9 +42,7 @@ class LocationService {
     }
   }
 
-  void startListening({
-    int distanceFilter = 5,
-  }) {
+  void startListening({int distanceFilter = 5}) {
     _positionSubscription?.cancel();
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: LocationSettings(

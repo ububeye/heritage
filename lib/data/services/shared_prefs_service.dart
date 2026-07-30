@@ -2,7 +2,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 
 class SharedPrefsService {
-
   SharedPrefsService._();
   static SharedPrefsService? _instance;
   static SharedPreferences? _prefs;
@@ -17,14 +16,18 @@ class SharedPrefsService {
 
   static SharedPrefsService get instance {
     if (_instance == null) {
-      throw Exception('SharedPrefsService not initialized. Call getInstance() first.');
+      throw Exception(
+        'SharedPrefsService not initialized. Call getInstance() first.',
+      );
     }
     return _instance!;
   }
 
   SharedPreferences get _preferences {
     if (_prefs == null) {
-      throw Exception('SharedPrefsService not initialized. Call getInstance() first.');
+      throw Exception(
+        'SharedPrefsService not initialized. Call getInstance() first.',
+      );
     }
     return _prefs!;
   }
@@ -110,7 +113,11 @@ class SharedPrefsService {
     return userId != null && userId.isNotEmpty;
   }
 
-  Future<void> setUserLoggedIn(bool isLoggedIn, {String? userId, String? userRole}) async {
+  Future<void> setUserLoggedIn(
+    bool isLoggedIn, {
+    String? userId,
+    String? userRole,
+  }) async {
     if (isLoggedIn && userId != null) {
       await _preferences.setString(AppConstants.keyUserId, userId);
       if (userRole != null) {
@@ -180,10 +187,7 @@ class SharedPrefsService {
       _preferences.getBool(AppConstants.keyArrivalAlertsEnabled) ?? true;
 
   Future<void> setArrivalAlertsEnabled(bool enabled) async {
-    await _preferences.setBool(
-      AppConstants.keyArrivalAlertsEnabled,
-      enabled,
-    );
+    await _preferences.setBool(AppConstants.keyArrivalAlertsEnabled, enabled);
   }
 
   // --- PR-B Settings (read by Settings screen; consumers in detail/
@@ -197,10 +201,7 @@ class SharedPrefsService {
       AppConstants.defaultRadiusMeters.round();
 
   Future<void> setArrivalAlertsRadiusM(int meters) async {
-    await _preferences.setInt(
-      AppConstants.keyArrivalAlertsRadiusM,
-      meters,
-    );
+    await _preferences.setInt(AppConstants.keyArrivalAlertsRadiusM, meters);
   }
 
   /// Whether quiet-hours are enabled. When true, TTS / arrival alerts
@@ -217,25 +218,17 @@ class SharedPrefsService {
   /// 22:00–07:00 (1320 / 420). Single global range — per-weekday
   /// granularity is out of scope for v1.
   int get quietHoursStartMinutes =>
-      _preferences.getInt(AppConstants.keyQuietHoursStartMinutes) ??
-      (22 * 60);
+      _preferences.getInt(AppConstants.keyQuietHoursStartMinutes) ?? (22 * 60);
 
   int get quietHoursEndMinutes =>
-      _preferences.getInt(AppConstants.keyQuietHoursEndMinutes) ??
-      (7 * 60);
+      _preferences.getInt(AppConstants.keyQuietHoursEndMinutes) ?? (7 * 60);
 
   Future<void> setQuietHoursStartMinutes(int minutes) async {
-    await _preferences.setInt(
-      AppConstants.keyQuietHoursStartMinutes,
-      minutes,
-    );
+    await _preferences.setInt(AppConstants.keyQuietHoursStartMinutes, minutes);
   }
 
   Future<void> setQuietHoursEndMinutes(int minutes) async {
-    await _preferences.setInt(
-      AppConstants.keyQuietHoursEndMinutes,
-      minutes,
-    );
+    await _preferences.setInt(AppConstants.keyQuietHoursEndMinutes, minutes);
   }
 
   /// Distance display units. 'metric' (m/km) or 'imperial' (ft/mi).
@@ -278,9 +271,6 @@ class SharedPrefsService {
       _preferences.getBool(AppConstants.keyAutoPlayOnArrival) ?? true;
 
   Future<void> setAutoPlayOnArrival(bool enabled) async {
-    await _preferences.setBool(
-      AppConstants.keyAutoPlayOnArrival,
-      enabled,
-    );
+    await _preferences.setBool(AppConstants.keyAutoPlayOnArrival, enabled);
   }
 }

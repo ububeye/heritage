@@ -61,32 +61,38 @@ class _UserManagementContent extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: 'Search users...',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: state.searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () => context.read<UserCubit>().searchUsers(''),
-                          )
-                        : null,
+                    suffixIcon:
+                        state.searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed:
+                                  () =>
+                                      context.read<UserCubit>().searchUsers(''),
+                            )
+                            : null,
                     border: OutlineInputBorder(
                       borderRadius: AppRadius.mdBorder,
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: AppRadius.mdBorder,
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                     filled: true,
                     fillColor: Theme.of(context).colorScheme.surface,
                   ),
-                  onChanged: (value) => context.read<UserCubit>().searchUsers(value),
+                  onChanged:
+                      (value) => context.read<UserCubit>().searchUsers(value),
                 );
               },
             ),
           ),
           _buildStatsBar(),
-          Expanded(
-            child: _buildUserList(),
-          ),
+          Expanded(child: _buildUserList()),
         ],
       ),
     );
@@ -106,9 +112,24 @@ class _UserManagementContent extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(context, 'Total', state.totalUsers.toString(), Theme.of(context).colorScheme.primary),
-              _buildStatItem(context, 'Premium', state.premiumUsers.toString(), Theme.of(context).colorScheme.secondary),
-              _buildStatItem(context, 'Admins', state.adminUsers.toString(), context.semanticColors.success),
+              _buildStatItem(
+                context,
+                'Total',
+                state.totalUsers.toString(),
+                Theme.of(context).colorScheme.primary,
+              ),
+              _buildStatItem(
+                context,
+                'Premium',
+                state.premiumUsers.toString(),
+                Theme.of(context).colorScheme.secondary,
+              ),
+              _buildStatItem(
+                context,
+                'Admins',
+                state.adminUsers.toString(),
+                context.semanticColors.success,
+              ),
             ],
           ),
         );
@@ -116,7 +137,12 @@ class _UserManagementContent extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, Color color) {
+  Widget _buildStatItem(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Column(
       children: [
         Text(
@@ -125,7 +151,9 @@ class _UserManagementContent extends StatelessWidget {
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -136,7 +164,9 @@ class _UserManagementContent extends StatelessWidget {
       builder: (context, state) {
         if (state.status == UserStatus.loading) {
           return Center(
-            child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.secondary,
+            ),
           );
         }
 
@@ -145,7 +175,11 @@ class _UserManagementContent extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 const Text('Failed to load users'),
                 const SizedBox(height: 8),
@@ -166,14 +200,20 @@ class _UserManagementContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  state.searchQuery.isEmpty ? Icons.people_outline : Icons.search_off,
+                  state.searchQuery.isEmpty
+                      ? Icons.people_outline
+                      : Icons.search_off,
                   size: 64,
                   color: Theme.of(context).colorScheme.outline,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  state.searchQuery.isEmpty ? 'No users found' : 'No matching users',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+                  state.searchQuery.isEmpty
+                      ? 'No users found'
+                      : 'No matching users',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -190,7 +230,9 @@ class _UserManagementContent extends StatelessWidget {
               final user = users[index];
               return _UserCard(
                 user: user,
-                onRoleChange: (role) => context.read<UserCubit>().updateUserRole(user.id, role),
+                onRoleChange:
+                    (role) =>
+                        context.read<UserCubit>().updateUserRole(user.id, role),
                 onDelete: () => _confirmDelete(context, user),
               );
             },
@@ -203,21 +245,26 @@ class _UserManagementContent extends StatelessWidget {
   Future<void> _confirmDelete(BuildContext context, UserModel user) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text('Delete user "${user.email}"? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Delete User'),
+            content: Text(
+              'Delete user "${user.email}"? This cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true && context.mounted) {
@@ -227,7 +274,6 @@ class _UserManagementContent extends StatelessWidget {
 }
 
 class _UserCard extends StatelessWidget {
-
   const _UserCard({
     required this.user,
     required this.onRoleChange,
@@ -253,16 +299,21 @@ class _UserCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  backgroundImage: user.photoUrl != null
-                      ? NetworkImage(user.photoUrl!)
-                      : null,
-                  child: user.photoUrl == null
-                      ? Text(
-                          user.email[0].toUpperCase(),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
-                        )
-                      : null,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundImage:
+                      user.photoUrl != null
+                          ? NetworkImage(user.photoUrl!)
+                          : null,
+                  child:
+                      user.photoUrl == null
+                          ? Text(
+                            user.email[0].toUpperCase(),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(color: AppColors.primary),
+                          )
+                          : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -272,15 +323,17 @@ class _UserCard extends StatelessWidget {
                       Text(
                         user.displayName ?? user.email,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                          fontWeight: FontWeight.w600,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         user.email,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -293,12 +346,13 @@ class _UserCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildRoleDropdown(context),
-                ),
+                Expanded(child: _buildRoleDropdown(context)),
                 const SizedBox(width: 12),
                 IconButton(
-                  icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   tooltip: deleteLabel,
                   onPressed: onDelete,
                 ),
@@ -333,10 +387,9 @@ class _UserCard extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontSize: 12,
-              color: color,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(fontSize: 12, color: color),
       ),
     );
   }
@@ -352,33 +405,37 @@ class _UserCard extends StatelessWidget {
         child: DropdownButton<UserRole>(
           value: user.role,
           isExpanded: true,
-          items: UserRole.values.map((role) {
-            return DropdownMenuItem(
-              value: role,
-              child: Row(
-                children: [
-                  Icon(
-                    role == UserRole.admin
-                        ? Icons.admin_panel_settings
-                        : role == UserRole.premium
+          items:
+              UserRole.values.map((role) {
+                return DropdownMenuItem(
+                  value: role,
+                  child: Row(
+                    children: [
+                      Icon(
+                        role == UserRole.admin
+                            ? Icons.admin_panel_settings
+                            : role == UserRole.premium
                             ? Icons.workspace_premium
                             : Icons.person,
-                    size: 18,
-                    color: role == UserRole.admin
-                        ? context.semanticColors.success
-                        : role == UserRole.premium
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 18,
+                        color:
+                            role == UserRole.admin
+                                ? context.semanticColors.success
+                                : role == UserRole.premium
+                                ? Theme.of(context).colorScheme.secondary
+                                : Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        role.name[0].toUpperCase() + role.name.substring(1),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    role.name[0].toUpperCase() + role.name.substring(1),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
           onChanged: (role) {
             if (role != null && role != user.role) {
               onRoleChange(role);

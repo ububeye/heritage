@@ -16,11 +16,11 @@ class PremiumCubit extends Cubit<PremiumState> {
     AuthCubit? auth,
     SharedPrefsService? prefs,
     TtsService? ttsService,
-  })  : _billing = billing,
-        _auth = auth,
-        _prefs = prefs ?? SharedPrefsService.instance,
-        _ttsService = ttsService,
-        super(const PremiumState()) {
+  }) : _billing = billing,
+       _auth = auth,
+       _prefs = prefs ?? SharedPrefsService.instance,
+       _ttsService = ttsService,
+       super(const PremiumState()) {
     _hydrateFromPrefs();
   }
 
@@ -33,10 +33,12 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// the right state on first frame. The BillingProvider call happens
   /// separately via [initialize].
   void _hydrateFromPrefs() {
-    emit(state.copyWith(
-      showPremiumOffer: _prefs.showPremiumOffer,
-      isPremium: _prefs.isPremiumDemo,
-    ),);
+    emit(
+      state.copyWith(
+        showPremiumOffer: _prefs.showPremiumOffer,
+        isPremium: _prefs.isPremiumDemo,
+      ),
+    );
   }
 
   /// App-start hook. Asks the billing provider for the authoritative
@@ -49,59 +51,64 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// calling close" and crashes the splash transition.
   Future<void> initialize() async {
     if (isClosed) return;
-    emit(state.copyWith(
-      isLoading: true,
-      lastOutcome: PurchaseOutcome.idle,
-    ),);
+    emit(state.copyWith(isLoading: true, lastOutcome: PurchaseOutcome.idle));
     try {
       final entitlement = await _billing.currentEntitlement();
       if (isClosed) return;
       if (entitlement != null) {
-        emit(state.copyWith(
-          isLoading: false,
-          isPremium: true,
-          selectedPlanId: entitlement.planId,
-          trialActiveUntil: entitlement.trialActiveUntil,
-          lastReceiptId: entitlement.receiptId,
-          lastOutcome: PurchaseOutcome.success,
-        ),);
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isPremium: true,
+            selectedPlanId: entitlement.planId,
+            trialActiveUntil: entitlement.trialActiveUntil,
+            lastReceiptId: entitlement.receiptId,
+            lastOutcome: PurchaseOutcome.success,
+          ),
+        );
         // Push the upgrade onto the TTS engine so the next speak()
         // uses the unlimited chunk rather than the 30s preview.
         _ttsService?.setPremium(true);
       } else {
-        emit(state.copyWith(isLoading: false),);
+        emit(state.copyWith(isLoading: false));
       }
     } catch (e) {
       // Surface the error so the upgrade screen can show a banner
       // rather than silently leaving the user on a stale cached value.
       if (isClosed) return;
-      emit(state.copyWith(
-        isLoading: false,
-        lastOutcome: PurchaseOutcome.error,
-        errorMessage: 'Could not verify entitlement: $e',
-      ),);
+      emit(
+        state.copyWith(
+          isLoading: false,
+          lastOutcome: PurchaseOutcome.error,
+          errorMessage: 'Could not verify entitlement: $e',
+        ),
+      );
     }
   }
 
   /// Plan card tap.
   void selectPlan(PlanId id) {
     if (state.selectedPlanId == id) return;
-    emit(state.copyWith(
-      selectedPlanId: id,
-      lastOutcome: PurchaseOutcome.idle,
-      errorMessage: null,
-    ),);
+    emit(
+      state.copyWith(
+        selectedPlanId: id,
+        lastOutcome: PurchaseOutcome.idle,
+        errorMessage: null,
+      ),
+    );
   }
 
   /// Purchase the currently selected plan. Translates [BillingResult]
   /// variants into UI state.
   Future<void> purchase() async {
     if (state.isLoading) return;
-    emit(state.copyWith(
-      isLoading: true,
-      lastOutcome: PurchaseOutcome.pending,
-      errorMessage: null,
-    ),);
+    emit(
+      state.copyWith(
+        isLoading: true,
+        lastOutcome: PurchaseOutcome.pending,
+        errorMessage: null,
+      ),
+    );
 
     final result = await _billing.purchase(state.selectedPlanId);
     if (isClosed) return;
@@ -112,11 +119,13 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// "Restore purchases" link).
   Future<void> restore() async {
     if (state.isLoading) return;
-    emit(state.copyWith(
-      isLoading: true,
-      lastOutcome: PurchaseOutcome.pending,
-      errorMessage: null,
-    ),);
+    emit(
+      state.copyWith(
+        isLoading: true,
+        lastOutcome: PurchaseOutcome.pending,
+        errorMessage: null,
+      ),
+    );
     final result = await _billing.restore();
     if (isClosed) return;
     await _applyResult(result);
@@ -125,22 +134,24 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> _applyResult(BillingResult result) async {
     switch (result) {
       case BillingSuccess(
-          :final planId,
-          :final receiptId,
-          :final trialActiveUntil,
-        ):
+        :final planId,
+        :final receiptId,
+        :final trialActiveUntil,
+      ):
         await _prefs.setPremiumDemo(true);
         await _prefs.setShowPremiumOffer(false);
         if (isClosed) return;
-        emit(state.copyWith(
-          isLoading: false,
-          isPremium: true,
-          showPremiumOffer: false,
-          selectedPlanId: planId,
-          trialActiveUntil: trialActiveUntil,
-          lastReceiptId: receiptId,
-          lastOutcome: PurchaseOutcome.success,
-        ),);
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isPremium: true,
+            showPremiumOffer: false,
+            selectedPlanId: planId,
+            trialActiveUntil: trialActiveUntil,
+            lastReceiptId: receiptId,
+            lastOutcome: PurchaseOutcome.success,
+          ),
+        );
         // Push the upgrade onto the TTS engine immediately so the
         // next speak() (e.g. the user replays the audio right after
         // buying) uses the unlimited chunk. Without this, the user
@@ -152,23 +163,29 @@ class PremiumCubit extends Cubit<PremiumState> {
         await _mirrorUserPremium(true);
       case BillingCancelled():
         if (isClosed) return;
-        emit(state.copyWith(
-          isLoading: false,
-          lastOutcome: PurchaseOutcome.cancelled,
-        ),);
+        emit(
+          state.copyWith(
+            isLoading: false,
+            lastOutcome: PurchaseOutcome.cancelled,
+          ),
+        );
       case BillingPending():
         if (isClosed) return;
-        emit(state.copyWith(
-          isLoading: false,
-          lastOutcome: PurchaseOutcome.pending,
-        ),);
+        emit(
+          state.copyWith(
+            isLoading: false,
+            lastOutcome: PurchaseOutcome.pending,
+          ),
+        );
       case BillingError(:final message):
         if (isClosed) return;
-        emit(state.copyWith(
-          isLoading: false,
-          lastOutcome: PurchaseOutcome.error,
-          errorMessage: message,
-        ),);
+        emit(
+          state.copyWith(
+            isLoading: false,
+            lastOutcome: PurchaseOutcome.error,
+            errorMessage: message,
+          ),
+        );
     }
   }
 
@@ -176,17 +193,14 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> skipPremiumOffer() async {
     await _prefs.setShowPremiumOffer(false);
     if (isClosed) return;
-    emit(state.copyWith(showPremiumOffer: false),);
+    emit(state.copyWith(showPremiumOffer: false));
   }
 
   /// Clear the last outcome (e.g. after the user dismisses the error
   /// banner).
   void clearOutcome() {
     if (state.lastOutcome == PurchaseOutcome.idle) return;
-    emit(state.copyWith(
-      lastOutcome: PurchaseOutcome.idle,
-      errorMessage: null,
-    ),);
+    emit(state.copyWith(lastOutcome: PurchaseOutcome.idle, errorMessage: null));
   }
 
   /// Dev-only override. Lets a build flag flip premium status without
@@ -195,7 +209,7 @@ class PremiumCubit extends Cubit<PremiumState> {
   Future<void> setPremium(bool isPremium) async {
     await _prefs.setPremiumDemo(isPremium);
     if (isClosed) return;
-    emit(state.copyWith(isPremium: isPremium),);
+    emit(state.copyWith(isPremium: isPremium));
     _ttsService?.setPremium(isPremium);
   }
 

@@ -10,7 +10,6 @@ import '../../core/theme/app_colors.dart';
 /// when the photo isn't available. Pass an empty string to render the
 /// default person icon.
 class UserAvatar extends StatelessWidget {
-
   const UserAvatar({
     super.key,
     this.photoUrl,
@@ -43,23 +42,26 @@ class UserAvatar extends StatelessWidget {
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+      backgroundColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.12),
       backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
-      child: hasPhoto
-          ? null
-          : initials.isNotEmpty
+      child:
+          hasPhoto
+              ? null
+              : initials.isNotEmpty
               ? Text(
-                  initials,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontSize: radius * 0.7,
-                      ),
-                )
-              : Icon(
-                  Icons.person_outline,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: radius,
+                initials,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.primary,
+                  fontSize: radius * 0.7,
                 ),
+              )
+              : Icon(
+                Icons.person_outline,
+                color: Theme.of(context).colorScheme.primary,
+                size: radius,
+              ),
     );
   }
 }

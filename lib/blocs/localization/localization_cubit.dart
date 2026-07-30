@@ -7,8 +7,8 @@ import '../../data/services/tts_service.dart';
 
 class LocalizationCubit extends Cubit<LocalizationState> {
   LocalizationCubit({required TtsService ttsService})
-      : _ttsService = ttsService,
-        super(const LocalizationState()) {
+    : _ttsService = ttsService,
+      super(const LocalizationState()) {
     // Forward native TTS engine errors into the same SnackBar channel as
     // voice-fallback and preview-ended. Without this, a "no network" or
     // missing-voice failure shows as a silent dead bar.
@@ -75,14 +75,16 @@ class LocalizationCubit extends Cubit<LocalizationState> {
       final activeCode = _ttsService.currentLanguage.split('-').first;
       final isGenuineFallback =
           outcome == SetLanguageOutcome.voiceUnavailable &&
-              activeCode != languageCode;
-      emit(state.copyWith(
-        status: LocalizationStatus.loaded,
-        currentLanguage: languageCode,
-        translations: translations,
-        ttsFallback: isGenuineFallback ? activeCode : null,
-        ttsFallbackRequested: isGenuineFallback ? languageCode : null,
-      ),);
+          activeCode != languageCode;
+      emit(
+        state.copyWith(
+          status: LocalizationStatus.loaded,
+          currentLanguage: languageCode,
+          translations: translations,
+          ttsFallback: isGenuineFallback ? activeCode : null,
+          ttsFallbackRequested: isGenuineFallback ? languageCode : null,
+        ),
+      );
     } catch (e) {
       if (token != _loadSeq) return;
       emit(state.copyWith(status: LocalizationStatus.error));
@@ -108,13 +110,15 @@ class LocalizationCubit extends Cubit<LocalizationState> {
       final activeCode = _ttsService.currentLanguage.split('-').first;
       final isGenuineFallback =
           outcome == SetLanguageOutcome.voiceUnavailable &&
-              activeCode != resolved;
-      emit(state.copyWith(
-        currentLanguage: resolved,
-        translations: translations,
-        ttsFallback: isGenuineFallback ? activeCode : null,
-        ttsFallbackRequested: isGenuineFallback ? resolved : null,
-      ),);
+          activeCode != resolved;
+      emit(
+        state.copyWith(
+          currentLanguage: resolved,
+          translations: translations,
+          ttsFallback: isGenuineFallback ? activeCode : null,
+          ttsFallbackRequested: isGenuineFallback ? resolved : null,
+        ),
+      );
     } catch (e) {
       if (token != _loadSeq) return;
       // Fallback to English
@@ -125,12 +129,14 @@ class LocalizationCubit extends Cubit<LocalizationState> {
       final activeCode = _ttsService.currentLanguage.split('-').first;
       final isGenuineFallback =
           outcome == SetLanguageOutcome.voiceUnavailable && activeCode != 'en';
-      emit(state.copyWith(
-        currentLanguage: 'en',
-        translations: translations,
-        ttsFallback: isGenuineFallback ? activeCode : null,
-        ttsFallbackRequested: isGenuineFallback ? 'en' : null,
-      ),);
+      emit(
+        state.copyWith(
+          currentLanguage: 'en',
+          translations: translations,
+          ttsFallback: isGenuineFallback ? activeCode : null,
+          ttsFallbackRequested: isGenuineFallback ? 'en' : null,
+        ),
+      );
     }
   }
 
@@ -143,10 +149,12 @@ class LocalizationCubit extends Cubit<LocalizationState> {
     required String spokenCode,
   }) {
     if (requestedCode == spokenCode) return;
-    emit(state.copyWith(
-      ttsFallback: spokenCode,
-      ttsFallbackRequested: requestedCode,
-    ),);
+    emit(
+      state.copyWith(
+        ttsFallback: spokenCode,
+        ttsFallbackRequested: requestedCode,
+      ),
+    );
   }
 
   /// Surface the fact that a free-tier playback hit the per-session
@@ -155,14 +163,14 @@ class LocalizationCubit extends Cubit<LocalizationState> {
   /// the cap value so the SnackBar can render e.g. "30-second preview
   /// ended — upgrade to keep listening."
   void reportTtsPreviewEnded({required int maxSeconds}) {
-    emit(state.copyWith(ttsPreviewEndedAt: maxSeconds),);
+    emit(state.copyWith(ttsPreviewEndedAt: maxSeconds));
   }
 
   /// Reset the preview-ended signal after the UI has shown the SnackBar
   /// so the same state doesn't re-trigger on rebuild.
   void clearTtsPreviewEnded() {
     if (state.ttsPreviewEndedAt != null) {
-      emit(state.copyWith(clearTtsPreviewEnded: true),);
+      emit(state.copyWith(clearTtsPreviewEnded: true));
     }
   }
 
@@ -204,7 +212,6 @@ class LocalizationCubit extends Cubit<LocalizationState> {
 }
 
 class LocalizationState {
-
   const LocalizationState({
     this.status = LocalizationStatus.initial,
     this.currentLanguage = 'en',
@@ -259,12 +266,14 @@ class LocalizationState {
       currentLanguage: currentLanguage ?? this.currentLanguage,
       translations: translations ?? this.translations,
       ttsFallback: clearTtsFallback ? null : (ttsFallback ?? this.ttsFallback),
-      ttsFallbackRequested: clearTtsFallback
-          ? null
-          : (ttsFallbackRequested ?? this.ttsFallbackRequested),
-      ttsPreviewEndedAt: clearTtsPreviewEnded
-          ? null
-          : (ttsPreviewEndedAt ?? this.ttsPreviewEndedAt),
+      ttsFallbackRequested:
+          clearTtsFallback
+              ? null
+              : (ttsFallbackRequested ?? this.ttsFallbackRequested),
+      ttsPreviewEndedAt:
+          clearTtsPreviewEnded
+              ? null
+              : (ttsPreviewEndedAt ?? this.ttsPreviewEndedAt),
       ttsEngineError:
           clearTtsEngineError ? null : (ttsEngineError ?? this.ttsEngineError),
     );

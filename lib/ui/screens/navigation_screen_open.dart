@@ -49,8 +49,9 @@ class NavigationScreenOpen extends StatefulWidget {
 class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
-  late final RoutingService _routingService =
-      RoutingService(routeCache: FirestoreRouteCache());
+  late final RoutingService _routingService = RoutingService(
+    routeCache: FirestoreRouteCache(),
+  );
   bool _showArrivalOverlay = false;
 
   /// Cached at [didChangeDependencies] time. We must not call
@@ -125,9 +126,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
 
     // Snap destination to polyline as soon as the route is available —
     // the marker should sit on the road, not 5 m into a doorway.
-    final snapped = result.points.length >= 2
-        ? PolylineSnap.snapToPolyline(destination, result.points)
-        : null;
+    final snapped =
+        result.points.length >= 2
+            ? PolylineSnap.snapToPolyline(destination, result.points)
+            : null;
 
     setState(() {
       _routePoints = result.points;
@@ -143,9 +145,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   /// Animate the camera from its current centre to [target] in
   /// [AppDurations.navigation.inMilliseconds], preserving zoom and rotation.
   void _animateCameraTo(LatLng target) {
-    final clamped = StoneTownBounds.contains(target)
-        ? target
-        : StoneTownBounds.centre;
+    final clamped =
+        StoneTownBounds.contains(target) ? target : StoneTownBounds.centre;
     if (_lastUserPosition != null &&
         _lastUserPosition!.latitude == clamped.latitude &&
         _lastUserPosition!.longitude == clamped.longitude) {
@@ -164,7 +165,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     _cameraTickerStart = start;
     _cameraTickerEnd = clamped;
     _cameraTicker = createTicker((elapsed) {
-      final t = (elapsed.inMicroseconds / 1000.0 /
+      final t = (elapsed.inMicroseconds /
+              1000.0 /
               AppDurations.navigation.inMilliseconds)
           .clamp(0.0, 1.0);
       final eased = Curves.easeInOut.transform(t);
@@ -185,8 +187,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         _cameraTicker?.dispose();
         _cameraTicker = null;
       }
-    })
-      ..start();
+    })..start();
   }
 
   double _lerp(double a, double b, double t) => a + (b - a) * t;
@@ -226,20 +227,22 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<NavigationCubit, NavigationCubitState>(
-      listenWhen: (prev, next) =>
-          prev.navigationState.status != next.navigationState.status ||
-          prev.navigationState.currentPosition !=
-              next.navigationState.currentPosition ||
-          // Fire on a permission-denied transition so we can pop the
-          // "Open Settings" SnackBar. Re-emits with the same error
-          // code do not re-pop (the prev/next inequality gate).
-          (prev.navigationState.errorCode !=
-                  next.navigationState.errorCode &&
-              next.navigationState.errorCode == 'permission_denied'),
+      listenWhen:
+          (prev, next) =>
+              prev.navigationState.status != next.navigationState.status ||
+              prev.navigationState.currentPosition !=
+                  next.navigationState.currentPosition ||
+              // Fire on a permission-denied transition so we can pop the
+              // "Open Settings" SnackBar. Re-emits with the same error
+              // code do not re-pop (the prev/next inequality gate).
+              (prev.navigationState.errorCode !=
+                      next.navigationState.errorCode &&
+                  next.navigationState.errorCode == 'permission_denied'),
       listener: (context, state) {
         final navState = state.navigationState;
         final pos = navState.currentPosition;
-        final posLatLng = pos == null ? null : LatLng(pos.latitude, pos.longitude);
+        final posLatLng =
+            pos == null ? null : LatLng(pos.latitude, pos.longitude);
 
         // 1. Pull a route once we know where the user is.
         if (_routeLoading && posLatLng != null) {
@@ -264,8 +267,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         //     a maneuver point. Only meaningful once steps have been
         //     loaded; ignore on the initial pre-route state.
         if (posLatLng != null && _routeSteps.isNotEmpty) {
-          final newIdx =
-              RoutingService.currentStepIndex(_routeSteps, posLatLng);
+          final newIdx = RoutingService.currentStepIndex(
+            _routeSteps,
+            posLatLng,
+          );
           if (newIdx != _activeStepIndex) {
             setState(() => _activeStepIndex = newIdx);
           }
@@ -281,8 +286,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         }
 
         // 4. Show arrival overlay once. Gated by the arrival-alerts preference
-//    so users who turned off the welcome card in Settings don't get a
-//    surprise modal as they walk through Stone Town.
+        //    so users who turned off the welcome card in Settings don't get a
+        //    surprise modal as they walk through Stone Town.
         if (navState.status == nav_model.NavigationStatus.arrived &&
             !_showArrivalOverlay &&
             SharedPrefsService.instance.arrivalAlertsEnabled) {
@@ -319,12 +324,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       builder: (context, state) {
         final navState = state.navigationState;
         final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
-        final userLatLng = navState.currentPosition == null
-            ? null
-            : LatLng(
-                navState.currentPosition!.latitude,
-                navState.currentPosition!.longitude,
-              );
+        final userLatLng =
+            navState.currentPosition == null
+                ? null
+                : LatLng(
+                  navState.currentPosition!.latitude,
+                  navState.currentPosition!.longitude,
+                );
 
         return Scaffold(
           body: Stack(
@@ -340,11 +346,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                   onPlayAudio: () {
                     final audioLang =
                         context.read<LanguageCubit>().state.audioLanguage;
-                    final isPremium =
-                        context.read<AuthCubit>().state.isPremium;
-                    context
-                        .read<SiteDetailCubit>()
-                        .playAudio(audioLang, isPremium: isPremium);
+                    final isPremium = context.read<AuthCubit>().state.isPremium;
+                    context.read<SiteDetailCubit>().playAudio(
+                      audioLang,
+                      isPremium: isPremium,
+                    );
                     setState(() => _showArrivalOverlay = false);
                   },
                   onClose: () => setState(() => _showArrivalOverlay = false),
@@ -406,8 +412,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               point: LatLng(widget.site.latitude, widget.site.longitude),
               radius: widget.site.entryRadiusM,
               useRadiusInMeter: true,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-              borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.12),
+              borderColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.45),
               borderStrokeWidth: 1.5,
             ),
           ],
@@ -419,11 +429,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             // doorway; proximity detection still uses the raw coord
             // (see [CircleMarker] above).
             Marker(
-              point: _snappedDestination ??
-                  LatLng(
-                    widget.site.latitude,
-                    widget.site.longitude,
-                  ),
+              point:
+                  _snappedDestination ??
+                  LatLng(widget.site.latitude, widget.site.longitude),
               width: 44,
               height: 44,
               alignment: Alignment.topCenter,
@@ -497,9 +505,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   void _recenter() {
     final nav = _navigationCubit?.state.navigationState;
     final pos = nav?.currentPosition;
-    final raw = (pos != null)
-        ? LatLng(pos.latitude, pos.longitude)
-        : StoneTownBounds.centre;
+    final raw =
+        (pos != null)
+            ? LatLng(pos.latitude, pos.longitude)
+            : StoneTownBounds.centre;
     final target = StoneTownBounds.contains(raw) ? raw : StoneTownBounds.centre;
 
     // _fitInitial drives the camera via the map controller; stop any
@@ -530,12 +539,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     // Banner shows an error pill on failure, and a near-black neutral pill
     // while the route is loading or in fallback mode. The neutral tone
     // uses onSurface for a high-contrast, theme-aware fill.
-    final color = hasError
-        ? Theme.of(context).colorScheme.error
-        : Theme.of(context).colorScheme.onSurface;
-    final text = hasError
-        ? (nav.errorMessage ?? tr('error_generic'))
-        : _routeLoading
+    final color =
+        hasError
+            ? Theme.of(context).colorScheme.error
+            : Theme.of(context).colorScheme.onSurface;
+    final text =
+        hasError
+            ? (nav.errorMessage ?? tr('error_generic'))
+            : _routeLoading
             ? tr('loading')
             : (isRoutingAuthFailure
                 ? tr('routing_api_key_invalid')
@@ -559,10 +570,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               textAlign: TextAlign.center,
               // Banner fill is `colorScheme.error` or `colorScheme.onSurface`,
               // so the text sits on its `on*` counterpart.
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.surface),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.surface,
+              ),
             ),
           ),
         ),
@@ -577,26 +587,27 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   ) {
     final arrived = nav.status == nav_model.NavigationStatus.arrived;
     final hasError = nav.status == nav_model.NavigationStatus.error;
-    final statusChip = hasError
-        ? _StatusChip(
-            label: 'Error',
-            color: Theme.of(context).colorScheme.error,
-            foreground: Theme.of(context).colorScheme.onError,
-            icon: Icons.error_outline,
-          )
-        : arrived
+    final statusChip =
+        hasError
             ? _StatusChip(
-                label: 'Arrived',
-                color: Theme.of(context).colorScheme.primary,
-                foreground: Theme.of(context).colorScheme.onPrimary,
-                icon: Icons.check_circle,
-              )
+              label: 'Error',
+              color: Theme.of(context).colorScheme.error,
+              foreground: Theme.of(context).colorScheme.onError,
+              icon: Icons.error_outline,
+            )
+            : arrived
+            ? _StatusChip(
+              label: 'Arrived',
+              color: Theme.of(context).colorScheme.primary,
+              foreground: Theme.of(context).colorScheme.onPrimary,
+              icon: Icons.check_circle,
+            )
             : _StatusChip(
-                label: 'Navigating',
-                color: Theme.of(context).colorScheme.primary,
-                foreground: Theme.of(context).colorScheme.onPrimary,
-                icon: Icons.directions_walk,
-              );
+              label: 'Navigating',
+              color: Theme.of(context).colorScheme.primary,
+              foreground: Theme.of(context).colorScheme.onPrimary,
+              icon: Icons.directions_walk,
+            );
 
     return Positioned(
       bottom: 0,
@@ -605,7 +616,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheetBorderSm)),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.sheetBorderSm),
+          ),
           boxShadow: [
             BoxShadow(
               // Shadow tone uses the theme-aware semantic shadow colour.
@@ -632,30 +645,39 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                         width: 56,
                         height: 56,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                          width: 56,
-                          height: 56,
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          child: Center(
-                            child: SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                color: Theme.of(context).colorScheme.primary,
-                                strokeWidth: 2,
+                        placeholder:
+                            (_, __) => Container(
+                              width: 56,
+                              height: 56,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainer,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        errorWidget: (_, __, ___) => Container(
-                          width: 56,
-                          height: 56,
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          child: Icon(
-                            Icons.image_not_supported,
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
+                        errorWidget:
+                            (_, __, ___) => Container(
+                              width: 56,
+                              height: 56,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainer,
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -668,50 +690,57 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                             widget.site.getName(uiLanguage),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(Icons.straighten,
-                                  size: 14,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,),
+                              Icon(
+                                Icons.straighten,
+                                size: 14,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 nav.distanceToSite != null
                                     ? _formatDistance(nav.distanceToSite!)
                                     : '—',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                               const SizedBox(width: 12),
-                              Icon(Icons.access_time,
-                                  size: 14,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,),
+                              Icon(
+                                Icons.access_time,
+                                size: 14,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 nav.estimatedTime != null
                                     ? _formatDuration(nav.estimatedTime!)
                                     : '—',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ],
                           ),
@@ -725,8 +754,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                 // (no step data) and on the arrived state (the destination
                 // overlay covers navigation). Sits just above the action
                 // button so the eye reads "next move → action".
-                if (_routeSteps.isNotEmpty &&
-                    !arrived)
+                if (_routeSteps.isNotEmpty && !arrived)
                   _buildTurnInstructionRow(),
                 const SizedBox(height: 12),
                 Row(
@@ -779,7 +807,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: AppRadius.mdBorder,
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
@@ -792,7 +822,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               boxShadow: [
                 // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
                 BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -800,7 +832,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             ),
             // Icon sits over a primary-filled circle. Foreground uses
             // the matching onPrimary for contrast.
-            child: Icon(step.icon, color: Theme.of(context).colorScheme.onPrimary, size: 24),
+            child: Icon(
+              step.icon,
+              color: Theme.of(context).colorScheme.onPrimary,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -862,10 +898,9 @@ class _StatusChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontSize: 12,
-              color: foreground,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontSize: 12, color: foreground),
           ),
         ],
       ),
@@ -909,25 +944,28 @@ class _PinPainter extends CustomPainter {
     final center = Offset(size.width / 2, radius + 4);
     final tailBottom = Offset(size.width / 2, size.height - 2);
 
-    final shadowPaint = Paint()
-      ..color = shadowColor
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final shadowPaint =
+        Paint()
+          ..color = shadowColor
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     canvas.drawCircle(center + const Offset(0, 1), radius, shadowPaint);
 
     final fill = Paint()..color = fillColor;
-    final stroke = Paint()
-      ..color = strokeColor
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
+    final stroke =
+        Paint()
+          ..color = strokeColor
+          ..strokeWidth = 3
+          ..style = PaintingStyle.stroke;
 
     canvas.drawCircle(center, radius, fill);
     canvas.drawCircle(center, radius, stroke);
 
-    final tail = ui.Path()
-      ..moveTo(center.dx - radius * 0.55, center.dy + radius * 0.6)
-      ..lineTo(tailBottom.dx, tailBottom.dy)
-      ..lineTo(center.dx + radius * 0.55, center.dy + radius * 0.6)
-      ..close();
+    final tail =
+        ui.Path()
+          ..moveTo(center.dx - radius * 0.55, center.dy + radius * 0.6)
+          ..lineTo(tailBottom.dx, tailBottom.dy)
+          ..lineTo(center.dx + radius * 0.55, center.dy + radius * 0.6)
+          ..close();
     canvas.drawPath(tail, fill);
     canvas.drawPath(tail, stroke);
 
@@ -977,7 +1015,9 @@ class _UserMarkerState extends State<_UserMarker>
               height: 28 + pulse * 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: context.semanticColors.mapUser.withValues(alpha: 0.18 * (1 - pulse)),
+                color: context.semanticColors.mapUser.withValues(
+                  alpha: 0.18 * (1 - pulse),
+                ),
               ),
             ),
             // Solid dot.
@@ -989,7 +1029,10 @@ class _UserMarkerState extends State<_UserMarker>
                 shape: BoxShape.circle,
                 // Border over the user marker uses fixed white so it
                 // stays legible against any map tile hue.
-                border: Border.all(color: context.semanticColors.onImage, width: 3),
+                border: Border.all(
+                  color: context.semanticColors.onImage,
+                  width: 3,
+                ),
                 boxShadow: [
                   // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                   BoxShadow(

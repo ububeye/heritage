@@ -79,8 +79,10 @@ class AppConstants {
     defaultValue:
         'https://api.openrouteservice.org/v2/directions/foot-walking/geojson',
   );
-  static const String orsApiKey =
-      String.fromEnvironment('ORS_API_KEY', defaultValue: '');
+  static const String orsApiKey = String.fromEnvironment(
+    'ORS_API_KEY',
+    defaultValue: '',
+  );
   static const String osrmBaseUrl = String.fromEnvironment(
     'OSRM_BASE_URL',
     defaultValue: 'https://router.project-osrm.org',
@@ -123,14 +125,16 @@ class AppConstants {
   static const String keyUserId = 'user_id';
   static const String keyFavorites = 'favorites';
   static const String keyMapProvider = 'map_provider'; // 'open' | 'google'
-  static const String keyThemeMode = 'theme_mode'; // 'light' | 'dark' | 'system'
+  static const String keyThemeMode =
+      'theme_mode'; // 'light' | 'dark' | 'system'
   static const String keyArrivalAlertsEnabled = 'arrival_alerts_enabled';
   // PR-B settings — read/write via SharedPrefsService.
   static const String keyArrivalAlertsRadiusM = 'arrival_alerts_radius_m';
   static const String keyQuietHoursEnabled = 'quiet_hours_enabled';
   static const String keyQuietHoursStartMinutes = 'quiet_hours_start_min';
   static const String keyQuietHoursEndMinutes = 'quiet_hours_end_min';
-  static const String keyDistanceUnits = 'distance_units'; // 'metric' | 'imperial'
+  static const String keyDistanceUnits =
+      'distance_units'; // 'metric' | 'imperial'
   static const String keyReduceMotion = 'reduce_motion';
   static const String keyPlaybackSpeed = 'playback_speed'; // double as string
   static const String keyAutoPlayOnArrival = 'auto_play_on_arrival';

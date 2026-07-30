@@ -19,9 +19,7 @@ class UpgradeScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
-      body: const SafeArea(
-        child: UpgradeContent(mode: UpgradeMode.settings),
-      ),
+      body: const SafeArea(child: UpgradeContent(mode: UpgradeMode.settings)),
     );
   }
 }

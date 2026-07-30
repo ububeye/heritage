@@ -7,7 +7,6 @@ import '../../../core/theme/app_radius.dart';
 /// Square leading icon chip with a tinted background. Mirrors the
 /// `_ModernIcon` helper previously inlined in `settings_screen.dart`.
 class SettingsTileIcon extends StatelessWidget {
-
   const SettingsTileIcon({super.key, required this.icon, required this.color});
   final IconData icon;
   final Color color;
@@ -30,7 +29,6 @@ class SettingsTileIcon extends StatelessWidget {
 /// app's [ListTileTheme] / [ThemeData.listTileTheme]; we set explicit
 /// padding only.
 class SettingsTile extends StatelessWidget {
-
   const SettingsTile({
     super.key,
     required this.icon,
@@ -57,15 +55,17 @@ class SettingsTile extends StatelessWidget {
       ),
       leading: SettingsTileIcon(icon: icon, color: iconColor),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            )
-          : null,
-      trailing: trailing ??
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              )
+              : null,
+      trailing:
+          trailing ??
           Icon(
             CupertinoIcons.chevron_right,
             size: 16,
@@ -79,7 +79,6 @@ class SettingsTile extends StatelessWidget {
 /// Switch variant of [SettingsTile] — convenience for boolean toggles so
 /// callers don't have to assemble the trailing `Switch.adaptive` manually.
 class SettingsSwitchTile extends StatelessWidget {
-
   const SettingsSwitchTile({
     super.key,
     required this.icon,
@@ -106,14 +105,15 @@ class SettingsSwitchTile extends StatelessWidget {
       ),
       secondary: SettingsTileIcon(icon: icon, color: iconColor),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            )
-          : null,
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              )
+              : null,
       value: value,
       activeColor: Theme.of(context).colorScheme.primary,
       onChanged: onChanged,

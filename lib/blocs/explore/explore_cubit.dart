@@ -43,7 +43,6 @@ class ExploreCubit extends Cubit<ExploreState> {
 }
 
 class ExploreState {
-
   const ExploreState({
     this.isMapView = false,
     this.itinerary = const [],

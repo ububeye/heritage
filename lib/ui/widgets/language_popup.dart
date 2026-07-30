@@ -3,11 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 
 class LanguagePopup extends StatelessWidget {
-
-  const LanguagePopup({
-    super.key,
-    required this.onSelect,
-  });
+  const LanguagePopup({super.key, required this.onSelect});
   final Function(String) onSelect;
 
   @override
@@ -31,17 +27,17 @@ class LanguagePopup extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Choose Your Language',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(color: AppColors.textPrimary),
             ),
             const SizedBox(height: 8),
             Text(
               'Select your preferred language for the app interface',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             Row(
@@ -71,7 +67,6 @@ class LanguagePopup extends StatelessWidget {
 }
 
 class _LanguageButton extends StatelessWidget {
-
   const _LanguageButton({
     required this.flag,
     required this.label,
@@ -94,18 +89,15 @@ class _LanguageButton extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              flag,
-              style: const TextStyle(fontSize: 32),
-            ),
+            Text(flag, style: const TextStyle(fontSize: 32)),
             const SizedBox(height: 8),
             Text(
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
           ],
         ),

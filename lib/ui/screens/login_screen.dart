@@ -145,11 +145,10 @@ class _LoginScreenState extends State<LoginScreen>
                       Text(
                         _tr(locState, 'welcome_subtitle'),
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.8),
-                            ),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.8),
+                        ),
                       ),
                       const SizedBox(height: 40),
                       // Form Card
@@ -243,9 +242,10 @@ class _LoginScreenState extends State<LoginScreen>
                                                 height: 24,
                                                 child:
                                                     CircularProgressIndicator(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onPrimary,
+                                                      color:
+                                                          Theme.of(context)
+                                                              .colorScheme
+                                                              .onPrimary,
                                                       strokeWidth: 2,
                                                     ),
                                               )
@@ -268,15 +268,14 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                     child: Text(
                                       'or',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withValues(alpha: 0.7),
-                                          ),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.7),
+                                      ),
                                     ),
                                   ),
                                   Expanded(
@@ -309,9 +308,11 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                             child: Text(
                               _tr(locState, 'register'),
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                             ),
                           ),
                         ],
@@ -405,17 +406,17 @@ class _LoginScreenState extends State<LoginScreen>
                     // White foreground over the brand-literal red pill
                     // — fixed-content, not theme-aware.
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: const Color(0xFFFFFFFF),
-                        ),
+                      color: const Color(0xFFFFFFFF),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Text(
                 'Continue with Google',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
               ),
             ],
           ),

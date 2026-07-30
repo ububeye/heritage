@@ -8,7 +8,6 @@ import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
 
 class FeaturedSiteCard extends StatelessWidget {
-
   const FeaturedSiteCard({
     super.key,
     required this.site,
@@ -53,22 +52,24 @@ class FeaturedSiteCard extends StatelessWidget {
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.secondary,
+                placeholder:
+                    (context, url) => Container(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  child: Icon(
-                    Icons.image_not_supported,
-                    color: Theme.of(context).colorScheme.outline,
-                    size: 48,
-                  ),
-                ),
+                errorWidget:
+                    (context, url, error) => Container(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Theme.of(context).colorScheme.outline,
+                        size: 48,
+                      ),
+                    ),
               ),
             ),
             // Hero gradient overlay — fixed scrim tone so foreground
@@ -107,9 +108,9 @@ class FeaturedSiteCard extends StatelessWidget {
                     Text(
                       'Featured',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontSize: 12,
-                            color: AppColors.textOnAccent,
-                          ),
+                        fontSize: 12,
+                        color: AppColors.textOnAccent,
+                      ),
                     ),
                   ],
                 ),
@@ -138,9 +139,9 @@ class FeaturedSiteCard extends StatelessWidget {
                     Text(
                       site.rating?.toStringAsFixed(1) ?? '4.8',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontSize: 12,
-                            color: context.semanticColors.onImage,
-                          ),
+                        fontSize: 12,
+                        color: context.semanticColors.onImage,
+                      ),
                     ),
                   ],
                 ),
@@ -158,8 +159,8 @@ class FeaturedSiteCard extends StatelessWidget {
                     Text(
                       site.getName(uiLanguage),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: context.semanticColors.onImage,
-                          ),
+                        color: context.semanticColors.onImage,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -171,7 +172,9 @@ class FeaturedSiteCard extends StatelessWidget {
                               // Button border + foreground over hero
                               // image — fixed white.
                               foregroundColor: context.semanticColors.onImage,
-                              side: BorderSide(color: context.semanticColors.onImage),
+                              side: BorderSide(
+                                color: context.semanticColors.onImage,
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                             child: const Text('View on Map'),
@@ -182,8 +185,10 @@ class FeaturedSiteCard extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: onStartAudio,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.secondary,
-                              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.secondary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                             child: const Text('Start Audio Guide'),

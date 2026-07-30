@@ -83,11 +83,7 @@ class _SettingsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        _ProfileHeroAppBar(
-          authState: authState,
-          locState: locState,
-          tr: tr,
-        ),
+        _ProfileHeroAppBar(authState: authState, locState: locState, tr: tr),
         SliverPadding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -96,117 +92,123 @@ class _SettingsBody extends StatelessWidget {
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               // ── Tour preferences (NEW) ───────────────────────────────
-              SettingsSectionTitle(
-                label: tr(locState, 'tour_preferences'),
+              SettingsSectionTitle(label: tr(locState, 'tour_preferences')),
+              SettingsCard(
+                children: const [
+                  _AutoPlayTile(),
+                  SettingsDivider(),
+                  _PlaybackSpeedTile(),
+                  SettingsDivider(),
+                  _DistanceUnitsTile(),
+                  SettingsDivider(),
+                  _ReduceMotionTile(),
+                ],
               ),
-              SettingsCard(children: const [
-                _AutoPlayTile(),
-                SettingsDivider(),
-                _PlaybackSpeedTile(),
-                SettingsDivider(),
-                _DistanceUnitsTile(),
-                SettingsDivider(),
-                _ReduceMotionTile(),
-              ],),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Appearance ───────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'appearance')),
-              SettingsCard(children: const [
-                _ThemeTile(),
-                SettingsDivider(),
-                _MapProviderTile(),
-              ],),
+              SettingsCard(
+                children: const [
+                  _ThemeTile(),
+                  SettingsDivider(),
+                  _MapProviderTile(),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Languages ────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'app_language')),
-              SettingsCard(children: [
-                _LanguageDropdownTile(
-                  icon: Icons.language,
-                  iconColor: context.semanticColors.info,
-                  code: locState.currentLanguage,
-                  items: AppConstants.uiLanguages,
-                  onChanged: (value) {
-                    if (value != null) {
-                      context.read<LocalizationCubit>().setLanguage(value);
-                    }
-                  },
-                ),
-                const SettingsDivider(),
-                _LanguageDropdownTile(
-                  icon: Icons.record_voice_over,
-                  iconColor: context.semanticColors.warning,
-                  code: context.watch<LanguageCubit>().state.audioLanguage,
-                  items: authState.isPremium
-                      ? AppConstants.ttsLanguages
-                      : AppConstants.freeTtsLanguages,
-                  enabled: authState.isPremium,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    if (!authState.isPremium) {
-                      _showUpgradeDialog(context, locState);
-                      return;
-                    }
-                    context.read<LanguageCubit>().setAudioLanguage(value);
-                  },
-                ),
-              ],),
+              SettingsCard(
+                children: [
+                  _LanguageDropdownTile(
+                    icon: Icons.language,
+                    iconColor: context.semanticColors.info,
+                    code: locState.currentLanguage,
+                    items: AppConstants.uiLanguages,
+                    onChanged: (value) {
+                      if (value != null) {
+                        context.read<LocalizationCubit>().setLanguage(value);
+                      }
+                    },
+                  ),
+                  const SettingsDivider(),
+                  _LanguageDropdownTile(
+                    icon: Icons.record_voice_over,
+                    iconColor: context.semanticColors.warning,
+                    code: context.watch<LanguageCubit>().state.audioLanguage,
+                    items:
+                        authState.isPremium
+                            ? AppConstants.ttsLanguages
+                            : AppConstants.freeTtsLanguages,
+                    enabled: authState.isPremium,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      if (!authState.isPremium) {
+                        _showUpgradeDialog(context, locState);
+                        return;
+                      }
+                      context.read<LanguageCubit>().setAudioLanguage(value);
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Notifications ────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'notifications')),
-              SettingsCard(children: [
-                _ArrivalNotificationsGroup(),
-              ],),
+              SettingsCard(children: [_ArrivalNotificationsGroup()]),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Storage ──────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'storage')),
-              SettingsCard(children: const [
-                _ClearMapCacheTile(),
-                SettingsDivider(),
-                _OfflineDataTile(),
-              ],),
+              SettingsCard(
+                children: const [
+                  _ClearMapCacheTile(),
+                  SettingsDivider(),
+                  _OfflineDataTile(),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Account ──────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'account')),
-              SettingsCard(children: [
-                _AccountRow(authState: authState),
-              ],),
+              SettingsCard(children: [_AccountRow(authState: authState)]),
               const SizedBox(height: AppSpacing.lg),
 
               // ── About ────────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'about')),
-              SettingsCard(children: const [
-                _VersionTile(),
-                SettingsDivider(),
-                _OpenSourceLicensesTile(),
-                SettingsDivider(),
-                _PrivacyAndDataTile(),
-                SettingsDivider(),
-                _ReportAProblemTile(),
-              ],),
+              SettingsCard(
+                children: const [
+                  _VersionTile(),
+                  SettingsDivider(),
+                  _OpenSourceLicensesTile(),
+                  SettingsDivider(),
+                  _PrivacyAndDataTile(),
+                  SettingsDivider(),
+                  _ReportAProblemTile(),
+                ],
+              ),
 
               if (!authState.isPremium) ...[
                 const SizedBox(height: AppSpacing.lg),
-                SettingsSectionTitle(
-                  label: tr(locState, 'upgrade_to_premium'),
-                ),
-                SettingsCard(children: [
-                  SettingsTile(
-                    icon: Icons.workspace_premium,
-                    iconColor: Theme.of(context).colorScheme.secondary,
-                    title: tr(locState, 'upgrade_to_premium'),
-                    subtitle: tr(locState, 'unlock_premium'),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const UpgradeScreen(),
-                      ),
+                SettingsSectionTitle(label: tr(locState, 'upgrade_to_premium')),
+                SettingsCard(
+                  children: [
+                    SettingsTile(
+                      icon: Icons.workspace_premium,
+                      iconColor: Theme.of(context).colorScheme.secondary,
+                      title: tr(locState, 'upgrade_to_premium'),
+                      subtitle: tr(locState, 'unlock_premium'),
+                      onTap:
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const UpgradeScreen(),
+                            ),
+                          ),
                     ),
-                  ),
-                ],),
+                  ],
+                ),
               ],
               const SizedBox(height: AppSpacing.xl),
 
@@ -225,36 +227,37 @@ class _SettingsBody extends StatelessWidget {
   void _showUpgradeDialog(BuildContext context, LocalizationState locState) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: Text(
-          tr(locState, 'unlock_premium'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(tr(locState, 'benefit_audio_tours')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(tr(locState, 'try_free')),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.button),
-              ),
+      builder:
+          (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Text(tr(locState, 'go_premium')),
+            title: Text(
+              tr(locState, 'unlock_premium'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Text(tr(locState, 'benefit_audio_tours')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(tr(locState, 'try_free')),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.button),
+                  ),
+                ),
+                child: Text(tr(locState, 'go_premium')),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -337,9 +340,7 @@ class _ProfileHeroAppBar extends StatelessWidget {
                       Text(
                         emailSubtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -349,11 +350,12 @@ class _ProfileHeroAppBar extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               OutlinedButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const UserProfileScreen(),
-                  ),
-                ),
+                onPressed:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const UserProfileScreen(),
+                      ),
+                    ),
                 icon: const Icon(Icons.edit, size: 16),
                 label: Text(tr(locState, 'edit_profile')),
                 style: OutlinedButton.styleFrom(
@@ -379,9 +381,10 @@ class _PlanBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final key = isPremium ? 'premium_badge' : 'free_badge';
-    final color = isPremium
-        ? Theme.of(context).colorScheme.secondary
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final color =
+        isPremium
+            ? Theme.of(context).colorScheme.secondary
+            : Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       padding: AppInsets.badgePadding,
       decoration: BoxDecoration(
@@ -414,17 +417,18 @@ class _AccountRow extends StatelessWidget {
       icon: isAuthed ? Icons.person : Icons.person_outline,
       iconColor: Theme.of(context).colorScheme.primary,
       title: email ?? '',
-      subtitle: authState.isPremium
-          ? (context
-              .watch<LocalizationCubit>()
-              .state
-              .translations['premium_badge'] ??
-              'Premium')
-          : (context
-                  .watch<LocalizationCubit>()
-                  .state
-                  .translations['free_badge'] ??
-              'Free'),
+      subtitle:
+          authState.isPremium
+              ? (context
+                      .watch<LocalizationCubit>()
+                      .state
+                      .translations['premium_badge'] ??
+                  'Premium')
+              : (context
+                      .watch<LocalizationCubit>()
+                      .state
+                      .translations['free_badge'] ??
+                  'Free'),
       trailing: Icon(
         CupertinoIcons.chevron_right,
         size: 16,
@@ -432,13 +436,13 @@ class _AccountRow extends StatelessWidget {
       ),
       onTap: () {
         if (!isAuthed) {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
         } else {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const UserProfileScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const UserProfileScreen()));
         }
       },
     );
@@ -474,7 +478,8 @@ class _AutoPlayTileState extends State<_AutoPlayTile> {
       icon: Icons.play_circle_outline,
       iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['auto_play_on_arrival'] ?? 'Auto-play on arrival',
-      subtitle: loc.translations['auto_play_on_arrival_subtitle'] ??
+      subtitle:
+          loc.translations['auto_play_on_arrival_subtitle'] ??
           'Start narration as soon as you enter a site',
       value: _value,
       onChanged: _onChange,
@@ -546,7 +551,8 @@ class _ReduceMotionTileState extends State<_ReduceMotionTile> {
       icon: Icons.motion_photos_off_outlined,
       iconColor: Colors.deepPurpleAccent,
       title: loc.translations['reduce_motion'] ?? 'Reduce motion',
-      subtitle: loc.translations['reduce_motion_subtitle'] ??
+      subtitle:
+          loc.translations['reduce_motion_subtitle'] ??
           'Disable hero crossfades and the arrival pulse',
       value: _value,
       onChanged: _onChange,
@@ -600,8 +606,7 @@ class _PlaybackSpeedTileState extends State<_PlaybackSpeedTile> {
       icon: Icons.speed,
       iconColor: context.semanticColors.warning,
       title: loc.translations['playback_speed'] ?? 'Playback speed',
-      subtitle:
-          loc.translations['playback_speed_subtitle'] ?? 'Narration pace',
+      subtitle: loc.translations['playback_speed_subtitle'] ?? 'Narration pace',
       value: safeValue,
       items: _options,
       labels: _options.map((v) => _labelFor(context, v)).toList(),
@@ -687,12 +692,14 @@ class _MapProviderTileState extends State<_MapProviderTile> {
     final apiKey = AppConstants.googleMapsApiKey;
     final googleEnabled = apiKey != null && apiKey.isNotEmpty;
     final loc = context.watch<LocalizationCubit>().state;
-    final options = googleEnabled
-        ? const ['OSM', 'Google']
-        : const ['OSM'];
-    final values = googleEnabled
-        ? const <String>[AppConstants.mapProviderOpen, AppConstants.mapProviderGoogle]
-        : const <String>[AppConstants.mapProviderOpen];
+    final options = googleEnabled ? const ['OSM', 'Google'] : const ['OSM'];
+    final values =
+        googleEnabled
+            ? const <String>[
+              AppConstants.mapProviderOpen,
+              AppConstants.mapProviderGoogle,
+            ]
+            : const <String>[AppConstants.mapProviderOpen];
     return SettingsSegmentedTile<String>(
       icon: Icons.public,
       iconColor: Theme.of(context).colorScheme.primary,
@@ -703,19 +710,20 @@ class _MapProviderTileState extends State<_MapProviderTile> {
       // segment but show a hint if the user tries to tap Google. Tapping
       // a disabled option used to be silently swallowed, which made the
       // segmented control look broken.
-      onChanged: googleEnabled
-          ? _select
-          : (v) {
-              ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    loc.translations['map_provider_google_disabled'] ??
-                        'Add a Google Maps API key in AppConstants to enable Google tiles',
+      onChanged:
+          googleEnabled
+              ? _select
+              : (v) {
+                ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      loc.translations['map_provider_google_disabled'] ??
+                          'Add a Google Maps API key in AppConstants to enable Google tiles',
+                    ),
+                    duration: const Duration(seconds: 3),
                   ),
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-            },
+                );
+              },
     );
   }
 }
@@ -744,15 +752,20 @@ class _LanguageDropdownTile extends StatelessWidget {
     return SettingsDropdownTile<String>(
       icon: icon,
       iconColor: iconColor,
-      title: items == AppConstants.uiLanguages
-          ? (loc.translations['app_language'] ?? 'App language')
-          : (loc.translations['audio_language'] ?? 'Audio language'),
-      subtitle: items == AppConstants.ttsLanguages
-          ? (loc.translations['benefit_audio_tours'] ?? 'Narration voice')
-          : (loc.translations['choose_language'] ?? ''),
+      title:
+          items == AppConstants.uiLanguages
+              ? (loc.translations['app_language'] ?? 'App language')
+              : (loc.translations['audio_language'] ?? 'Audio language'),
+      subtitle:
+          items == AppConstants.ttsLanguages
+              ? (loc.translations['benefit_audio_tours'] ?? 'Narration voice')
+              : (loc.translations['choose_language'] ?? ''),
       value: code,
       items: items,
-      labels: items.map((c) => '${LanguageMeta.flag(c)} ${LanguageMeta.name(c)}').toList(),
+      labels:
+          items
+              .map((c) => '${LanguageMeta.flag(c)} ${LanguageMeta.name(c)}')
+              .toList(),
       enabled: enabled,
       onChanged: onChanged,
     );
@@ -775,7 +788,8 @@ class _ArrivalNotificationsGroup extends StatefulWidget {
       _ArrivalNotificationsGroupState();
 }
 
-class _ArrivalNotificationsGroupState extends State<_ArrivalNotificationsGroup> {
+class _ArrivalNotificationsGroupState
+    extends State<_ArrivalNotificationsGroup> {
   late bool _enabled;
 
   @override
@@ -810,17 +824,18 @@ class _ArrivalNotificationsGroupState extends State<_ArrivalNotificationsGroup> 
           duration: AppDurations.collapse,
           curve: Curves.easeOut,
           alignment: Alignment.topCenter,
-          child: _enabled
-              ? const Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SettingsDivider(),
-                    _ArrivalRadiusSubTile(),
-                    SettingsDivider(),
-                    _QuietHoursSubTile(),
-                  ],
-                )
-              : const SizedBox(width: double.infinity),
+          child:
+              _enabled
+                  ? const Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SettingsDivider(),
+                      _ArrivalRadiusSubTile(),
+                      SettingsDivider(),
+                      _QuietHoursSubTile(),
+                    ],
+                  )
+                  : const SizedBox(width: double.infinity),
         ),
       ],
     );
@@ -917,10 +932,7 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
   }
 
   Future<TimeOfDay?> _pickTime(BuildContext context, TimeOfDay initial) {
-    return showTimePicker(
-      context: context,
-      initialTime: initial,
-    );
+    return showTimePicker(context: context, initialTime: initial);
   }
 
   Future<void> _pickStart() async {
@@ -974,15 +986,17 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
         '${(_startMin ~/ 60).toString().padLeft(2, '0')}:${(_startMin % 60).toString().padLeft(2, '0')}';
     final endStr =
         '${(_endMin ~/ 60).toString().padLeft(2, '0')}:${(_endMin % 60).toString().padLeft(2, '0')}';
-    final collapsedValue =
-        (loc.translations['quiet_hours_value'] ?? 'Quiet from %s to %s')
-            .replaceAll('%s', startStr)
-            .replaceAll('%s', endStr);
+    final collapsedValue = (loc.translations['quiet_hours_value'] ??
+            'Quiet from %s to %s')
+        .replaceAll('%s', startStr)
+        .replaceAll('%s', endStr);
 
     // Animated chevron — same ease as the size transition so the rotation
     // and the height growth feel like one motion.
-    final expandCurve =
-        CurvedAnimation(parent: _expandController, curve: Curves.easeInOut);
+    final expandCurve = CurvedAnimation(
+      parent: _expandController,
+      curve: Curves.easeInOut,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1018,9 +1032,10 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
                   collapsedValue,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     fontSize: 12,
-                    color: _enabled
-                        ? Theme.of(context).colorScheme.primary
-                        : AppColors.textHint,
+                    color:
+                        _enabled
+                            ? Theme.of(context).colorScheme.primary
+                            : AppColors.textHint,
                   ),
                 ),
               const SizedBox(width: 8),
@@ -1033,10 +1048,7 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
                 ),
               ),
               const SizedBox(width: 4),
-              Switch.adaptive(
-                value: _enabled,
-                onChanged: _toggle,
-              ),
+              Switch.adaptive(value: _enabled, onChanged: _toggle),
             ],
           ),
           onTap: _toggleExpanded,
@@ -1130,9 +1142,10 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
   @override
   Widget build(BuildContext context) {
     final loc = context.watch<LocalizationCubit>().state;
-    final sizeLabel = _bytes < 0
-        ? (loc.translations['cache_size_unknown'] ?? 'Calculating…')
-        : _formatBytes(_bytes);
+    final sizeLabel =
+        _bytes < 0
+            ? (loc.translations['cache_size_unknown'] ?? 'Calculating…')
+            : _formatBytes(_bytes);
     return SettingsTile(
       icon: CupertinoIcons.trash,
       iconColor: Colors.blueGrey,
@@ -1145,9 +1158,10 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
             sizeLabel,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontSize: 12,
-              color: _bytes > 0
-                  ? Theme.of(context).colorScheme.primary
-                  : AppColors.textHint,
+              color:
+                  _bytes > 0
+                      ? Theme.of(context).colorScheme.primary
+                      : AppColors.textHint,
             ),
           ),
           const SizedBox(width: 8),
@@ -1184,7 +1198,9 @@ class _OfflineDataTile extends StatelessWidget {
         final messenger = ScaffoldMessenger.maybeOf(context);
         messenger?.showSnackBar(
           SnackBar(
-            content: Text(loc.translations['offline_data_subtitle'] ?? 'Coming soon'),
+            content: Text(
+              loc.translations['offline_data_subtitle'] ?? 'Coming soon',
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -1225,9 +1241,9 @@ class _VersionTile extends StatelessWidget {
           ),
           trailing: Text(
             value,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
           ),
         );
       },
@@ -1245,11 +1261,12 @@ class _OpenSourceLicensesTile extends StatelessWidget {
       icon: Icons.balance_outlined,
       iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['open_source_licenses'] ?? 'Open-source licenses',
-      onTap: () => showLicensePage(
-        context: context,
-        applicationName: 'Stone Town Guide',
-        applicationVersion: '1.0.0',
-      ),
+      onTap:
+          () => showLicensePage(
+            context: context,
+            applicationName: 'Stone Town Guide',
+            applicationVersion: '1.0.0',
+          ),
     );
   }
 }
@@ -1270,9 +1287,7 @@ class _PrivacyAndDataTile extends StatelessWidget {
         final messenger = ScaffoldMessenger.maybeOf(context);
         messenger?.showSnackBar(
           SnackBar(
-            content: Text(
-              loc.translations['coming_soon'] ?? 'Coming soon',
-            ),
+            content: Text(loc.translations['coming_soon'] ?? 'Coming soon'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -1287,7 +1302,8 @@ class _ReportAProblemTile extends StatelessWidget {
   Future<void> _launch(BuildContext context) async {
     final loc = context.read<LocalizationCubit>();
     final info = await PackageInfo.fromPlatform();
-    final subject = 'Stone Town Guide ${info.version}+${info.buildNumber} — bug';
+    final subject =
+        'Stone Town Guide ${info.version}+${info.buildNumber} — bug';
     final body =
         'Locale: ${loc.state.currentLanguage}\nVersion: ${info.version}+${info.buildNumber}\n\n';
     final uri = Uri(
@@ -1343,33 +1359,34 @@ class _SignOutFooter extends StatelessWidget {
   Future<void> _confirmAndSignOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: Text(
-          tr(locState, 'logout'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text('${tr(locState, 'logout')}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(tr(locState, 'cancel')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.button),
-              ),
+      builder:
+          (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Text(tr(locState, 'logout')),
+            title: Text(
+              tr(locState, 'logout'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Text('${tr(locState, 'logout')}?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(tr(locState, 'cancel')),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.button),
+                  ),
+                ),
+                child: Text(tr(locState, 'logout')),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     if (!context.mounted) return;

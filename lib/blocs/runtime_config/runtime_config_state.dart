@@ -11,10 +11,10 @@ class RuntimeConfigState {
   });
 
   factory RuntimeConfigState.initial() => const RuntimeConfigState(
-        freeAudioMaxSeconds: 30,
-        orsApiKey: '',
-        maintenanceMode: false,
-      );
+    freeAudioMaxSeconds: 30,
+    orsApiKey: '',
+    maintenanceMode: false,
+  );
 
   final int freeAudioMaxSeconds;
   final String orsApiKey;
@@ -40,9 +40,6 @@ class RuntimeConfigState {
       other.maintenanceMode == maintenanceMode;
 
   @override
-  int get hashCode => Object.hash(
-        freeAudioMaxSeconds,
-        orsApiKey,
-        maintenanceMode,
-      );
+  int get hashCode =>
+      Object.hash(freeAudioMaxSeconds, orsApiKey, maintenanceMode);
 }

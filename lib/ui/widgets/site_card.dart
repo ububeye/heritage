@@ -10,7 +10,6 @@ import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 
 class SiteCard extends StatelessWidget {
-
   const SiteCard({
     super.key,
     required this.site,
@@ -68,22 +67,26 @@ class SiteCard extends StatelessWidget {
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.secondary,
-                            strokeWidth: 2,
+                      placeholder:
+                          (context, url) => Container(
+                            color:
+                                Theme.of(context).colorScheme.surfaceContainer,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Theme.of(context).colorScheme.secondary,
+                                strokeWidth: 2,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                      ),
+                      errorWidget:
+                          (context, url, error) => Container(
+                            color:
+                                Theme.of(context).colorScheme.surfaceContainer,
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
                     ),
                   ),
 
@@ -95,11 +98,14 @@ class SiteCard extends StatelessWidget {
                       right: 8,
                       child: BlocBuilder<LocalizationCubit, LocalizationState>(
                         builder: (context, locState) {
-                          final label = isFavorite
-                              ? (locState.translations['remove_from_favorites'] ??
-                                  'Remove from favorites')
-                              : (locState.translations['add_to_favorites'] ??
-                                  'Add to favorites');
+                          final label =
+                              isFavorite
+                                  ? (locState
+                                          .translations['remove_from_favorites'] ??
+                                      'Remove from favorites')
+                                  : (locState
+                                          .translations['add_to_favorites'] ??
+                                      'Add to favorites');
                           return Semantics(
                             label: label,
                             button: true,
@@ -121,15 +127,20 @@ class SiteCard extends StatelessWidget {
                                   ],
                                 ),
                                 child: Icon(
-                                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
                                   // Heart is the love/like state — uses
                                   // the success semantic role; the
                                   // fallback border variant stays muted
                                   // via onSurfaceVariant for contrast on
                                   // the white pill.
-                                  color: isFavorite
-                                      ? context.semanticColors.success
-                                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color:
+                                      isFavorite
+                                          ? context.semanticColors.success
+                                          : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                   size: 20,
                                 ),
                               ),
@@ -158,15 +169,19 @@ class SiteCard extends StatelessWidget {
                                 Icon(
                                   Icons.check,
                                   size: 12,
-                                  color: Theme.of(context).colorScheme.onSecondary,
+                                  color:
+                                      Theme.of(context).colorScheme.onSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  loc.translations['added_to_itinerary'] ?? 'Added',
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textOnAccent,
-                                      ),
+                                  loc.translations['added_to_itinerary'] ??
+                                      'Added',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textOnAccent,
+                                  ),
                                 ),
                               ],
                             ),
@@ -192,8 +207,8 @@ class SiteCard extends StatelessWidget {
                       child: Text(
                         site.getName(uiLanguage),
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: AppColors.textPrimary,
-                            ),
+                          color: AppColors.textPrimary,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -213,9 +228,8 @@ class SiteCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             site.rating!.toStringAsFixed(1),
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ] else
                           const SizedBox(),
@@ -235,7 +249,8 @@ class SiteCard extends StatelessWidget {
                               child: Icon(
                                 Icons.navigation,
                                 size: 16,
-                                color: Theme.of(context).colorScheme.onSecondary,
+                                color:
+                                    Theme.of(context).colorScheme.onSecondary,
                               ),
                             ),
                           ),

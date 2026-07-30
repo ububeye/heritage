@@ -44,8 +44,7 @@ class _AdminShellState extends State<AdminShell> {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
         final isAdmin = authState.user?.role == UserRole.admin;
-        final inMaintenance =
-            RuntimeConfigService.instance.maintenanceMode;
+        final inMaintenance = RuntimeConfigService.instance.maintenanceMode;
         if (inMaintenance && !isAdmin) {
           return const MaintenanceScreen();
         }
@@ -108,7 +107,6 @@ class _AdminShellState extends State<AdminShell> {
 }
 
 class _AdminDashboard extends StatelessWidget {
-
   const _AdminDashboard({
     required this.locState,
     required this.tr,
@@ -165,7 +163,6 @@ class _AdminDashboard extends StatelessWidget {
 }
 
 class _WelcomeCard extends StatelessWidget {
-
   const _WelcomeCard({required this.locState, required this.tr});
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
@@ -190,7 +187,9 @@ class _WelcomeCard extends StatelessWidget {
             boxShadow: [
               // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
               BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 15,
                 offset: const Offset(0, 6),
               ),
@@ -201,10 +200,16 @@ class _WelcomeCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onPrimary.withValues(alpha: 0.2),
                   borderRadius: AppRadius.badgeBorder,
                 ),
-                child: Icon(Icons.admin_panel_settings, color: Theme.of(context).colorScheme.onPrimary, size: 32),
+                child: Icon(
+                  Icons.admin_panel_settings,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  size: 32,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -213,14 +218,18 @@ class _WelcomeCard extends StatelessWidget {
                   children: [
                     Text(
                       tr(locState, 'admin_welcome'),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       authState.user?.email ?? '',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
-                          ),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary.withValues(alpha: 0.8),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -236,7 +245,6 @@ class _WelcomeCard extends StatelessWidget {
 }
 
 class _StatsSection extends StatelessWidget {
-
   const _StatsSection({required this.locState, required this.tr});
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
@@ -289,7 +297,6 @@ class _StatsSection extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-
   const _StatCard({
     required this.icon,
     required this.value,
@@ -331,18 +338,17 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontSize: 22,
-                  color: color,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineLarge?.copyWith(fontSize: 22, color: color),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -354,7 +360,6 @@ class _StatCard extends StatelessWidget {
 }
 
 class _MenuSection extends StatelessWidget {
-
   const _MenuSection({
     required this.locState,
     required this.tr,
@@ -394,7 +399,6 @@ class _MenuSection extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-
   const _SectionHeader({required this.title});
   final String title;
 
@@ -402,13 +406,14 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
+      style: Theme.of(
+        context,
+      ).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
     );
   }
 }
 
 class _MenuCard extends StatelessWidget {
-
   const _MenuCard({
     required this.icon,
     required this.title,
@@ -453,22 +458,26 @@ class _MenuCard extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.outline, size: 24),
+            Icon(
+              Icons.chevron_right,
+              color: Theme.of(context).colorScheme.outline,
+              size: 24,
+            ),
           ],
         ),
       ),
@@ -477,7 +486,6 @@ class _MenuCard extends StatelessWidget {
 }
 
 class _QuickActionsSection extends StatelessWidget {
-
   const _QuickActionsSection({
     required this.locState,
     required this.tr,
@@ -514,9 +522,12 @@ class _QuickActionsSection extends StatelessWidget {
                 color: Theme.of(context).colorScheme.secondary,
                 // Analytics is a pushed screen (not a tab). Pre-existing
                 // behaviour — keep it so the chip stays useful.
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminAnalyticsScreen()),
-                ),
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AdminAnalyticsScreen(),
+                      ),
+                    ),
               ),
             ),
           ],
@@ -527,7 +538,6 @@ class _QuickActionsSection extends StatelessWidget {
 }
 
 class _QuickActionButton extends StatelessWidget {
-
   const _QuickActionButton({
     required this.icon,
     required this.label,
@@ -562,10 +572,10 @@ class _QuickActionButton extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),

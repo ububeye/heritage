@@ -9,10 +9,9 @@ import '../../core/utils/stone_town_bounds.dart';
 import 'navigation_state.dart';
 
 class NavigationCubit extends Cubit<NavigationCubitState> {
-
   NavigationCubit({LocationService? locationService})
-      : _locationService = locationService ?? LocationService(),
-        super(const NavigationCubitState());
+    : _locationService = locationService ?? LocationService(),
+      super(const NavigationCubitState());
   final LocationService _locationService;
   StreamSubscription<Position>? _positionSubscription;
 
@@ -43,13 +42,15 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
     _siteLng = siteLng;
     _entryRadiusM = entryRadiusM;
 
-    emit(state.copyWith(
-      currentSiteId: siteId,
-      isNavigating: true,
-      navigationState: const NavigationState(
-        status: NavigationStatus.navigating,
+    emit(
+      state.copyWith(
+        currentSiteId: siteId,
+        isNavigating: true,
+        navigationState: const NavigationState(
+          status: NavigationStatus.navigating,
+        ),
       ),
-    ),);
+    );
 
     // 2. Reject destinations outside Stone Town up-front — the user can't
     // navigate to a place we don't cover.
@@ -111,25 +112,29 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
 
     if (hasArrived && !_hasArrived) {
       _hasArrived = true;
-      emit(state.copyWith(
-        navigationState: NavigationState(
-          status: NavigationStatus.arrived,
-          currentPosition: position,
-          distanceToSite: distance,
-          estimatedTime: eta,
-          hasArrived: true,
+      emit(
+        state.copyWith(
+          navigationState: NavigationState(
+            status: NavigationStatus.arrived,
+            currentPosition: position,
+            distanceToSite: distance,
+            estimatedTime: eta,
+            hasArrived: true,
+          ),
         ),
-      ),);
+      );
     } else {
-      emit(state.copyWith(
-        navigationState: NavigationState(
-          status: NavigationStatus.navigating,
-          currentPosition: position,
-          distanceToSite: distance,
-          estimatedTime: eta,
-          hasArrived: false,
+      emit(
+        state.copyWith(
+          navigationState: NavigationState(
+            status: NavigationStatus.navigating,
+            currentPosition: position,
+            distanceToSite: distance,
+            estimatedTime: eta,
+            hasArrived: false,
+          ),
         ),
-      ),);
+      );
     }
   }
 
@@ -137,13 +142,15 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
     if (session != _sessionId) return;
     // Preserve the last known position / distance so the UI keeps showing
     // something useful — only flip status + message.
-    emit(state.copyWith(
-      navigationState: state.navigationState.copyWith(
-        status: NavigationStatus.error,
-        errorMessage: message,
-        errorCode: errorCode,
+    emit(
+      state.copyWith(
+        navigationState: state.navigationState.copyWith(
+          status: NavigationStatus.error,
+          errorMessage: message,
+          errorCode: errorCode,
+        ),
       ),
-    ),);
+    );
   }
 
   void stopNavigation() {
@@ -159,12 +166,14 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
     // background → foreground cycle doesn't silently mask a permission
     // failure or OSRM outage.
     final lastError = state.navigationState.errorMessage;
-    emit(NavigationCubitState(
-      navigationState: NavigationState(
-        status: NavigationStatus.idle,
-        errorMessage: lastError,
+    emit(
+      NavigationCubitState(
+        navigationState: NavigationState(
+          status: NavigationStatus.idle,
+          errorMessage: lastError,
+        ),
       ),
-    ),);
+    );
   }
 
   @override

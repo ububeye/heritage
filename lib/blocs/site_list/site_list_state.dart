@@ -4,7 +4,6 @@ import '../../data/models/site_model.dart';
 enum SiteListStatus { initial, loading, loaded, error }
 
 class SiteListState extends Equatable {
-
   const SiteListState({
     this.status = SiteListStatus.initial,
     this.sites = const [],
@@ -44,12 +43,12 @@ class SiteListState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        sites,
-        sitesById,
-        filteredSites,
-        errorMessage,
-        searchQuery,
-        selectedCategory,
-      ];
+    status,
+    sites,
+    sitesById,
+    filteredSites,
+    errorMessage,
+    searchQuery,
+    selectedCategory,
+  ];
 }

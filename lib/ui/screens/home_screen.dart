@@ -49,7 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() => _currentIndex = index);
             },
             children: [
-              KeepAlivePage(child: _HomeContent(onNavigate: _navigateToSite, locState: locState)),
+              KeepAlivePage(
+                child: _HomeContent(
+                  onNavigate: _navigateToSite,
+                  locState: locState,
+                ),
+              ),
               const KeepAlivePage(child: ExploreScreen()),
               const KeepAlivePage(child: SettingsScreen()),
             ],
@@ -100,7 +105,6 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomeContent extends StatelessWidget {
-
   const _HomeContent({required this.onNavigate, required this.locState});
   final Function(SiteModel) onNavigate;
   final LocalizationState locState;
@@ -124,7 +128,9 @@ class _HomeContent extends StatelessWidget {
         builder: (context, state) {
           if (state.status == SiteListStatus.loading) {
             return Center(
-              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             );
           }
 
@@ -142,8 +148,8 @@ class _HomeContent extends StatelessWidget {
                   Text(
                     state.errorMessage ?? _tr(locState, 'error_generic'),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -171,8 +177,8 @@ class _HomeContent extends StatelessWidget {
                   Text(
                     _tr(locState, 'best_places'),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -198,20 +204,29 @@ class _HomeContent extends StatelessWidget {
               itemCount: sites.length,
               itemBuilder: (context, index) {
                 final site = sites[index];
-                final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
+                final uiLanguage =
+                    context.read<LanguageCubit>().state.uiLanguage;
 
                 return SiteCard(
                   site: site,
                   uiLanguage: uiLanguage,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => DetailScreen(siteId: site.id),
-                    ),
-                  ),
+                  onTap:
+                      () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => DetailScreen(siteId: site.id),
+                        ),
+                      ),
                   onNavigate: () => onNavigate(site),
-                  isInItinerary: context.read<ExploreCubit>().isInItinerary(site.id),
-                  isFavorite: context.read<FavoritesCubit>().isFavorite(site.id),
-                  onToggleFavorite: () => context.read<FavoritesCubit>().toggleFavorite(site.id),
+                  isInItinerary: context.read<ExploreCubit>().isInItinerary(
+                    site.id,
+                  ),
+                  isFavorite: context.read<FavoritesCubit>().isFavorite(
+                    site.id,
+                  ),
+                  onToggleFavorite:
+                      () => context.read<FavoritesCubit>().toggleFavorite(
+                        site.id,
+                      ),
                 );
               },
             ),
@@ -234,7 +249,8 @@ class KeepAlivePage extends StatefulWidget {
   State<KeepAlivePage> createState() => _KeepAlivePageState();
 }
 
-class _KeepAlivePageState extends State<KeepAlivePage> with AutomaticKeepAliveClientMixin {
+class _KeepAlivePageState extends State<KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 

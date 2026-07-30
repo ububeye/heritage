@@ -1,16 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:geolocator/geolocator.dart';
 
-enum NavigationStatus {
-  idle,
-  navigating,
-  arrived,
-  completed,
-  error,
-}
+enum NavigationStatus { idle, navigating, arrived, completed, error }
 
 class NavigationState extends Equatable {
-
   const NavigationState({
     this.status = NavigationStatus.idle,
     this.currentPosition,
@@ -58,12 +51,12 @@ class NavigationState extends Equatable {
 
   @override
   List<Object?> get props => [
-        status,
-        currentPosition,
-        distanceToSite,
-        estimatedTime,
-        hasArrived,
-        errorMessage,
-        errorCode,
-      ];
+    status,
+    currentPosition,
+    distanceToSite,
+    estimatedTime,
+    hasArrived,
+    errorMessage,
+    errorCode,
+  ];
 }
