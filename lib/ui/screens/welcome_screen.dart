@@ -189,6 +189,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                   color: Theme.of(context).colorScheme.surface,
                                   borderRadius: AppRadius.heroGreetingBorder,
                                   boxShadow: [
+                                    // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                                     BoxShadow(
                                       // Logo shadow — theme-aware.
                                       color: context.semanticColors.shadow,

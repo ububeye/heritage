@@ -40,6 +40,7 @@ class SiteCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
+            // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
             BoxShadow(
               // Card shadow — theme-aware.
               color: context.semanticColors.shadow,
@@ -111,6 +112,7 @@ class SiteCard extends StatelessWidget {
                                   color: context.semanticColors.onImage,
                                   shape: BoxShape.circle,
                                   boxShadow: [
+                                    // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                                     BoxShadow(
                                       // Pill shadow — theme-aware.
                                       color: context.semanticColors.shadow,

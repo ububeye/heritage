@@ -340,6 +340,7 @@ class _Hero extends StatelessWidget {
           ),
           borderRadius: AppRadius.ctaButtonBorder,
           boxShadow: [
+            // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
             BoxShadow(
               color: scheme.secondary.withValues(alpha: 0.45),
               blurRadius: 24,

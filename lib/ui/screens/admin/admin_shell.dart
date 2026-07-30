@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
@@ -187,6 +188,7 @@ class _WelcomeCard extends StatelessWidget {
             ),
             borderRadius: AppRadius.lgBorder,
             boxShadow: [
+              // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
               BoxShadow(
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 15,
@@ -308,6 +310,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
+          // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
           BoxShadow(
             color: context.semanticColors.shadow,
             blurRadius: 8,
@@ -430,13 +433,7 @@ class _MenuCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: AppRadius.lgBorder,
           border: Border.all(color: Theme.of(context).colorScheme.outline),
-          boxShadow: [
-            BoxShadow(
-              color: context.semanticColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
         ),
         child: Row(
           children: [

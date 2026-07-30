@@ -33,6 +33,7 @@ class FeaturedSiteCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
+            // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
             BoxShadow(
               // Featured-card shadow — theme-aware.
               color: context.semanticColors.shadow,

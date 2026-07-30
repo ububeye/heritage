@@ -9,6 +9,7 @@ import '../../data/models/site_model.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/tile_cache_service.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 
 /// Wraps `flutter_map` (OpenStreetMap tiles) with the project's color theme.
 ///
@@ -381,6 +382,7 @@ class _PinMarker extends StatelessWidget {
                 color: context.semanticColors.onImage,
                 borderRadius: AppRadius.xsBorder,
                 boxShadow: [
+                  // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                   BoxShadow(
                     // Marker shadow — theme-aware.
                     color: context.semanticColors.shadow,
@@ -410,14 +412,7 @@ class _PinMarker extends StatelessWidget {
             shape: BoxShape.circle,
             // Border over the map tile — fixed white for contrast.
             border: Border.all(color: context.semanticColors.onImage, width: isPicker ? 4 : 3),
-            boxShadow: [
-              BoxShadow(
-                // Marker shadow — theme-aware.
-                color: context.semanticColors.shadow,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
           ),
           child: Icon(
             Icons.location_on,

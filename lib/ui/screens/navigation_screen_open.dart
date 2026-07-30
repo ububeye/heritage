@@ -790,6 +790,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               color: Theme.of(context).colorScheme.primary,
               shape: BoxShape.circle,
               boxShadow: [
+                // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
                 BoxShadow(
                   color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 6,
@@ -990,6 +991,7 @@ class _UserMarkerState extends State<_UserMarker>
                 // stays legible against any map tile hue.
                 border: Border.all(color: context.semanticColors.onImage, width: 3),
                 boxShadow: [
+                  // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                   BoxShadow(
                     // Marker shadow uses the theme-aware semantic shadow
                     // colour.

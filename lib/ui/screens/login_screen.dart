@@ -119,6 +119,7 @@ class _LoginScreenState extends State<LoginScreen>
                           color: Theme.of(context).colorScheme.surface,
                           borderRadius: AppRadius.heroImageBorder,
                           boxShadow: [
+                            // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                             BoxShadow(
                               // Card / logo shadow — theme-aware.
                               color: context.semanticColors.shadow,
@@ -158,6 +159,7 @@ class _LoginScreenState extends State<LoginScreen>
                           color: Theme.of(context).colorScheme.surface,
                           borderRadius: AppRadius.xlBorder,
                           boxShadow: [
+                            // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                             BoxShadow(
                               // Form-card shadow — theme-aware.
                               color: context.semanticColors.shadow,

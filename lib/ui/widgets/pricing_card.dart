@@ -73,6 +73,7 @@ class PricingCard extends StatelessWidget {
           border: Border.all(color: borderColor, width: borderWidth),
           boxShadow: isPrimary
               ? [
+                  // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
                   BoxShadow(
                     color: scheme.primary.withValues(alpha: 0.30),
                     blurRadius: 12,
