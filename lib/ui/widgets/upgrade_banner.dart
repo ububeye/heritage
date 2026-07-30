@@ -19,7 +19,7 @@ class UpgradeBanner extends StatelessWidget {
     return GestureDetector(
       onTap: onUpgrade,
       child: Container(
-        margin: const EdgeInsets.all(16),
+        margin: AppInsets.card,
         padding: AppInsets.chipTall,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.error,
