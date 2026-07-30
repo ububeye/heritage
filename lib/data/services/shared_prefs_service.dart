@@ -185,4 +185,102 @@ class SharedPrefsService {
       enabled,
     );
   }
+
+  // --- PR-B Settings (read by Settings screen; consumers in detail/
+  // navigation screens are follow-up work, gated on these getters) ---
+
+  /// Arrival-detection radius in meters. Defaults to [defaultRadiusMeters]
+  /// (30 m). The detail screen will use this to decide whether the user
+  /// has "arrived" at a site.
+  int get arrivalAlertsRadiusM =>
+      _preferences.getInt(AppConstants.keyArrivalAlertsRadiusM) ??
+      AppConstants.defaultRadiusMeters.round();
+
+  Future<void> setArrivalAlertsRadiusM(int meters) async {
+    await _preferences.setInt(
+      AppConstants.keyArrivalAlertsRadiusM,
+      meters,
+    );
+  }
+
+  /// Whether quiet-hours are enabled. When true, TTS / arrival alerts
+  /// are suppressed during the configured window. v1: the value is
+  /// stored; consumers land in a follow-up PR.
+  bool get quietHoursEnabled =>
+      _preferences.getBool(AppConstants.keyQuietHoursEnabled) ?? false;
+
+  Future<void> setQuietHoursEnabled(bool enabled) async {
+    await _preferences.setBool(AppConstants.keyQuietHoursEnabled, enabled);
+  }
+
+  /// Quiet-hours window stored as minutes-from-midnight. Default is
+  /// 22:00–07:00 (1320 / 420). Single global range — per-weekday
+  /// granularity is out of scope for v1.
+  int get quietHoursStartMinutes =>
+      _preferences.getInt(AppConstants.keyQuietHoursStartMinutes) ??
+      (22 * 60);
+
+  int get quietHoursEndMinutes =>
+      _preferences.getInt(AppConstants.keyQuietHoursEndMinutes) ??
+      (7 * 60);
+
+  Future<void> setQuietHoursStartMinutes(int minutes) async {
+    await _preferences.setInt(
+      AppConstants.keyQuietHoursStartMinutes,
+      minutes,
+    );
+  }
+
+  Future<void> setQuietHoursEndMinutes(int minutes) async {
+    await _preferences.setInt(
+      AppConstants.keyQuietHoursEndMinutes,
+      minutes,
+    );
+  }
+
+  /// Distance display units. 'metric' (m/km) or 'imperial' (ft/mi).
+  /// Defaults to metric. Distance formatting helpers in [DistanceCalculator]
+  /// (or wherever they're read) are gated on this in a follow-up PR.
+  String get distanceUnits =>
+      _preferences.getString(AppConstants.keyDistanceUnits) ?? 'metric';
+
+  Future<void> setDistanceUnits(String units) async {
+    await _preferences.setString(AppConstants.keyDistanceUnits, units);
+  }
+
+  /// Reduce-motion preference. v1 stores the flag; detail-screen
+  /// [AnimatedSwitcher]s and the arrival pulse read it in a follow-up PR.
+  bool get reduceMotion =>
+      _preferences.getBool(AppConstants.keyReduceMotion) ?? false;
+
+  Future<void> setReduceMotion(bool enabled) async {
+    await _preferences.setBool(AppConstants.keyReduceMotion, enabled);
+  }
+
+  /// TTS playback-rate multiplier. Defaults to 1.0. Persisted as the
+  /// string form of a double to keep SharedPreferences ergonomic.
+  double get playbackSpeed {
+    final raw = _preferences.getString(AppConstants.keyPlaybackSpeed);
+    return double.tryParse(raw ?? '') ?? 1.0;
+  }
+
+  Future<void> setPlaybackSpeed(double speed) async {
+    await _preferences.setString(
+      AppConstants.keyPlaybackSpeed,
+      speed.toString(),
+    );
+  }
+
+  /// Auto-play narration as soon as the user enters a site's arrival radius.
+  /// Defaults to true — matches the in-app preview flow where the tour starts
+  /// the moment you arrive. SiteDetailCubit reads this in a follow-up PR.
+  bool get autoPlayOnArrival =>
+      _preferences.getBool(AppConstants.keyAutoPlayOnArrival) ?? true;
+
+  Future<void> setAutoPlayOnArrival(bool enabled) async {
+    await _preferences.setBool(
+      AppConstants.keyAutoPlayOnArrival,
+      enabled,
+    );
+  }
 }

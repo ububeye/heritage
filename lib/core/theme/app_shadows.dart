@@ -32,4 +32,22 @@ class AppShadows {
       offset: const Offset(0, 8),
     ),
   ];
+
+  /// Brightness-aware low shadow. The default [low] is `Colors.black @ 5%`,
+  /// which is invisible on a dark surface (and looks like a smudge against
+  /// `darkScaffold`). For card-like containers that sit on `surface` in
+  /// light mode and `surfaceDark` in dark mode, return a faint white halo
+  /// in dark mode and the original black shadow in light mode.
+  static List<BoxShadow> lowFor(Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return const [
+        BoxShadow(
+          color: Color(0x14FFFFFF), // white @ ~8%
+          blurRadius: 6.0,
+          offset: Offset(0, 2),
+        ),
+      ];
+    }
+    return low;
+  }
 }
