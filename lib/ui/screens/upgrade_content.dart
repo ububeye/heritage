@@ -10,6 +10,7 @@ import '../../core/constants/app_constants.dart';
 import '../widgets/faq_accordion.dart';
 import '../widgets/pricing_card.dart';
 import '../widgets/trial_badge.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Controls secondary copy + which buttons appear on the upgrade screen.
 enum UpgradeMode {
@@ -233,7 +234,7 @@ class UpgradeContent extends StatelessWidget {
             '${AppConstants.acceptedPaymentMethods.join(', ')} — '
             'processed by Google Play Billing. Payment details never touch '
             'our servers.',
-        icon: Icons.payment,
+        icon: PhosphorIconsRegular.creditCard,
       ),
       FaqEntry(
         question: 'What happens after the trial?',
@@ -274,7 +275,7 @@ class UpgradeContent extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.check_rounded,
+                  PhosphorIconsRegular.checkCircle,
                   size: 48,
                   color: scheme.primary,
                 ),
@@ -389,14 +390,14 @@ class _BenefitsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = const [
       (
-        Icons.language,
+        PhosphorIconsRegular.globe,
         'Full audio tours in 7 languages (en, sw, fr, de, ar, it, es)',
       ),
-      (Icons.directions_walk, 'GPS walking directions, turn-by-turn'),
+      (PhosphorIconsRegular.personSimpleWalk, 'GPS walking directions, turn-by-turn'),
       (Icons.play_circle_filled, 'Auto-play audio the moment you arrive'),
       (Icons.replay, 'Unlimited replays of every guide'),
       (Icons.cloud_off, 'Offline access — caches tiles & audio'),
-      (Icons.block, 'No ads, ever'),
+      (PhosphorIconsRegular.prohibit, 'No ads, ever'),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,7 +497,7 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: scheme.error, size: 20),
+          Icon(PhosphorIconsRegular.warningCircle, color: scheme.error, size: 20),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

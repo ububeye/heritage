@@ -4,6 +4,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../data/models/site_model.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ArrivalOverlay extends StatefulWidget {
   const ArrivalOverlay({
@@ -60,7 +61,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
               child: IconButton(
                 onPressed: widget.onClose,
                 icon: Icon(
-                  Icons.close,
+                  PhosphorIconsRegular.x,
                   // Close icon over the scrim/map — fixed-content white.
                   color: context.semanticColors.onImage,
                   size: 28,
@@ -158,7 +159,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                             ],
                           ),
                           child: Icon(
-                            Icons.play_arrow,
+                            PhosphorIconsRegular.play,
                             size: 48,
                             color: Theme.of(context).colorScheme.onSecondary,
                           ),

@@ -16,6 +16,7 @@ import '../../widgets/settings/settings_tile.dart';
 import '../../screens/login_screen.dart';
 import '../user_profile_screen.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Admin settings surface. The body is a vertical list of four labelled
 /// sections, each a [SettingsCard] or a single tile:
@@ -61,7 +62,7 @@ class AdminSettingsScreen extends StatelessWidget {
                   SettingsCard(
                     children: [
                       SettingsDropdownTile<String>(
-                        icon: Icons.language,
+                        icon: PhosphorIconsRegular.globe,
                         iconColor: Theme.of(context).colorScheme.primary,
                         title: _tr(locState, 'app_language'),
                         value:
@@ -128,7 +129,7 @@ class AdminSettingsScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               SettingsTile(
-                                icon: Icons.person,
+                                icon: PhosphorIconsRegular.user,
                                 iconColor: Theme.of(context).colorScheme.primary,
                                 title: _tr(locState, 'profile') == 'profile'
                                     ? 'My Profile'
@@ -196,7 +197,7 @@ class AdminSettingsScreen extends StatelessWidget {
                   SettingsCard(
                     children: [
                       _InfoRow(
-                        icon: Icons.info_outline,
+                        icon: PhosphorIconsRegular.info,
                         title: _tr(locState, 'version'),
                         value: '1.0.0',
                       ),
@@ -223,7 +224,7 @@ class AdminSettingsScreen extends StatelessWidget {
                   SettingsCard(
                     children: [
                       SettingsTile(
-                        icon: Icons.logout,
+                        icon: PhosphorIconsRegular.signOut,
                         iconColor: Theme.of(context).colorScheme.error,
                         title: _tr(locState, 'logout'),
                         subtitle: authState.user?.email ?? '',
@@ -332,7 +333,7 @@ class _MaintenanceBanner extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            Icons.warning_amber_rounded,
+            PhosphorIconsRegular.warning,
             color: context.semanticColors.warning,
             size: 20,
           ),
@@ -436,7 +437,7 @@ class _OrsApiKeyTile extends StatelessWidget {
             ),
           ),
           trailing: IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 20),
+            icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 20),
             tooltip: locState.translations['edit_profile'] ?? 'Edit',
             onPressed: () => _showEditDialog(context, state.orsApiKey),
           ),

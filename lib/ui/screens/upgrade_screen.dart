@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'upgrade_content.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Settings → "Upgrade to Premium". Reachable when the user is free-tier.
 class UpgradeScreen extends StatelessWidget {
@@ -15,7 +16,7 @@ class UpgradeScreen extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(PhosphorIconsRegular.arrowLeft),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),

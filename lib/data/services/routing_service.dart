@@ -11,6 +11,7 @@ import '../../core/utils/stone_town_bounds.dart';
 import '../models/site_model.dart';
 import 'route_cache_service.dart';
 import 'runtime_config_service.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// A single turn-by-turn instruction returned by the routing engine.
 ///
@@ -139,7 +140,7 @@ class ManeuverIcon {
 
     // Special main-word cases first — these don't follow the
     // "modifier is the second word" pattern.
-    if (main == 'depart') return Icons.play_arrow;
+    if (main == 'depart') return PhosphorIconsRegular.play;
     if (main == 'arrive') return Icons.flag;
     if (main == 'fork') {
       return mod1 == 'left' ? Icons.fork_left : Icons.fork_right;

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:stone_town_heritage_vt_guide/core/utils/distance_calculator.dart'
+    as dc;
 import '../../data/services/shared_prefs_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -31,6 +33,7 @@ import '../../data/services/route_cache_service.dart';
 import '../../data/services/routing_service.dart';
 import '../../data/services/tile_cache_service.dart';
 import '../widgets/arrival_overlay.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Stone Town live-navigation screen.
 ///
@@ -108,7 +111,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       siteId: widget.site.id,
       siteLat: widget.site.latitude,
       siteLng: widget.site.longitude,
-      entryRadiusM: widget.site.entryRadiusM,
+      entryRadiusM: SharedPrefsService.instance.arrivalAlertsRadiusM.toDouble(),
     );
   }
 
@@ -292,6 +295,15 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             !_showArrivalOverlay &&
             SharedPrefsService.instance.arrivalAlertsEnabled) {
           setState(() => _showArrivalOverlay = true);
+
+          if (SharedPrefsService.instance.autoPlayOnArrival) {
+            final audioLang = context.read<LanguageCubit>().state.audioLanguage;
+            final isPremium = context.read<AuthCubit>().state.isPremium;
+            context.read<SiteDetailCubit>().playAudio(
+              audioLang,
+              isPremium: isPremium,
+            );
+          }
         }
 
         // 5. Error state → stop animating so the user can re-tap recenter.
@@ -487,7 +499,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             backgroundColor: Theme.of(context).colorScheme.surface,
             foregroundColor: Theme.of(context).colorScheme.onSurface,
             elevation: 4,
-            child: const Icon(Icons.arrow_back),
+            child: const Icon(PhosphorIconsRegular.arrowLeft),
           ),
           const Spacer(),
           FloatingActionButton.small(
@@ -496,7 +508,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             backgroundColor: Theme.of(context).colorScheme.surface,
             foregroundColor: Theme.of(context).colorScheme.onSurface,
             elevation: 4,
-            child: const Icon(Icons.my_location),
+            child: const Icon(PhosphorIconsRegular.navigationArrow),
           ),
         ],
       ),
@@ -594,20 +606,20 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               label: 'Error',
               color: Theme.of(context).colorScheme.error,
               foreground: Theme.of(context).colorScheme.onError,
-              icon: Icons.error_outline,
+              icon: PhosphorIconsRegular.warningCircle,
             )
             : arrived
             ? _StatusChip(
               label: 'Arrived',
               color: Theme.of(context).colorScheme.primary,
               foreground: Theme.of(context).colorScheme.onPrimary,
-              icon: Icons.check_circle,
+              icon: PhosphorIconsRegular.checkCircle,
             )
             : _StatusChip(
               label: 'Navigating',
               color: Theme.of(context).colorScheme.primary,
               foreground: Theme.of(context).colorScheme.onPrimary,
-              icon: Icons.directions_walk,
+              icon: PhosphorIconsRegular.personSimpleWalk,
             );
 
     return Positioned(
@@ -720,7 +732,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                               ),
                               const SizedBox(width: 12),
                               Icon(
-                                Icons.access_time,
+                                PhosphorIconsRegular.clock,
                                 size: 14,
                                 color:
                                     Theme.of(
@@ -762,7 +774,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close, size: 18),
+                        icon: const Icon(PhosphorIconsRegular.x, size: 18),
                         label: const Text('Stop'),
                       ),
                     ),
@@ -777,15 +789,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   }
 
   String _formatDistance(double meters) {
-    if (meters < 1000) return '${meters.round()} m';
-    final km = meters / 1000;
-    return '${km.toStringAsFixed(1)} km';
+    final isImperial = SharedPrefsService.instance.distanceUnits == 'imperial';
+    return dc.DistanceCalculator.formatDistance(meters, isImperial: isImperial);
   }
 
   String _formatDuration(Duration d) {
-    if (d.inMinutes < 1) return '< 1 min';
-    if (d.inHours < 1) return '${d.inMinutes} min';
-    return '${d.inHours} h ${d.inMinutes % 60} min';
+    return dc.DistanceCalculator.formatDuration(d);
   }
 
   /// Builds the next-maneuver card that sits just above the Stop button
@@ -988,10 +997,19 @@ class _UserMarker extends StatefulWidget {
 
 class _UserMarkerState extends State<_UserMarker>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: AppDurations.onboardingReveal,
-  )..repeat();
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: AppDurations.onboardingReveal,
+    );
+    if (!SharedPrefsService.instance.reduceMotion) {
+      _ctrl.repeat();
+    }
+  }
 
   @override
   void dispose() {

@@ -6,6 +6,7 @@ import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/user_model.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
   const AdminUserManagementScreen({super.key});
@@ -59,7 +60,7 @@ class _UserManagementContent extends StatelessWidget {
                 return TextField(
                   decoration: InputDecoration(
                     hintText: 'Search users...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(PhosphorIconsRegular.magnifyingGlass),
                     suffixIcon:
                         state.searchQuery.isNotEmpty
                             ? IconButton(
@@ -199,7 +200,7 @@ class _UserManagementContent extends StatelessWidget {
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<UserSortOrder>(
                     value: state.sortOrder,
-                    icon: const Icon(Icons.sort, size: 18),
+                    icon: const Icon(PhosphorIconsRegular.sortAscending, size: 18),
                     style: Theme.of(context).textTheme.bodySmall,
                     items: const [
                       DropdownMenuItem(
@@ -269,7 +270,7 @@ class _UserManagementContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.error_outline,
+                  PhosphorIconsRegular.warningCircle,
                   size: 48,
                   color: Theme.of(context).colorScheme.error,
                 ),
@@ -295,7 +296,7 @@ class _UserManagementContent extends StatelessWidget {
                 Icon(
                   state.searchQuery.isEmpty
                       ? Icons.people_outline
-                      : Icons.search_off,
+                      : PhosphorIconsRegular.magnifyingGlassMinus,
                   size: 64,
                   color: Theme.of(context).colorScheme.outline,
                 ),
@@ -581,7 +582,7 @@ class _UserManagementSheet extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Icon(
-                user.disabled ? Icons.lock_open : Icons.lock_outline,
+                user.disabled ? PhosphorIconsRegular.lockOpen : PhosphorIconsRegular.lock,
                 color: user.disabled ? context.semanticColors.success : Theme.of(context).colorScheme.error,
               ),
               title: Text(user.disabled ? 'Unsuspend Account' : 'Suspend Account'),
@@ -623,7 +624,7 @@ class _UserManagementSheet extends StatelessWidget {
                 backgroundColor: Theme.of(context).colorScheme.error,
                 foregroundColor: Theme.of(context).colorScheme.onError,
               ),
-              icon: const Icon(Icons.delete_forever),
+              icon: const Icon(PhosphorIconsRegular.trash),
               label: const Text('Delete Account Permanently'),
             ),
           ],

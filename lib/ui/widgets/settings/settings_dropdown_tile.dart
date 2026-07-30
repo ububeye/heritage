@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_spacing.dart';
 import 'settings_tile.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Dropdown-row inside a settings card. Used for longer lists where a
 /// `SegmentedButton` would overflow — typically language pickers (7
@@ -73,7 +74,7 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: Icon(
-                Icons.lock,
+                PhosphorIconsRegular.lock,
                 size: 16,
                 color: Theme.of(context).colorScheme.outline,
               ),

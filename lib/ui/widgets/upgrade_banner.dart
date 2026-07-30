@@ -2,6 +2,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class UpgradeBanner extends StatelessWidget {
   const UpgradeBanner({super.key, required this.onUpgrade, this.message});
@@ -37,7 +38,7 @@ class UpgradeBanner extends StatelessWidget {
                 borderRadius: AppRadius.smBorder,
               ),
               child: Icon(
-                Icons.lock,
+                PhosphorIconsRegular.lock,
                 color: Theme.of(context).colorScheme.onError,
                 size: 20,
               ),
@@ -66,7 +67,7 @@ class UpgradeBanner extends StatelessWidget {
               ),
             ),
             Icon(
-              Icons.arrow_forward_ios,
+              PhosphorIconsRegular.caretRight,
               color: Theme.of(context).colorScheme.onError,
               size: 16,
             ),

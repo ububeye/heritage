@@ -15,6 +15,7 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
 import '../../widgets/heritage_map.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminEditSiteScreen extends StatefulWidget {
   const AdminEditSiteScreen({super.key, required this.site});
@@ -282,7 +283,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.close,
+                              PhosphorIconsRegular.x,
                               color: Theme.of(context).colorScheme.onError,
                               size: 16,
                             ),
@@ -350,7 +351,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.close,
+                              PhosphorIconsRegular.x,
                               color: Theme.of(context).colorScheme.onError,
                               size: 16,
                             ),
@@ -398,7 +399,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.add_photo_alternate,
+                  PhosphorIconsRegular.image,
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 8),

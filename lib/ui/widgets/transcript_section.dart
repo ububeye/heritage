@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils/language_meta.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Collapsible "Show transcript" widget. Used on the site detail screen
 /// below the description so deaf / quiet-environment users can read
@@ -126,7 +127,7 @@ class _TranscriptSectionState extends State<TranscriptSection>
                   RotationTransition(
                     turns: Tween(begin: 0.0, end: 0.5).animate(_expandCurve),
                     child: Icon(
-                      Icons.expand_more,
+                      PhosphorIconsRegular.caretDown,
                       size: 20,
                       color: scheme.onSurfaceVariant,
                     ),

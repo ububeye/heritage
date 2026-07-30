@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/distance_calculator.dart';
+import '../../data/services/shared_prefs_service.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/site_detail/site_detail_state.dart';
@@ -20,6 +22,7 @@ import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class DetailScreen extends StatefulWidget {
   const DetailScreen({super.key, required this.siteId});
@@ -165,7 +168,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   )
                                   : (selected
                                       ? Icon(
-                                        Icons.check_circle,
+                                        PhosphorIconsRegular.checkCircle,
                                         color:
                                             sheetContext.semanticColors.success,
                                       )
@@ -243,7 +246,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    PhosphorIconsRegular.warningCircle,
                     size: 48,
                     color: Theme.of(context).colorScheme.outline,
                   ),
@@ -290,7 +293,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           isFav ? 'remove_from_favorites' : 'add_to_favorites';
                       return IconButton(
                         icon: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
+                          isFav ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
                           // Favorite state uses the success semantic colour
                           // (love/like intent). The fallback (not favourite)
                           // renders over the SliverAppBar's hero image, so
@@ -395,15 +398,19 @@ class _DetailScreenState extends State<DetailScreen> {
                               allImages.length,
                               (index) => GestureDetector(
                                 onTap: () {
-                                  _pageController.animateToPage(
-                                    index,
-                                    duration: AppDurations.normal,
-                                    curve: Curves.easeInOut,
-                                  );
+                                  if (SharedPrefsService.instance.reduceMotion) {
+                                    _pageController.jumpToPage(index);
+                                  } else {
+                                    _pageController.animateToPage(
+                                      index,
+                                      duration: AppDurations.normal,
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
                                 },
                                 behavior: HitTestBehavior.opaque,
                                 child: AnimatedContainer(
-                                  duration: AppDurations.fast,
+                                  duration: SharedPrefsService.instance.reduceMotion ? Duration.zero : AppDurations.fast,
                                   margin: const EdgeInsets.symmetric(
                                     horizontal: 4,
                                   ),
@@ -444,7 +451,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.photo_library,
+                                  PhosphorIconsRegular.image,
                                   color: context.semanticColors.onImage,
                                   size: 14,
                                 ),
@@ -493,8 +500,8 @@ class _DetailScreenState extends State<DetailScreen> {
                             child: _GalleryArrow(
                               icon:
                                   isRtl
-                                      ? Icons.chevron_right
-                                      : Icons.chevron_left,
+                                      ? PhosphorIconsRegular.caretRight
+                                      : PhosphorIconsRegular.caretLeft,
                               semanticsLabel:
                                   locState.translations['previous_image'] ??
                                   'Previous image',
@@ -517,8 +524,8 @@ class _DetailScreenState extends State<DetailScreen> {
                             child: _GalleryArrow(
                               icon:
                                   isRtl
-                                      ? Icons.chevron_left
-                                      : Icons.chevron_right,
+                                      ? PhosphorIconsRegular.caretLeft
+                                      : PhosphorIconsRegular.caretRight,
                               semanticsLabel:
                                   locState.translations['next_image'] ??
                                   'Next image',
@@ -551,7 +558,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       Row(
                         children: [
                           Icon(
-                            Icons.location_on,
+                            PhosphorIconsRegular.mapPin,
                             size: 16,
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -635,7 +642,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               isPremium: liveIsPremium,
                             );
                           },
-                          icon: const Icon(Icons.play_arrow),
+                          icon: const Icon(PhosphorIconsRegular.play),
                           label: const Text('Start Audio Guide'),
                         ),
                       ),
@@ -654,7 +661,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.map_outlined, size: 18),
+                              icon: const Icon(PhosphorIconsRegular.mapTrifold, size: 18),
                               label: const Text('View on Map'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor:
@@ -675,7 +682,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               onPressed:
                                   () => safePushNavigation(context, site),
                               icon: const Icon(
-                                Icons.navigation_outlined,
+                                PhosphorIconsRegular.navigationArrow,
                                 size: 18,
                               ),
                               label: const Text('Navigate'),

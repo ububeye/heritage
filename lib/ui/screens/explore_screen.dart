@@ -14,6 +14,7 @@ import '../widgets/heritage_map.dart';
 import 'detail_screen.dart';
 import '../../core/utils/nav_guard.dart';
 import '../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -51,7 +52,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     label: label,
                     button: true,
                     child: IconButton(
-                      icon: Icon(state.isMapView ? Icons.list : Icons.map),
+                      icon: Icon(state.isMapView ? Icons.list : PhosphorIconsRegular.mapTrifold),
                       tooltip: label,
                       onPressed:
                           () => context.read<ExploreCubit>().toggleMapView(),
@@ -105,7 +106,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.search_off,
+                              PhosphorIconsRegular.magnifyingGlassMinus,
                               size: 48,
                               color: Theme.of(context).colorScheme.outline,
                             ),
@@ -344,7 +345,7 @@ class _MapView extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.location_on,
+                  PhosphorIconsRegular.mapPin,
                   size: 16,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

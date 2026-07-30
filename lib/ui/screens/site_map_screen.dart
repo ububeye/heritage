@@ -5,6 +5,7 @@ import '../../data/models/site_model.dart';
 import '../widgets/heritage_map.dart';
 import '../../core/utils/nav_guard.dart';
 import '../../core/theme/app_radius.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Full-screen map view for a single site. Shows the site as a labeled pin
 /// on an OpenStreetMap tile layer, with a Navigate FAB that pushes the
@@ -45,7 +46,7 @@ class SiteMapScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.location_on,
+                      PhosphorIconsRegular.mapPin,
                       color: Theme.of(context).colorScheme.primary,
                       size: 20,
                     ),
@@ -78,7 +79,7 @@ class SiteMapScreen extends StatelessWidget {
         onPressed: () => safePushNavigation(context, site),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        icon: const Icon(Icons.navigation),
+        icon: const Icon(PhosphorIconsFill.navigationArrow),
         label: const Text('Navigate'),
       ),
     );

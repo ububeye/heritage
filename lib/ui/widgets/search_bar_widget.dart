@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/debouncer.dart';
 import '../../core/theme/app_radius.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// A debounced search input with a prefix search icon and a suffix clear
 /// button. The clear button is rendered conditionally based on the
@@ -62,7 +63,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
                 color: Theme.of(context).colorScheme.outline,
               ),
               prefixIcon: Icon(
-                Icons.search,
+                PhosphorIconsRegular.magnifyingGlass,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               suffixIcon:

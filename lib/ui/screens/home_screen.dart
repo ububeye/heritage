@@ -12,6 +12,7 @@ import 'explore_screen.dart';
 import 'settings_screen.dart';
 import '../widgets/site_card.dart';
 import '../../core/utils/nav_guard.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,8 +71,8 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             destinations: [
               NavigationDestination(
-                icon: const Icon(Icons.home_outlined),
-                selectedIcon: const Icon(Icons.home),
+                icon: const Icon(PhosphorIconsRegular.house),
+                selectedIcon: const Icon(PhosphorIconsRegular.house),
                 label: _tr(locState, 'home'),
                 tooltip: _tr(locState, 'home'),
               ),
@@ -82,8 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 tooltip: _tr(locState, 'explore'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
+                icon: const Icon(PhosphorIconsRegular.gear),
+                selectedIcon: const Icon(PhosphorIconsRegular.gear),
                 label: _tr(locState, 'settings'),
                 tooltip: _tr(locState, 'settings'),
               ),
@@ -117,7 +118,7 @@ class _HomeContent extends StatelessWidget {
         title: Text(_tr(locState, 'stone_town_guide')),
         actions: [
           IconButton(
-            icon: const Icon(Icons.favorite_outline),
+            icon: const Icon(PhosphorIconsRegular.heart),
             tooltip: _tr(locState, 'favorites'),
             onPressed: () => Navigator.of(context).pushNamed('/favorites'),
           ),
@@ -139,7 +140,7 @@ class _HomeContent extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    PhosphorIconsRegular.warningCircle,
                     size: 48,
                     color: Theme.of(context).colorScheme.outline,
                   ),

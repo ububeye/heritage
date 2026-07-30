@@ -9,6 +9,7 @@ import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 
 import '../../data/models/user_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
@@ -37,21 +38,21 @@ class UserProfileScreen extends StatelessWidget {
               _SettingsCard(
                 children: [
                   _ProfileMenuItem(
-                    icon: Icons.person_outline,
+                    icon: PhosphorIconsRegular.user,
                     title: 'Edit Profile',
                     subtitle: 'Change name and photo',
                     onTap: () => _showEditProfileDialog(context, authState),
                   ),
                   const Divider(height: 1),
                   _ProfileMenuItem(
-                    icon: Icons.lock_outline,
+                    icon: PhosphorIconsRegular.lock,
                     title: 'Change Password',
                     subtitle: 'Update your password',
                     onTap: () => _showChangePasswordDialog(context),
                   ),
                   const Divider(height: 1),
                   _ProfileMenuItem(
-                    icon: Icons.language,
+                    icon: PhosphorIconsRegular.globe,
                     title: 'Language',
                     subtitle: 'App and audio language',
                     onTap: () => _showLanguageDialog(context),
@@ -90,7 +91,7 @@ class UserProfileScreen extends StatelessWidget {
                                 ),
                               ),
                             )
-                            : const Icon(Icons.chevron_right),
+                            : const Icon(PhosphorIconsRegular.caretRight),
                     onTap: () => _showUpgradeDialog(context),
                   ),
                 ],
@@ -461,7 +462,7 @@ class _ProfileMenuItem extends StatelessWidget {
                 ),
               )
               : null,
-      trailing: trailing ?? const Icon(Icons.chevron_right),
+      trailing: trailing ?? const Icon(PhosphorIconsRegular.caretRight),
       onTap: onTap,
     );
   }

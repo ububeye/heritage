@@ -20,6 +20,7 @@ import 'admin_settings_screen.dart';
 import 'admin_analytics_screen.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -101,8 +102,8 @@ class _AdminShellState extends State<AdminShell> {
                 tooltip: _tr(locState, 'admin_tab_users'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
+                icon: const Icon(PhosphorIconsRegular.gear),
+                selectedIcon: const Icon(PhosphorIconsRegular.gear),
                 label: _tr(locState, 'admin_tab_settings'),
                 tooltip: _tr(locState, 'admin_tab_settings'),
               ),
@@ -343,7 +344,7 @@ class _QuickActionsGrid extends StatelessWidget {
           childAspectRatio: 2.5,
           children: [
             _QuickActionTile(
-              icon: Icons.add_location,
+              icon: PhosphorIconsRegular.mapPin,
               label: tr(locState, 'add_site'),
               onTap: () => onNavigateToTab(1), // Nav to Sites
             ),
@@ -359,7 +360,7 @@ class _QuickActionsGrid extends StatelessWidget {
             ),
 
             _QuickActionTile(
-              icon: Icons.settings,
+              icon: PhosphorIconsRegular.gear,
               label: tr(locState, 'admin_tab_settings'),
               onTap: () => onNavigateToTab(3), // Nav to Settings
             ),
@@ -485,13 +486,13 @@ class _RecentActivities extends StatelessWidget {
                   IconData icon;
                   switch (activity.type) {
                     case 'user_registered':
-                      icon = Icons.person_add;
+                      icon = PhosphorIconsRegular.userPlus;
                       break;
                     case 'site_updated':
-                      icon = Icons.edit_location_alt;
+                      icon = PhosphorIconsRegular.mapPin;
                       break;
                     case 'premium_upgrade':
-                      icon = Icons.star;
+                      icon = PhosphorIconsFill.star;
                       break;
                     default:
                       icon = Icons.notifications;

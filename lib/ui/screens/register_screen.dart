@@ -13,6 +13,7 @@ import 'home_screen.dart';
 import 'admin/admin_shell.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -166,7 +167,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               _buildTextField(
                                 controller: _emailController,
                                 label: _tr(locState, 'email'),
-                                icon: Icons.email_outlined,
+                                icon: PhosphorIconsRegular.envelopeSimple,
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -182,13 +183,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                               _buildTextField(
                                 controller: _passwordController,
                                 label: _tr(locState, 'password'),
-                                icon: Icons.lock_outlined,
+                                icon: PhosphorIconsRegular.lock,
                                 obscureText: _obscurePassword,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
+                                        ? PhosphorIconsRegular.eyeSlash
+                                        : PhosphorIconsRegular.eye,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
@@ -215,13 +216,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                               _buildTextField(
                                 controller: _confirmPasswordController,
                                 label: _tr(locState, 'confirm_password'),
-                                icon: Icons.lock_outlined,
+                                icon: PhosphorIconsRegular.lock,
                                 obscureText: _obscureConfirmPassword,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscureConfirmPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
+                                        ? PhosphorIconsRegular.eyeSlash
+                                        : PhosphorIconsRegular.eye,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface

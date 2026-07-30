@@ -3,6 +3,7 @@ import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class RatingStars extends StatelessWidget {
   const RatingStars({
@@ -25,11 +26,11 @@ class RatingStars extends StatelessWidget {
           IconData icon;
 
           if (rating >= starValue) {
-            icon = Icons.star;
+            icon = PhosphorIconsFill.star;
           } else if (rating >= starValue - 0.5) {
-            icon = Icons.star_half;
+            icon = PhosphorIconsFill.starHalf;
           } else {
-            icon = Icons.star_border;
+            icon = PhosphorIconsRegular.star;
           }
 
           return Icon(icon, size: size, color: context.semanticColors.rating);
@@ -68,7 +69,7 @@ class RatingBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star, size: 14, color: context.semanticColors.rating),
+          Icon(PhosphorIconsFill.star, size: 14, color: context.semanticColors.rating),
           const SizedBox(width: 4),
           Text(
             rating.toStringAsFixed(1),

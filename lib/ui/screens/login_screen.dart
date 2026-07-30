@@ -13,6 +13,7 @@ import 'home_screen.dart';
 import 'admin/admin_shell.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -165,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen>
                               _buildTextField(
                                 controller: _emailController,
                                 label: _tr(locState, 'email'),
-                                icon: Icons.email_outlined,
+                                icon: PhosphorIconsRegular.envelopeSimple,
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -181,13 +182,13 @@ class _LoginScreenState extends State<LoginScreen>
                               _buildTextField(
                                 controller: _passwordController,
                                 label: _tr(locState, 'password'),
-                                icon: Icons.lock_outlined,
+                                icon: PhosphorIconsRegular.lock,
                                 obscureText: _obscurePassword,
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
+                                        ? PhosphorIconsRegular.eyeSlash
+                                        : PhosphorIconsRegular.eye,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface

@@ -7,6 +7,7 @@ import 'welcome_screen.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, this.isFirstLaunch = false});
@@ -43,7 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       color: Theme.of(context).colorScheme.secondary,
     ),
     OnboardingPage(
-      icon: Icons.navigation,
+      icon: PhosphorIconsFill.navigationArrow,
       title: loc.translations['onboarding_p3_title'] ?? 'GPS Navigation',
       subtitle:
           loc.translations['onboarding_p3_subtitle'] ??
@@ -238,7 +239,7 @@ class _LanguageSelector extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                Icons.language,
+                PhosphorIconsRegular.globe,
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 12),

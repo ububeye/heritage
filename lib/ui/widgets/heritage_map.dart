@@ -10,6 +10,7 @@ import '../../data/services/tile_cache_service.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Wraps `flutter_map` (OpenStreetMap tiles) with the project's color theme.
 ///
@@ -263,7 +264,7 @@ class _HeritageMapState extends State<HeritageMap> {
                         children: [
                           Icon(
                             widget.draggableMarker
-                                ? Icons.my_location
+                                ? PhosphorIconsRegular.navigationArrow
                                 : Icons.center_focus_strong,
                             size: 18,
                             color: Theme.of(context).colorScheme.primary,
@@ -306,7 +307,7 @@ class _HeritageMapState extends State<HeritageMap> {
                     children: [
                       IconButton(
                         icon: Icon(
-                          Icons.add,
+                          PhosphorIconsRegular.plus,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         onPressed: _zoomIn,
@@ -319,7 +320,7 @@ class _HeritageMapState extends State<HeritageMap> {
                       ),
                       IconButton(
                         icon: Icon(
-                          Icons.remove,
+                          PhosphorIconsRegular.minus,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         onPressed: _zoomOut,
@@ -426,7 +427,7 @@ class _PinMarker extends StatelessWidget {
             boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
           ),
           child: Icon(
-            Icons.location_on,
+            PhosphorIconsRegular.mapPin,
             size: isPicker ? 20 : 14,
             // Pin icon over a coloured circle — use the onImage foreground
             // so it stays consistent across themes.

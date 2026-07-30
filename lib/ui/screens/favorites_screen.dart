@@ -12,6 +12,7 @@ import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -38,7 +39,7 @@ class FavoritesScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.favorite_border,
+                        PhosphorIconsRegular.heart,
                         size: 80,
                         color: Theme.of(context).colorScheme.outline,
                       ),
@@ -98,7 +99,7 @@ class FavoritesScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.favorite_border,
+                            PhosphorIconsRegular.heart,
                             size: 80,
                             color: Theme.of(context).colorScheme.outline,
                           ),
@@ -266,7 +267,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.favorite,
+                        PhosphorIconsFill.heart,
                         // Heart = love/like state — mapped to the success
                         // semantic role per the migration rules.
                         color: context.semanticColors.success,
@@ -317,7 +318,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          Icons.location_on,
+                          PhosphorIconsRegular.mapPin,
                           size: 14,
                           color: Theme.of(context).colorScheme.outline,
                         ),

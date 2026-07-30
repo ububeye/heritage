@@ -25,6 +25,7 @@ import '../widgets/user_avatar.dart';
 import 'login_screen.dart';
 import 'upgrade_screen.dart';
 import 'user_profile_screen.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -121,7 +122,7 @@ class _SettingsBody extends StatelessWidget {
               SettingsCard(
                 children: [
                   _LanguageDropdownTile(
-                    icon: Icons.language,
+                    icon: PhosphorIconsRegular.globe,
                     iconColor: context.semanticColors.info,
                     code: locState.currentLanguage,
                     items: AppConstants.uiLanguages,
@@ -358,7 +359,7 @@ class _ProfileHeroAppBar extends StatelessWidget {
                         builder: (_) => const UserProfileScreen(),
                       ),
                     ),
-                icon: const Icon(Icons.edit, size: 16),
+                icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 16),
                 label: Text(tr(locState, 'edit_profile')),
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
@@ -418,7 +419,7 @@ class _AccountRow extends StatelessWidget {
     final isAuthed = authState.isAuthenticated;
     final email = authState.user?.email;
     return SettingsTile(
-      icon: isAuthed ? Icons.person : Icons.person_outline,
+      icon: isAuthed ? PhosphorIconsRegular.user : PhosphorIconsRegular.user,
       iconColor: Theme.of(context).colorScheme.primary,
       title: email ?? '',
       subtitle:
@@ -434,7 +435,7 @@ class _AccountRow extends StatelessWidget {
                       .translations['free_badge'] ??
                   'Free'),
       trailing: Icon(
-        CupertinoIcons.chevron_right,
+        PhosphorIconsRegular.caretRight,
         size: 16,
         color: Theme.of(context).colorScheme.outline,
       ),
@@ -643,7 +644,7 @@ class _ThemeTile extends StatelessWidget {
     return BlocBuilder<ThemeCubit, ThemeMode>(
       builder: (context, themeMode) {
         return SettingsSegmentedTile<String>(
-          icon: Icons.palette,
+          icon: PhosphorIconsRegular.palette,
           iconColor: Colors.deepPurpleAccent,
           options: [
             loc.translations['theme_light'] ?? 'Light',
@@ -1041,7 +1042,7 @@ class _VersionTile extends StatelessWidget {
             vertical: 4,
           ),
           leading: SettingsTileIcon(
-            icon: Icons.info_outline,
+            icon: PhosphorIconsRegular.info,
             color: Colors.teal,
           ),
           title: Text(
@@ -1228,7 +1229,7 @@ class _SignOutFooter extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.button),
           ),
         ),
-        icon: const Icon(Icons.logout, size: 18),
+        icon: const Icon(PhosphorIconsRegular.signOut, size: 18),
         label: Text(tr(locState, 'sign_out')),
       ),
     );

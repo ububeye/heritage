@@ -13,12 +13,22 @@ class DistanceCalculator {
     return Geolocator.distanceBetween(startLat, startLng, endLat, endLng);
   }
 
-  static String formatDistance(double meters) {
-    if (meters < 1000) {
-      return '${meters.round()} m';
+  static String formatDistance(double meters, {bool isImperial = false}) {
+    if (isImperial) {
+      final feet = meters * 3.28084;
+      if (feet < 1000) {
+        return '${feet.round()} ft';
+      } else {
+        final miles = feet / 5280;
+        return '${miles.toStringAsFixed(1)} mi';
+      }
     } else {
-      final km = meters / 1000;
-      return '${km.toStringAsFixed(1)} km';
+      if (meters < 1000) {
+        return '${meters.round()} m';
+      } else {
+        final km = meters / 1000;
+        return '${km.toStringAsFixed(1)} km';
+      }
     }
   }
 

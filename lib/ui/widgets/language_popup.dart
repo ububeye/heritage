@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_radius.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LanguagePopup extends StatelessWidget {
   const LanguagePopup({super.key, required this.onSelect});
@@ -19,7 +20,7 @@ class LanguagePopup extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.language,
+              PhosphorIconsRegular.globe,
               size: 48,
               color: Theme.of(context).colorScheme.primary,
             ),

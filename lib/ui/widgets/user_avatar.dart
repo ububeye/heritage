@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// User avatar with photo + initials fallback. Replaces the inline
 /// `CircleAvatar` patterns that lived in `admin_user_management_screen`
@@ -57,7 +58,7 @@ class UserAvatar extends StatelessWidget {
                 ),
               )
               : Icon(
-                Icons.person_outline,
+                PhosphorIconsRegular.user,
                 color: Theme.of(context).colorScheme.onSurface,
                 size: radius * 1.2,
               ),

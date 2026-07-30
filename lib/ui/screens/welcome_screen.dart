@@ -8,6 +8,7 @@ import 'register_screen.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -151,7 +152,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            Icons.language,
+                                            PhosphorIconsRegular.globe,
                                             color:
                                                 Theme.of(
                                                   context,
@@ -365,7 +366,7 @@ class _LanguageOption extends StatelessWidget {
             ),
             if (isSelected)
               Icon(
-                Icons.check_circle,
+                PhosphorIconsRegular.checkCircle,
                 color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),

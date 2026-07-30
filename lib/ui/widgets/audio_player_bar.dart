@@ -6,6 +6,7 @@ import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/audio_state.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Bottom-sheet audio player used on the site detail screen.
 ///
@@ -98,7 +99,7 @@ class AudioPlayerBar extends StatelessWidget {
                           borderRadius: AppRadius.avatarBorder,
                         ),
                         child: Icon(
-                          isPlaying ? Icons.pause : Icons.play_arrow,
+                          isPlaying ? PhosphorIconsRegular.pause : PhosphorIconsRegular.play,
                           size: 32,
                           color: scheme.onSecondary,
                         ),
@@ -212,7 +213,7 @@ class _LanguageChip extends StatelessWidget {
             ),
             const SizedBox(width: 2),
             Icon(
-              Icons.expand_more,
+              PhosphorIconsRegular.caretDown,
               size: 16,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),

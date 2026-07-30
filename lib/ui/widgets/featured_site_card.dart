@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class FeaturedSiteCard extends StatelessWidget {
   const FeaturedSiteCard({
@@ -92,7 +93,7 @@ class FeaturedSiteCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.star,
+                      PhosphorIconsFill.star,
                       size: 14,
                       color: Theme.of(context).colorScheme.onSecondary,
                     ),
@@ -123,7 +124,7 @@ class FeaturedSiteCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.star,
+                      PhosphorIconsFill.star,
                       size: 14,
                       color: context.semanticColors.rating,
                     ),

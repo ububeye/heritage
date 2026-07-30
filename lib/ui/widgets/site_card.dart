@@ -8,6 +8,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class SiteCard extends StatelessWidget {
   const SiteCard({
@@ -115,8 +116,8 @@ class SiteCard extends StatelessWidget {
                                 ),
                                 child: Icon(
                                   isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
+                                      ? PhosphorIconsFill.heart
+                                      : PhosphorIconsRegular.heart,
                                   // Heart is the love/like state — uses
                                   // the success semantic role; the
                                   // fallback border variant stays muted
@@ -154,7 +155,7 @@ class SiteCard extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.check,
+                                  PhosphorIconsRegular.check,
                                   size: 12,
                                   color:
                                       Theme.of(context).colorScheme.onSecondary,
@@ -211,7 +212,7 @@ class SiteCard extends StatelessWidget {
                         // Rating
                         if (site.rating != null) ...[
                           Icon(
-                            Icons.star,
+                            PhosphorIconsFill.star,
                             size: 14,
                             color: context.semanticColors.rating,
                           ),
@@ -243,7 +244,7 @@ class SiteCard extends StatelessWidget {
                                 borderRadius: AppRadius.smBorder,
                               ),
                               child: Icon(
-                                Icons.navigation,
+                                PhosphorIconsFill.navigationArrow,
                                 size: 16,
                                 color:
                                     Theme.of(context).colorScheme.onSecondary,

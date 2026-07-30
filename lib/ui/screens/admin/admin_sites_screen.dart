@@ -13,6 +13,7 @@ import 'admin_add_site_screen.dart';
 import 'admin_edit_site_screen.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminSitesScreen extends StatefulWidget {
   const AdminSitesScreen({super.key, this.addNew = false});
@@ -152,7 +153,7 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
               MaterialPageRoute(builder: (_) => const AdminAddSiteScreen()),
             ),
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
+        child: Icon(PhosphorIconsRegular.plus, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
@@ -245,7 +246,7 @@ class _EmptyState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            searching ? Icons.search_off : Icons.location_city,
+            searching ? PhosphorIconsRegular.magnifyingGlassMinus : Icons.location_city,
             size: 64,
             color: Theme.of(context).colorScheme.outline,
           ),
@@ -262,7 +263,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onAdd,
-              icon: const Icon(Icons.add),
+              icon: const Icon(PhosphorIconsRegular.plus),
               label: Text(loc.translations['no_sites_cta'] ?? 'Add First Site'),
             ),
           ],
@@ -357,7 +358,7 @@ class _SiteCard extends StatelessWidget {
                         if (site.featured) ...[
                           const SizedBox(width: 6),
                           Icon(
-                            Icons.star,
+                            PhosphorIconsFill.star,
                             size: 16,
                             color: Theme.of(context).colorScheme.secondary,
                           ),
@@ -384,7 +385,7 @@ class _SiteCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          Icons.location_on,
+                          PhosphorIconsRegular.mapPin,
                           size: 14,
                           color: Theme.of(context).colorScheme.outline,
                         ),
@@ -411,7 +412,7 @@ class _SiteCard extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: Icon(
-                      site.featured ? Icons.star : Icons.star_border,
+                      site.featured ? PhosphorIconsFill.star : PhosphorIconsRegular.star,
                       color:
                           site.featured
                               ? Theme.of(context).colorScheme.secondary
@@ -427,7 +428,7 @@ class _SiteCard extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: Icon(
-                      Icons.edit,
+                      PhosphorIconsRegular.pencilSimple,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     tooltip: editLabel,
@@ -436,7 +437,7 @@ class _SiteCard extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: Icon(
-                      Icons.delete,
+                      PhosphorIconsRegular.trash,
                       color: Theme.of(context).colorScheme.error,
                     ),
                     tooltip: deleteLabel,

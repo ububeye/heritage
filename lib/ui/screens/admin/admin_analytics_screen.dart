@@ -10,6 +10,7 @@ import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
 import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/site_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Real analytics dashboard for admins. All numbers are derived client-side
 /// from the in-memory [SiteListCubit] and [UserCubit] state — no extra Firestore
@@ -365,7 +366,7 @@ class _TopRatedList extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.star,
+                    PhosphorIconsFill.star,
                     size: 16,
                     color: context.semanticColors.rating,
                   ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_radius.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Square leading icon chip with a tinted background. Mirrors the
 /// `_ModernIcon` helper previously inlined in `settings_screen.dart`.
@@ -67,7 +68,7 @@ class SettingsTile extends StatelessWidget {
       trailing:
           trailing ??
           Icon(
-            CupertinoIcons.chevron_right,
+            PhosphorIconsRegular.caretRight,
             size: 16,
             color: Theme.of(context).colorScheme.outline,
           ),

@@ -12,6 +12,7 @@ import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../widgets/heritage_map.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminAddSiteScreen extends StatefulWidget {
   const AdminAddSiteScreen({super.key});
@@ -417,7 +418,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.close,
+                              PhosphorIconsRegular.x,
                               color: Theme.of(context).colorScheme.onError,
                               size: 16,
                             ),
@@ -468,7 +469,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             child: Column(
               children: [
                 Icon(
-                  Icons.add_photo_alternate,
+                  PhosphorIconsRegular.image,
                   size: 40,
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -506,9 +507,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildTabButton('Manual', Icons.edit_location, 1),
+                child: _buildTabButton('Manual', PhosphorIconsRegular.mapPin, 1),
               ),
-              Expanded(child: _buildTabButton('Map', Icons.map, 0)),
+              Expanded(child: _buildTabButton('Map', PhosphorIconsRegular.mapTrifold, 0)),
             ],
           ),
           Padding(
