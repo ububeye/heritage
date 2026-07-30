@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 
 /// Dead-end screen shown to non-admin users while an admin has flipped
 /// the maintenance-mode toggle on. The screen is intentionally minimal —
@@ -42,13 +43,13 @@ class MaintenanceScreen extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.build_circle_outlined,
                     size: 64,
-                    color: AppColors.primary,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -80,7 +81,7 @@ class MaintenanceScreen extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.12),
+                    color: context.semanticColors.warning.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(

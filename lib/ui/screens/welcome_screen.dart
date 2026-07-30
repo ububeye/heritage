@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 
@@ -186,8 +187,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                   borderRadius: BorderRadius.circular(40),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black
-                                          .withValues(alpha: 0.1),
+                                      // Logo shadow — theme-aware.
+                                      color: context.semanticColors.shadow,
                                       blurRadius: 30,
                                       offset: const Offset(0, 15),
                                     ),

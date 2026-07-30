@@ -21,11 +21,11 @@ class UpgradeBanner extends StatelessWidget {
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.error,
+          color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
             BoxShadow(
-              color: AppColors.error.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -36,12 +36,12 @@ class UpgradeBanner extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.textOnPrimary.withValues(alpha: 0.2),
+                color: Theme.of(context).colorScheme.onError.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.lock,
-                color: AppColors.textOnPrimary,
+                color: Theme.of(context).colorScheme.onError,
                 size: 20,
               ),
             ),
@@ -66,9 +66,9 @@ class UpgradeBanner extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
-              color: AppColors.textOnPrimary,
+              color: Theme.of(context).colorScheme.onError,
               size: 16,
             ),
           ],

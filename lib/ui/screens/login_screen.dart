@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../data/models/user_model.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -117,7 +118,8 @@ class _LoginScreenState extends State<LoginScreen>
                           borderRadius: BorderRadius.circular(35),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withAlpha(26),
+                              // Card / logo shadow — theme-aware.
+                              color: context.semanticColors.shadow,
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -155,7 +157,8 @@ class _LoginScreenState extends State<LoginScreen>
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
+                              // Form-card shadow — theme-aware.
+                              color: context.semanticColors.shadow,
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -386,15 +389,19 @@ class _LoginScreenState extends State<LoginScreen>
               Container(
                 width: 24,
                 height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.red.shade600,
+                // Brand-explicit Google red — kept literal so the
+                // sign-in badge stays consistent with Google's brand.
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD32F2F),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     'G',
+                    // White foreground over the brand-literal red pill
+                    // — fixed-content, not theme-aware.
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white,
+                          color: const Color(0xFFFFFFFF),
                         ),
                   ),
                 ),

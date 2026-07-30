@@ -17,8 +17,10 @@ class SettingsSectionTitle extends StatelessWidget {
     // — `AppColors.textSecondary` (mid grey) is illegible on a dark
     // surface, while `onSurfaceVariant` is the M3-recommended muted tone
     // for both brightness modes.
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? AppColors.darkMuted : AppColors.textSecondary;
+    // Resolve at build time so light + dark both pick the right muted
+    // colour — onSurfaceVariant is the M3-recommended muted tone for
+    // both brightness modes.
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
     return Padding(
       padding: const EdgeInsets.only(left: 8, bottom: 8, top: 8),
       child: Text(

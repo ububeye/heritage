@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
@@ -39,7 +40,8 @@ class SiteCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textPrimary.withValues(alpha: 0.1),
+              // Card shadow — theme-aware.
+              color: context.semanticColors.shadow,
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -65,25 +67,26 @@ class SiteCard extends StatelessWidget {
                       height: double.infinity,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
-                        color: AppColors.surfaceDark,
-                        child: const Center(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
                           child: CircularProgressIndicator(
-                            color: AppColors.accent,
+                            color: Theme.of(context).colorScheme.secondary,
                             strokeWidth: 2,
                           ),
                         ),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: AppColors.surfaceDark,
-                        child: const Icon(
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Icon(
                           Icons.image_not_supported,
-                          color: AppColors.textHint,
+                          color: Theme.of(context).colorScheme.outline,
                         ),
                       ),
                     ),
                   ),
 
-                  // Favorite button
+                  // Favorite button — sits over the site card image. The
+                  // white pill keeps the heart legible on any photo.
                   if (onToggleFavorite != null)
                     Positioned(
                       top: 8,
@@ -103,18 +106,27 @@ class SiteCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  // Pill over the hero image — fixed white.
+                                  color: context.semanticColors.onImage,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
+                                      // Pill shadow — theme-aware.
+                                      color: context.semanticColors.shadow,
                                       blurRadius: 4,
                                     ),
                                   ],
                                 ),
                                 child: Icon(
                                   isFavorite ? Icons.favorite : Icons.favorite_border,
-                                  color: isFavorite ? Colors.red : AppColors.textSecondary,
+                                  // Heart is the love/like state — uses
+                                  // the success semantic role; the
+                                  // fallback border variant stays muted
+                                  // via onSurfaceVariant for contrast on
+                                  // the white pill.
+                                  color: isFavorite
+                                      ? context.semanticColors.success
+                                      : Theme.of(context).colorScheme.onSurfaceVariant,
                                   size: 20,
                                 ),
                               ),
@@ -137,16 +149,16 @@ class SiteCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.accent,
+                              color: Theme.of(context).colorScheme.secondary,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.check,
                                   size: 12,
-                                  color: AppColors.textOnAccent,
+                                  color: Theme.of(context).colorScheme.onSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -193,10 +205,10 @@ class SiteCard extends StatelessWidget {
                       children: [
                         // Rating
                         if (site.rating != null) ...[
-                          const Icon(
+                          Icon(
                             Icons.star,
                             size: 14,
-                            color: AppColors.rating,
+                            color: context.semanticColors.rating,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -217,13 +229,13 @@ class SiteCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: AppColors.accent,
+                                color: Theme.of(context).colorScheme.secondary,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.navigation,
                                 size: 16,
-                                color: AppColors.textOnAccent,
+                                color: Theme.of(context).colorScheme.onSecondary,
                               ),
                             ),
                           ),

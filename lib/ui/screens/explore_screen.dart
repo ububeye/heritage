@@ -89,8 +89,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 child: BlocBuilder<SiteListCubit, SiteListState>(
                   builder: (context, state) {
                     if (state.status == SiteListStatus.loading) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: AppColors.accent),
+                      return Center(
+                        child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
                       );
                     }
 

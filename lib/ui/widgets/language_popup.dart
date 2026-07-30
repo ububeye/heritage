@@ -22,10 +22,10 @@ class LanguagePopup extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.language,
               size: 48,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 16),
             Text(
@@ -89,7 +89,7 @@ class _LanguageButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
         child: Column(
           children: [

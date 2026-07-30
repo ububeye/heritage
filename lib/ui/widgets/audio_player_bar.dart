@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/audio_state.dart';
@@ -53,7 +54,8 @@ class AudioPlayerBar extends StatelessWidget {
         color: scheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            // Bottom-bar shadow — theme-aware.
+            color: context.semanticColors.shadow,
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -89,13 +91,13 @@ class AudioPlayerBar extends StatelessWidget {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: AppColors.accent,
+                          color: scheme.secondary,
                           borderRadius: BorderRadius.circular(28),
                         ),
                         child: Icon(
                           isPlaying ? Icons.pause : Icons.play_arrow,
                           size: 32,
-                          color: AppColors.textOnAccent,
+                          color: scheme.onSecondary,
                         ),
                       ),
                     ),
@@ -127,19 +129,19 @@ class AudioPlayerBar extends StatelessWidget {
                       // looked like a frozen 00:00 / 00:00 bar for the
                       // first ~50-100 ms of every play.
                       if (audioState.isLoading)
-                        const LinearProgressIndicator(
+                        LinearProgressIndicator(
                           backgroundColor:
-                              Color(0xFFE5DCC8), // AppColors.border
+                              Theme.of(context).colorScheme.outline,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.accent),
+                              AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
                           minHeight: 4,
                         )
                       else
                         LinearProgressIndicator(
                           value: audioState.progress.clamp(0.0, 1.0),
-                          backgroundColor: AppColors.border,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.accent,
+                          backgroundColor: Theme.of(context).colorScheme.outline,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).colorScheme.secondary,
                           ),
                           minHeight: 4,
                         ),
@@ -159,7 +161,7 @@ class AudioPlayerBar extends StatelessWidget {
                   IconButton(
                     tooltip: locState.translations['replay'] ?? 'Replay',
                     onPressed: onReplay,
-                    icon: const Icon(Icons.replay, color: AppColors.primary),
+                    icon: Icon(Icons.replay, color: Theme.of(context).colorScheme.primary),
                   ),
               ],
             );
@@ -225,7 +227,7 @@ class _PreviewBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.accent,
+        color: Theme.of(context).colorScheme.secondary,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(

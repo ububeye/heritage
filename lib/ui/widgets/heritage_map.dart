@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/site_model.dart';
 import '../../data/services/location_service.dart';
@@ -258,7 +259,7 @@ class _HeritageMapState extends State<HeritageMap> {
                                 ? Icons.my_location
                                 : Icons.center_focus_strong,
                             size: 18,
-                            color: AppColors.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -293,17 +294,17 @@ class _HeritageMapState extends State<HeritageMap> {
                   child: Column(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.add, color: AppColors.primary),
+                        icon: Icon(Icons.add, color: Theme.of(context).colorScheme.primary),
                         onPressed: _zoomIn,
                         tooltip: 'Zoom In',
                       ),
                       Container(
                         height: 1,
                         width: 32,
-                        color: AppColors.border,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                       IconButton(
-                        icon: const Icon(Icons.remove, color: AppColors.primary),
+                        icon: Icon(Icons.remove, color: Theme.of(context).colorScheme.primary),
                         onPressed: _zoomOut,
                         tooltip: 'Zoom Out',
                       ),
@@ -374,11 +375,14 @@ class _PinMarker extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               margin: const EdgeInsets.only(bottom: 1),
               decoration: BoxDecoration(
-                color: Colors.white,
+                // Map-marker label sits over a map tile — fixed white
+                // background so the dark text is legible on any tile.
+                color: context.semanticColors.onImage,
                 borderRadius: BorderRadius.circular(4),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    // Marker shadow — theme-aware.
+                    color: context.semanticColors.shadow,
                     blurRadius: 2,
                   ),
                 ],
@@ -401,12 +405,14 @@ class _PinMarker extends StatelessWidget {
           width: isPicker ? 36 : 28,
           height: isPicker ? 36 : 28,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: context.semanticColors.mapMarker,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: isPicker ? 4 : 3),
+            // Border over the map tile — fixed white for contrast.
+            border: Border.all(color: context.semanticColors.onImage, width: isPicker ? 4 : 3),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                // Marker shadow — theme-aware.
+                color: context.semanticColors.shadow,
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -415,7 +421,9 @@ class _PinMarker extends StatelessWidget {
           child: Icon(
             Icons.location_on,
             size: isPicker ? 20 : 14,
-            color: Colors.white,
+            // Pin icon over a coloured circle — use the onImage foreground
+            // so it stays consistent across themes.
+            color: context.semanticColors.onImage,
           ),
         ),
       ],

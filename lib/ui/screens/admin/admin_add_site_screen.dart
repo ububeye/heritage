@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
 import '../../../data/services/firestore_service.dart';
@@ -87,9 +88,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
 
     if (_selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one image'),
-          backgroundColor: AppColors.error,
+        SnackBar(
+          content: const Text('Please select at least one image'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -132,9 +133,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       if (mounted) {
         context.read<SiteListCubit>().loadSites();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Site added successfully'),
-            backgroundColor: AppColors.success,
+          SnackBar(
+            content: const Text('Site added successfully'),
+            backgroundColor: context.semanticColors.success,
           ),
         );
         Navigator.of(context).pop();
@@ -144,7 +145,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -171,7 +172,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(color: AppColors.accent),
+                  CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
                   const SizedBox(height: 16),
                   Text(
                     _isUploading ? 'Uploading images...' : 'Saving site...',
@@ -264,7 +265,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                     child: ElevatedButton(
                       onPressed: _saveSite,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -319,7 +320,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -372,11 +373,11 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                           onTap: () => _removeImage(index),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.error,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.close, color: Colors.white, size: 16),
+                            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onError, size: 16),
                           ),
                         ),
                       ),
@@ -387,7 +388,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -395,7 +396,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
-                                  ?.copyWith(color: Colors.white),
+                                  ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
                             ),
                           ),
                         ),
@@ -415,11 +416,11 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary, style: BorderStyle.solid),
+              border: Border.all(color: Theme.of(context).colorScheme.primary, style: BorderStyle.solid),
             ),
             child: Column(
               children: [
-                const Icon(Icons.add_photo_alternate, size: 40, color: AppColors.primary),
+                Icon(Icons.add_photo_alternate, size: 40, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(height: 8),
                 Text(
                   'Add from Gallery',
@@ -443,7 +444,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -484,18 +485,18 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
+          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: isSelected ? Colors.white : AppColors.textSecondary),
+            Icon(icon, size: 18, color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(width: 8),
             Text(
               label,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                    color: isSelected ? Theme.of(context).colorScheme.onPrimary : AppColors.textSecondary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
             ),
@@ -515,7 +516,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
           height: 400,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           clipBehavior: Clip.antiAlias,
           child: HeritageMap.picker(
@@ -582,7 +583,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -601,8 +602,8 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             min: 10,
             max: 200,
             divisions: 19,
-            activeColor: AppColors.primary,
-            inactiveColor: AppColors.primary.withValues(alpha: 0.3),
+            activeColor: Theme.of(context).colorScheme.primary,
+            inactiveColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             onChanged: (value) => setState(() => _entryRadius = value),
           ),
           Row(
@@ -639,7 +640,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,8 +660,8 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                     if (_nameEnController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Fill the English name first'),
-                          backgroundColor: AppColors.error,
+                          content: const Text('Fill the English name first'),
+                          backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
                       return;
@@ -679,7 +680,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    foregroundColor: AppColors.primary,
+                    foregroundColor: Theme.of(context).colorScheme.primary,
                   ),
                 ),
             ],

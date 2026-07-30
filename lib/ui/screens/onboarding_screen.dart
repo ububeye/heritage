@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
@@ -20,27 +21,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Build the page list from the current LocalizationState so the
   /// onboarding copy honours the user's chosen language.
-  List<OnboardingPage> _buildPages(LocalizationState loc) => [
+  List<OnboardingPage> _buildPages(BuildContext context, LocalizationState loc) => [
         OnboardingPage(
           icon: Icons.location_city,
           title: loc.translations['onboarding_p1_title'] ?? 'Explore Heritage',
           subtitle: loc.translations['onboarding_p1_subtitle'] ??
               "Discover the rich history and culture of Stone Town, Zanzibar's UNESCO World Heritage Site",
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
         ),
         OnboardingPage(
           icon: Icons.headphones,
           title: loc.translations['onboarding_p2_title'] ?? 'Audio Guides',
           subtitle: loc.translations['onboarding_p2_subtitle'] ??
               'Listen to fascinating stories and history in 7 languages with our audio guide',
-          color: AppColors.accent,
+          color: Theme.of(context).colorScheme.secondary,
         ),
         OnboardingPage(
           icon: Icons.navigation,
           title: loc.translations['onboarding_p3_title'] ?? 'GPS Navigation',
           subtitle: loc.translations['onboarding_p3_subtitle'] ??
               'Navigate to sites with turn-by-turn directions and auto-play audio when you arrive',
-          color: AppColors.success,
+          color: context.semanticColors.success,
         ),
       ];
 
@@ -74,7 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, loc) {
-        final pages = _buildPages(loc);
+        final pages = _buildPages(context, loc);
         final isLast = _currentPage == pages.length - 1;
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,

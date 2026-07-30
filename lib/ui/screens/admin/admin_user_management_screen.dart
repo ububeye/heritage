@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/user_model.dart';
@@ -66,11 +67,11 @@ class _UserManagementContent extends StatelessWidget {
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                     ),
                     filled: true,
                     fillColor: Theme.of(context).colorScheme.surface,
@@ -98,14 +99,14 @@ class _UserManagementContent extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(context, 'Total', state.totalUsers.toString(), AppColors.primary),
-              _buildStatItem(context, 'Premium', state.premiumUsers.toString(), AppColors.accent),
-              _buildStatItem(context, 'Admins', state.adminUsers.toString(), AppColors.success),
+              _buildStatItem(context, 'Total', state.totalUsers.toString(), Theme.of(context).colorScheme.primary),
+              _buildStatItem(context, 'Premium', state.premiumUsers.toString(), Theme.of(context).colorScheme.secondary),
+              _buildStatItem(context, 'Admins', state.adminUsers.toString(), context.semanticColors.success),
             ],
           ),
         );
@@ -132,8 +133,8 @@ class _UserManagementContent extends StatelessWidget {
     return BlocBuilder<UserCubit, UserState>(
       builder: (context, state) {
         if (state.status == UserStatus.loading) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.accent),
+          return Center(
+            child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
           );
         }
 
@@ -142,7 +143,7 @@ class _UserManagementContent extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
                 const SizedBox(height: 16),
                 const Text('Failed to load users'),
                 const SizedBox(height: 8),
@@ -165,7 +166,7 @@ class _UserManagementContent extends StatelessWidget {
                 Icon(
                   state.searchQuery.isEmpty ? Icons.people_outline : Icons.search_off,
                   size: 64,
-                  color: AppColors.textHint,
+                  color: Theme.of(context).colorScheme.outline,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -179,7 +180,7 @@ class _UserManagementContent extends StatelessWidget {
 
         return RefreshIndicator(
           onRefresh: () => context.read<UserCubit>().loadUsers(),
-          color: AppColors.accent,
+          color: Theme.of(context).colorScheme.secondary,
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: users.length,
@@ -210,7 +211,7 @@ class _UserManagementContent extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Delete'),
           ),
         ],
@@ -250,7 +251,7 @@ class _UserCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AppColors.primary.withValues(alpha: 26),
+                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   backgroundImage: user.photoUrl != null
                       ? NetworkImage(user.photoUrl!)
                       : null,
@@ -295,7 +296,7 @@ class _UserCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                  icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                   tooltip: deleteLabel,
                   onPressed: onDelete,
                 ),
@@ -312,20 +313,20 @@ class _UserCard extends StatelessWidget {
     String label;
     switch (user.role) {
       case UserRole.admin:
-        color = AppColors.success;
+        color = context.semanticColors.success;
         label = 'Admin';
       case UserRole.premium:
-        color = AppColors.accent;
+        color = Theme.of(context).colorScheme.secondary;
         label = 'Premium';
       case UserRole.free:
-        color = AppColors.textSecondary;
+        color = Theme.of(context).colorScheme.onSurfaceVariant;
         label = 'Free';
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 26),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -342,7 +343,7 @@ class _UserCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
         borderRadius: BorderRadius.circular(8),
       ),
       child: DropdownButtonHideUnderline(
@@ -362,10 +363,10 @@ class _UserCard extends StatelessWidget {
                             : Icons.person,
                     size: 18,
                     color: role == UserRole.admin
-                        ? AppColors.success
+                        ? context.semanticColors.success
                         : role == UserRole.premium
-                            ? AppColors.accent
-                            : AppColors.textSecondary,
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
                   Text(

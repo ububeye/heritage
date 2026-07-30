@@ -43,7 +43,7 @@ class UserAvatar extends StatelessWidget {
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
       backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
       child: hasPhoto
           ? null
@@ -57,7 +57,7 @@ class UserAvatar extends StatelessWidget {
                 )
               : Icon(
                   Icons.person_outline,
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   size: radius,
                 ),
     );

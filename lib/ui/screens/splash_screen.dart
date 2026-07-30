@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
@@ -170,7 +171,8 @@ class _SplashScreenState extends State<SplashScreen>
                               borderRadius: BorderRadius.circular(35),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
+                                  // Logo shadow — theme-aware.
+                                  color: context.semanticColors.shadow,
                                   blurRadius: 30,
                                   offset: const Offset(0, 15),
                                 ),

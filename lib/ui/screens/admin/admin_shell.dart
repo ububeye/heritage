@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
 import '../../../blocs/user/user_cubit.dart';
@@ -130,7 +131,7 @@ class _AdminDashboard extends StatelessWidget {
           context.read<SiteListCubit>().loadSites();
           context.read<UserCubit>().loadUsers();
         },
-        color: AppColors.accent,
+        color: Theme.of(context).colorScheme.secondary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -177,12 +178,15 @@ class _WelcomeCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppColors.primaryDark, AppColors.primary],
+              colors: [
+                Theme.of(context).colorScheme.primaryContainer,
+                Theme.of(context).colorScheme.primary,
+              ],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 15,
                 offset: const Offset(0, 6),
               ),
@@ -193,10 +197,10 @@ class _WelcomeCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 32),
+                child: Icon(Icons.admin_panel_settings, color: Theme.of(context).colorScheme.onPrimary, size: 32),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -205,13 +209,13 @@ class _WelcomeCard extends StatelessWidget {
                   children: [
                     Text(
                       tr(locState, 'admin_welcome'),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       authState.user?.email ?? '',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                           ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -244,7 +248,7 @@ class _StatsSection extends StatelessWidget {
                 icon: Icons.location_city,
                 value: state.sites.length.toString(),
                 label: tr(locState, 'best_places'),
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               );
             },
           ),
@@ -257,7 +261,7 @@ class _StatsSection extends StatelessWidget {
                 icon: Icons.people,
                 value: state.totalUsers.toString(),
                 label: tr(locState, 'user_management'),
-                color: AppColors.accent,
+                color: Theme.of(context).colorScheme.secondary,
               );
             },
           ),
@@ -270,7 +274,7 @@ class _StatsSection extends StatelessWidget {
                 icon: Icons.workspace_premium,
                 value: state.premiumUsers.toString(),
                 label: tr(locState, 'upgrade_to_premium'),
-                color: AppColors.success,
+                color: context.semanticColors.success,
               );
             },
           ),
@@ -300,10 +304,10 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.semanticColors.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -366,7 +370,7 @@ class _MenuSection extends StatelessWidget {
           icon: Icons.location_on,
           title: tr(locState, 'best_places'),
           subtitle: tr(locState, 'admin_tab_sites'),
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           // Switch to the Sites tab (index 1) instead of pushing a new
           // AdminSitesScreen instance — the bottom nav stays in sync.
           onTap: () => onNavigateToTab(1),
@@ -376,7 +380,7 @@ class _MenuSection extends StatelessWidget {
           icon: Icons.people,
           title: tr(locState, 'user_management'),
           subtitle: tr(locState, 'admin_tab_users'),
-          color: AppColors.accent,
+          color: Theme.of(context).colorScheme.secondary,
           onTap: () => onNavigateToTab(2),
         ),
       ],
@@ -423,10 +427,10 @@ class _MenuCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: context.semanticColors.shadow,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -465,7 +469,7 @@ class _MenuCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.textHint, size: 24),
+            Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.outline, size: 24),
           ],
         ),
       ),
@@ -497,7 +501,7 @@ class _QuickActionsSection extends StatelessWidget {
               child: _QuickActionButton(
                 icon: Icons.add_location,
                 label: tr(locState, 'add_site'),
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
                 // Drop the redundant AdminSitesScreen(addNew:true) push —
                 // jump to the Sites tab and rely on its own FAB for "+".
                 onTap: () => onNavigateToTab(1),
@@ -508,7 +512,7 @@ class _QuickActionsSection extends StatelessWidget {
               child: _QuickActionButton(
                 icon: Icons.analytics,
                 label: tr(locState, 'analytics'),
-                color: AppColors.accent,
+                color: Theme.of(context).colorScheme.secondary,
                 // Analytics is a pushed screen (not a tab). Pre-existing
                 // behaviour — keep it so the chip stays useful.
                 onTap: () => Navigator.of(context).push(

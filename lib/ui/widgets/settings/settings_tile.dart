@@ -65,10 +65,10 @@ class SettingsTile extends StatelessWidget {
             )
           : null,
       trailing: trailing ??
-          const Icon(
+          Icon(
             CupertinoIcons.chevron_right,
             size: 16,
-            color: AppColors.textHint,
+            color: Theme.of(context).colorScheme.outline,
           ),
       onTap: onTap,
     );

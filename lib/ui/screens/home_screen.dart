@@ -123,8 +123,8 @@ class _HomeContent extends StatelessWidget {
       body: BlocBuilder<SiteListCubit, SiteListState>(
         builder: (context, state) {
           if (state.status == SiteListStatus.loading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.accent),
+            return Center(
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
             );
           }
 
@@ -133,10 +133,10 @@ class _HomeContent extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.error_outline,
                     size: 48,
-                    color: AppColors.textHint,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -181,7 +181,7 @@ class _HomeContent extends StatelessWidget {
 
           return RefreshIndicator(
             onRefresh: () => context.read<SiteListCubit>().loadSites(),
-            color: AppColors.accent,
+            color: Theme.of(context).colorScheme.secondary,
             child: GridView.builder(
               padding: EdgeInsets.fromLTRB(
                 16,

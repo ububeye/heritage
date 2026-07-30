@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/site_list/site_list_cubit.dart';
 import '../../blocs/site_list/site_list_state.dart';
 import '../../blocs/favorites/favorites_cubit.dart';
@@ -37,7 +38,7 @@ class FavoritesScreen extends StatelessWidget {
                       Icon(
                         Icons.favorite_border,
                         size: 80,
-                        color: AppColors.textHint,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -74,8 +75,8 @@ class FavoritesScreen extends StatelessWidget {
           return BlocBuilder<SiteListCubit, SiteListState>(
             builder: (context, siteState) {
               if (siteState.status == SiteListStatus.loading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.accent),
+                return Center(
+                  child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
                 );
               }
 
@@ -201,7 +202,8 @@ class _FavoriteSiteCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              // Card shadow uses the theme-aware semantic shadow tone.
+              color: context.semanticColors.shadow,
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -222,26 +224,28 @@ class _FavoriteSiteCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       height: 120,
-                      color: AppColors.surfaceDark,
-                      child: const Center(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      child: Center(
                         child: CircularProgressIndicator(
-                          color: AppColors.accent,
+                          color: Theme.of(context).colorScheme.secondary,
                           strokeWidth: 2,
                         ),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
                       height: 120,
-                      color: AppColors.surfaceDark,
-                      child: const Icon(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      child: Icon(
                         Icons.image_not_supported,
                         size: 40,
-                        color: AppColors.textHint,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
                   ),
                 ),
-                // Remove button
+                // Remove button — sits over the hero image. The white
+                // pill background and red heart render the love-state on
+                // top of any photograph.
                 Positioned(
                   top: 8,
                   right: 8,
@@ -249,13 +253,17 @@ class _FavoriteSiteCard extends StatelessWidget {
                     onTap: onRemove,
                     child: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      decoration: BoxDecoration(
+                        // Solid white pill sits over the hero image so
+                        // the heart stays legible on any photograph.
+                        color: context.semanticColors.onImage,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.favorite,
-                        color: Colors.red,
+                        // Heart = love/like state — mapped to the success
+                        // semantic role per the migration rules.
+                        color: context.semanticColors.success,
                         size: 20,
                       ),
                     ),
@@ -272,7 +280,9 @@ class _FavoriteSiteCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black54,
+                        // Badge sits over the photo — scrim background
+                        // and fixed-content foreground for legibility.
+                        color: context.semanticColors.imageScrim,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -280,7 +290,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                         style: Theme.of(context)
                             .textTheme
                             .labelSmall
-                            ?.copyWith(color: Colors.white),
+                            ?.copyWith(color: context.semanticColors.onImage),
                       ),
                     ),
                   ),
@@ -307,7 +317,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                         Icon(
                           Icons.location_on,
                           size: 14,
-                          color: AppColors.textHint,
+                          color: Theme.of(context).colorScheme.outline,
                         ),
                         const SizedBox(width: 4),
                         Expanded(

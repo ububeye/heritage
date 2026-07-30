@@ -2,6 +2,7 @@ import '../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
 
@@ -32,7 +33,8 @@ class FeaturedSiteCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
             BoxShadow(
-              color: AppColors.textPrimary.withValues(alpha: 0.15),
+              // Featured-card shadow — theme-aware.
+              color: context.semanticColors.shadow,
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -50,27 +52,36 @@ class FeaturedSiteCard extends StatelessWidget {
                 height: double.infinity,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
-                  color: AppColors.surfaceDark,
-                  child: const Center(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  child: Center(
                     child: CircularProgressIndicator(
-                      color: AppColors.accent,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ),
                 errorWidget: (context, url, error) => Container(
-                  color: AppColors.surfaceDark,
-                  child: const Icon(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  child: Icon(
                     Icons.image_not_supported,
-                    color: AppColors.textHint,
+                    color: Theme.of(context).colorScheme.outline,
                     size: 48,
                   ),
                 ),
               ),
             ),
+            // Hero gradient overlay — fixed scrim tone so foreground
+            // colours stay legible on any photograph.
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.card),
-                gradient: AppColors.heroGradient,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    context.semanticColors.imageScrim.withValues(alpha: 0.0),
+                    context.semanticColors.imageScrim,
+                  ],
+                ),
               ),
             ),
             Positioned(
@@ -79,16 +90,16 @@ class FeaturedSiteCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.accent,
+                  color: Theme.of(context).colorScheme.secondary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.star,
                       size: 14,
-                      color: AppColors.textOnAccent,
+                      color: Theme.of(context).colorScheme.onSecondary,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -108,23 +119,25 @@ class FeaturedSiteCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  // Rating pill sits over the hero image — scrim
+                  // background and fixed-content foreground.
+                  color: context.semanticColors.imageScrim,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.star,
                       size: 14,
-                      color: AppColors.rating,
+                      color: context.semanticColors.rating,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       site.rating?.toStringAsFixed(1) ?? '4.8',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                             fontSize: 12,
-                            color: Colors.white,
+                            color: context.semanticColors.onImage,
                           ),
                     ),
                   ],
@@ -143,7 +156,7 @@ class FeaturedSiteCard extends StatelessWidget {
                     Text(
                       site.getName(uiLanguage),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
+                            color: context.semanticColors.onImage,
                           ),
                     ),
                     const SizedBox(height: 12),
@@ -153,8 +166,10 @@ class FeaturedSiteCard extends StatelessWidget {
                           child: OutlinedButton(
                             onPressed: onViewMap,
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white),
+                              // Button border + foreground over hero
+                              // image — fixed white.
+                              foregroundColor: context.semanticColors.onImage,
+                              side: BorderSide(color: context.semanticColors.onImage),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                             child: const Text('View on Map'),
@@ -165,8 +180,8 @@ class FeaturedSiteCard extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: onStartAudio,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.accent,
-                              foregroundColor: AppColors.textOnAccent,
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
+                              foregroundColor: Theme.of(context).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                             child: const Text('Start Audio Guide'),

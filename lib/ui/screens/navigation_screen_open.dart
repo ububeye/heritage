@@ -20,6 +20,7 @@ import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_durations.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/polyline_snap.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
@@ -382,12 +383,15 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             polylines: [
               Polyline(
                 points: _routePoints,
-                color: Colors.white,
+                // White border underlay drawn under the coloured route
+                // for a crisp Google-Maps look. Fixed-content; uses the
+                // semantic onImage foreground.
+                color: context.semanticColors.onImage,
                 strokeWidth: AppConstants.routePolylineWidth + 4,
               ),
               Polyline(
                 points: _routePoints,
-                color: AppColors.mapRoute,
+                color: context.semanticColors.mapRoute,
                 strokeWidth: AppConstants.routePolylineWidth,
               ),
             ],
@@ -400,8 +404,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               point: LatLng(widget.site.latitude, widget.site.longitude),
               radius: widget.site.entryRadiusM,
               useRadiusInMeter: true,
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderColor: AppColors.primary.withValues(alpha: 0.45),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+              borderColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45),
               borderStrokeWidth: 1.5,
             ),
           ],
@@ -470,7 +474,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             heroTag: 'nav_back',
             onPressed: () => Navigator.of(context).pop(),
             backgroundColor: Theme.of(context).colorScheme.surface,
-            foregroundColor: AppColors.textPrimary,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
             elevation: 4,
             child: const Icon(Icons.arrow_back),
           ),
@@ -479,7 +483,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             heroTag: 'nav_recenter',
             onPressed: () => _recenter(),
             backgroundColor: Theme.of(context).colorScheme.surface,
-            foregroundColor: AppColors.textPrimary,
+            foregroundColor: Theme.of(context).colorScheme.onSurface,
             elevation: 4,
             child: const Icon(Icons.my_location),
           ),
@@ -521,7 +525,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     // when it gets a 401/403). Other errorMessage values are treated
     // as free-text from the engine.
     final isRoutingAuthFailure = _routeError == 'routing_api_key_invalid';
-    final color = hasError ? AppColors.error : Colors.black87;
+    // Banner shows an error pill on failure, and a near-black neutral pill
+    // while the route is loading or in fallback mode. The neutral tone
+    // uses onSurface for a high-contrast, theme-aware fill.
+    final color = hasError
+        ? Theme.of(context).colorScheme.error
+        : Theme.of(context).colorScheme.onSurface;
     final text = hasError
         ? (nav.errorMessage ?? tr('error_generic'))
         : _routeLoading
@@ -546,10 +555,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             child: Text(
               text,
               textAlign: TextAlign.center,
+              // Banner fill is `colorScheme.error` or `colorScheme.onSurface`,
+              // so the text sits on its `on*` counterpart.
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
-                  ?.copyWith(color: Colors.white),
+                  ?.copyWith(color: Theme.of(context).colorScheme.surface),
             ),
           ),
         ),
@@ -567,21 +578,21 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     final statusChip = hasError
         ? _StatusChip(
             label: 'Error',
-            color: AppColors.error,
-            foreground: AppColors.textOnPrimary,
+            color: Theme.of(context).colorScheme.error,
+            foreground: Theme.of(context).colorScheme.onError,
             icon: Icons.error_outline,
           )
         : arrived
             ? _StatusChip(
                 label: 'Arrived',
-                color: AppColors.primary,
-                foreground: AppColors.textOnPrimary,
+                color: Theme.of(context).colorScheme.primary,
+                foreground: Theme.of(context).colorScheme.onPrimary,
                 icon: Icons.check_circle,
               )
             : _StatusChip(
                 label: 'Navigating',
-                color: AppColors.primary,
-                foreground: AppColors.textOnPrimary,
+                color: Theme.of(context).colorScheme.primary,
+                foreground: Theme.of(context).colorScheme.onPrimary,
                 icon: Icons.directions_walk,
               );
 
@@ -595,7 +606,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              // Shadow tone uses the theme-aware semantic shadow colour.
+              color: context.semanticColors.shadow,
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -621,13 +633,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                         placeholder: (_, __) => Container(
                           width: 56,
                           height: 56,
-                          color: AppColors.surfaceDark,
-                          child: const Center(
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: Center(
                             child: SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                color: AppColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                                 strokeWidth: 2,
                               ),
                             ),
@@ -636,10 +648,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                         errorWidget: (_, __, ___) => Container(
                           width: 56,
                           height: 56,
-                          color: AppColors.surfaceDark,
-                          child: const Icon(
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: Icon(
                             Icons.image_not_supported,
-                            color: AppColors.textHint,
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                         ),
                       ),
@@ -666,8 +678,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(Icons.straighten,
-                                  size: 14, color: AppColors.textSecondary,),
+                              Icon(Icons.straighten,
+                                  size: 14,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,),
                               const SizedBox(width: 4),
                               Text(
                                 nav.distanceToSite != null
@@ -682,8 +695,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                     ),
                               ),
                               const SizedBox(width: 12),
-                              const Icon(Icons.access_time,
-                                  size: 14, color: AppColors.textSecondary,),
+                              Icon(Icons.access_time,
+                                  size: 14,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,),
                               const SizedBox(width: 4),
                               Text(
                                 nav.estimatedTime != null
@@ -761,9 +775,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -771,17 +785,19 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: Icon(step.icon, color: Colors.white, size: 24),
+            // Icon sits over a primary-filled circle. Foreground uses
+            // the matching onPrimary for contrast.
+            child: Icon(step.icon, color: Theme.of(context).colorScheme.onPrimary, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -860,12 +876,29 @@ class _DestinationMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _PinPainter(),
+      // Paints are constructed here so the painter can stay BuildContext-
+      // free; the foreground / scrim / shadow colours are read from the
+      // semantic role and forwarded as parameters.
+      painter: _PinPainter(
+        fillColor: context.semanticColors.mapMarker,
+        strokeColor: context.semanticColors.onImage,
+        shadowColor: context.semanticColors.imageScrim,
+      ),
     );
   }
 }
 
 class _PinPainter extends CustomPainter {
+  const _PinPainter({
+    required this.fillColor,
+    required this.strokeColor,
+    required this.shadowColor,
+  });
+
+  final Color fillColor;
+  final Color strokeColor;
+  final Color shadowColor;
+
   @override
   void paint(Canvas canvas, Size size) {
     // Drop-pin shape: filled circle on top, tapered tail to a point.
@@ -874,13 +907,13 @@ class _PinPainter extends CustomPainter {
     final tailBottom = Offset(size.width / 2, size.height - 2);
 
     final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.25)
+      ..color = shadowColor
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     canvas.drawCircle(center + const Offset(0, 1), radius, shadowPaint);
 
-    final fill = Paint()..color = AppColors.mapMarker;
+    final fill = Paint()..color = fillColor;
     final stroke = Paint()
-      ..color = Colors.white
+      ..color = strokeColor
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
@@ -896,12 +929,15 @@ class _PinPainter extends CustomPainter {
     canvas.drawPath(tail, stroke);
 
     // Inner dot
-    final inner = Paint()..color = Colors.white;
+    final inner = Paint()..color = strokeColor;
     canvas.drawCircle(center, radius * 0.35, inner);
   }
 
   @override
-  bool shouldRepaint(_PinPainter oldDelegate) => false;
+  bool shouldRepaint(_PinPainter oldDelegate) =>
+      oldDelegate.fillColor != fillColor ||
+      oldDelegate.strokeColor != strokeColor ||
+      oldDelegate.shadowColor != shadowColor;
 }
 
 class _UserMarker extends StatefulWidget {
@@ -938,7 +974,7 @@ class _UserMarkerState extends State<_UserMarker>
               height: 28 + pulse * 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.mapUser.withValues(alpha: 0.18 * (1 - pulse)),
+                color: context.semanticColors.mapUser.withValues(alpha: 0.18 * (1 - pulse)),
               ),
             ),
             // Solid dot.
@@ -946,12 +982,16 @@ class _UserMarkerState extends State<_UserMarker>
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: AppColors.mapUser,
+                color: context.semanticColors.mapUser,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
+                // Border over the user marker uses fixed white so it
+                // stays legible against any map tile hue.
+                border: Border.all(color: context.semanticColors.onImage, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    // Marker shadow uses the theme-aware semantic shadow
+                    // colour.
+                    color: context.semanticColors.shadow,
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   ),

@@ -1,6 +1,7 @@
 import '../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class RatingStars extends StatelessWidget {
@@ -35,7 +36,7 @@ class RatingStars extends StatelessWidget {
           return Icon(
             icon,
             size: size,
-            color: AppColors.rating,
+            color: context.semanticColors.rating,
           );
         }),
         if (showValue) ...[
@@ -69,16 +70,18 @@ class RatingBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
+        // RatingBadge sits over a hero image — fixed-content scrim so
+        // the star + number stay legible on any photograph.
+        color: context.semanticColors.imageScrim,
         borderRadius: BorderRadius.circular(AppRadius.button),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.star,
             size: 14,
-            color: AppColors.rating,
+            color: context.semanticColors.rating,
           ),
           const SizedBox(width: 4),
           Text(
@@ -86,7 +89,7 @@ class RatingBadge extends StatelessWidget {
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: context.semanticColors.onImage,
                 ),
           ),
           if (label != null) ...[
@@ -94,7 +97,7 @@ class RatingBadge extends StatelessWidget {
             Text(
               label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: context.semanticColors.onImageMuted,
                   ),
             ),
           ],

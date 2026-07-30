@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import 'login_screen.dart';
@@ -72,7 +73,7 @@ class UserProfileScreen extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.1),
+                              color: context.semanticColors.success.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -100,14 +101,15 @@ class UserProfileScreen extends StatelessWidget {
                   _ProfileMenuItem(
                     icon: Icons.logout,
                     title: 'Logout',
-                    iconColor: AppColors.error,
+                    iconColor: Theme.of(context).colorScheme.error,
                     onTap: () => _showLogoutDialog(context),
                   ),
                   const Divider(height: 1),
                   _ProfileMenuItem(
                     icon: Icons.delete_forever,
                     title: 'Delete Account',
-                    iconColor: Colors.red,
+                    // Destructive action — same semantic role as Logout.
+                    iconColor: Theme.of(context).colorScheme.error,
                     onTap: () => _showDeleteAccountDialog(context),
                   ),
                 ],
@@ -146,8 +148,13 @@ class UserProfileScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
+        // Profile banner uses a primary-tone gradient (primaryContainer
+        // → primary) so the onPrimary foreground stays legible.
         gradient: LinearGradient(
-          colors: [AppColors.primaryDark, AppColors.primary],
+          colors: [
+            Theme.of(context).colorScheme.primaryContainer,
+            Theme.of(context).colorScheme.primary,
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -155,7 +162,12 @@ class UserProfileScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 36,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            // Avatar sits over the primary-tinted gradient; use a
+            // translucent onPrimary fill so it reads as a glassy chip.
+            backgroundColor: Theme.of(context)
+                .colorScheme
+                .onPrimary
+                .withValues(alpha: 0.2),
             backgroundImage:
                 user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
             child: user?.photoUrl == null
@@ -164,7 +176,7 @@ class UserProfileScreen extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .displayMedium
-                        ?.copyWith(color: Colors.white),
+                        ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
                   )
                 : null,
           ),
@@ -176,14 +188,17 @@ class UserProfileScreen extends StatelessWidget {
                 Text(
                   user?.displayName ?? user?.email ?? 'User',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   user?.email ?? '',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onPrimary
+                        .withValues(alpha: 0.8),
                     fontSize: 13,
                   ),
                 ),
@@ -194,13 +209,16 @@ class UserProfileScreen extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onPrimary
+                        .withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     user?.role.name.toUpperCase() ?? 'FREE',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -410,7 +428,7 @@ class UserProfileScreen extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () {
               Navigator.pop(ctx);
@@ -443,7 +461,7 @@ class UserProfileScreen extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () {
               Navigator.pop(ctx);
@@ -491,7 +509,7 @@ class _SettingsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(children: children),
     );
@@ -520,7 +538,7 @@ class _ProfileMenuItem extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: iconColor ?? AppColors.primary,
+        color: iconColor ?? Theme.of(context).colorScheme.primary,
       ),
       title: Text(
         title,

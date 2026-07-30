@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
@@ -82,8 +83,8 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
                 child: BlocBuilder<SiteListCubit, SiteListState>(
                   builder: (context, state) {
                     if (state.status == SiteListStatus.loading) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: AppColors.accent),
+                      return Center(
+                        child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
                       );
                     }
 
@@ -104,7 +105,7 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
                     return RefreshIndicator(
                       onRefresh: () =>
                           context.read<SiteListCubit>().loadSites(),
-                      color: AppColors.accent,
+                      color: Theme.of(context).colorScheme.secondary,
                       child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
                         itemCount: sites.length,
@@ -140,8 +141,8 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
         onPressed: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const AdminAddSiteScreen()),
         ),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
       ),
     );
   }
@@ -167,7 +168,7 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             child: Text(loc.translations['delete'] ?? 'Delete'),
           ),
         ],
@@ -186,7 +187,7 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
         messenger?.showSnackBar(
           SnackBar(
             content: Text(template.replaceAll('%s', site.nameEn)),
-            backgroundColor: AppColors.success,
+            backgroundColor: context.semanticColors.success,
           ),
         );
       }
@@ -196,7 +197,7 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
         messenger?.showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -225,7 +226,7 @@ class _EmptyState extends StatelessWidget {
           Icon(
             searching ? Icons.search_off : Icons.location_city,
             size: 64,
-            color: AppColors.textHint,
+            color: Theme.of(context).colorScheme.outline,
           ),
           const SizedBox(height: 16),
           Text(
@@ -292,13 +293,13 @@ class _SiteCard extends StatelessWidget {
                   placeholder: (context, url) => Container(
                     width: 64,
                     height: 64,
-                    color: AppColors.surfaceDark,
-                    child: const Center(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    child: Center(
                       child: SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                          color: AppColors.accent,
+                          color: Theme.of(context).colorScheme.secondary,
                           strokeWidth: 2,
                         ),
                       ),
@@ -307,8 +308,8 @@ class _SiteCard extends StatelessWidget {
                   errorWidget: (context, url, error) => Container(
                     width: 64,
                     height: 64,
-                    color: AppColors.surfaceDark,
-                    child: const Icon(Icons.image_not_supported, color: AppColors.textHint),
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    child: Icon(Icons.image_not_supported, color: Theme.of(context).colorScheme.outline),
                   ),
                 ),
               ),
@@ -331,7 +332,7 @@ class _SiteCard extends StatelessWidget {
                         ),
                         if (site.featured) ...[
                           const SizedBox(width: 6),
-                          const Icon(Icons.star, size: 16, color: AppColors.accent),
+                          Icon(Icons.star, size: 16, color: Theme.of(context).colorScheme.secondary),
                         ],
                       ],
                     ),
@@ -342,7 +343,7 @@ class _SiteCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.1),
+                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -353,10 +354,10 @@ class _SiteCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.location_on,
                           size: 14,
-                          color: AppColors.textHint,
+                          color: Theme.of(context).colorScheme.outline,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -379,8 +380,8 @@ class _SiteCard extends StatelessWidget {
                     icon: Icon(
                       site.featured ? Icons.star : Icons.star_border,
                       color: site.featured
-                          ? AppColors.accent
-                          : AppColors.textHint,
+                          ? Theme.of(context).colorScheme.secondary
+                          : Theme.of(context).colorScheme.outline,
                     ),
                     tooltip: featuredLabel,
                     onPressed: () =>
@@ -391,13 +392,13 @@ class _SiteCard extends StatelessWidget {
                   ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.edit, color: AppColors.primary),
+                    icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
                     tooltip: editLabel,
                     onPressed: onEdit,
                   ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.delete, color: AppColors.error),
+                    icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                     tooltip: deleteLabel,
                     onPressed: onDelete,
                   ),

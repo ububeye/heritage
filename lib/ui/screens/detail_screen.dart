@@ -82,7 +82,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: Theme.of(sheetContext).colorScheme.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -113,7 +113,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       title: Text(
                         _audioLanguageName(code),
                         style: Theme.of(sheetContext).textTheme.bodyLarge?.copyWith(
-                              color: locked ? AppColors.textHint : AppColors.textPrimary,
+                              color: locked ? Theme.of(sheetContext).colorScheme.outline : Theme.of(sheetContext).colorScheme.onSurface,
                               fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                             ),
                       ),
@@ -121,18 +121,18 @@ class _DetailScreenState extends State<DetailScreen> {
                           ? Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.accent,
+                                color: Theme.of(sheetContext).colorScheme.secondary,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 'PREMIUM',
                                 style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
-                                      color: AppColors.textOnAccent,
+                                      color: Theme.of(sheetContext).colorScheme.onSecondary,
                                     ),
                               ),
                             )
                           : (selected
-                              ? const Icon(Icons.check_circle, color: AppColors.success)
+                              ? Icon(Icons.check_circle, color: sheetContext.semanticColors.success)
                               : null),
                       onTap: locked
                           ? () {
@@ -185,9 +185,9 @@ class _DetailScreenState extends State<DetailScreen> {
     return BlocBuilder<SiteDetailCubit, SiteDetailState>(
       builder: (context, state) {
         if (state.status == SiteDetailStatus.loading) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(color: AppColors.accent),
+              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
             ),
           );
         }
@@ -201,7 +201,7 @@ class _DetailScreenState extends State<DetailScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: AppColors.textHint),
+                  Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.outline),
                   const SizedBox(height: 16),
                   Text(state.errorMessage ?? 'Site not found'),
                   const SizedBox(height: 16),
@@ -247,7 +247,13 @@ class _DetailScreenState extends State<DetailScreen> {
                       return IconButton(
                         icon: Icon(
                           isFav ? Icons.favorite : Icons.favorite_border,
-                          color: isFav ? Colors.red : Colors.white,
+                          // Favorite state uses the success semantic colour
+                          // (love/like intent). The fallback (not favourite)
+                          // renders over the SliverAppBar's hero image, so
+                          // it uses onImage for foreground contrast.
+                          color: isFav
+                              ? context.semanticColors.success
+                              : context.semanticColors.onImage,
                         ),
                         tooltip: loc.translations[tooltipKey] ??
                             (isFav ? 'Remove from favorites' : 'Add to favorites'),
@@ -276,28 +282,30 @@ class _DetailScreenState extends State<DetailScreen> {
                             ),
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
-                              color: AppColors.surfaceDark,
-                              child: const Center(
-                                child: CircularProgressIndicator(color: AppColors.accent),
+                              color: Theme.of(context).colorScheme.surfaceContainer,
+                              child: Center(
+                                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
                               ),
                             ),
                             errorWidget: (context, url, error) => Container(
-                              color: AppColors.surfaceDark,
+                              color: Theme.of(context).colorScheme.surfaceContainer,
                               child: const Icon(Icons.image_not_supported, size: 48),
                             ),
                           );
                         },
                       ),
-                      // Gradient overlay
+                      // Gradient overlay — top and bottom scrims over the
+                      // gallery photograph. Fixed-content colours; mapped
+                      // to imageScrim via the semantic role.
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.black.withValues(alpha: 0.3),
+                              context.semanticColors.imageScrim.withValues(alpha: 0.3),
                               Colors.transparent,
-                              Colors.black.withValues(alpha: 0.5),
+                              context.semanticColors.imageScrim.withValues(alpha: 0.5),
                             ],
                             stops: const [0.0, 0.5, 1.0],
                           ),
@@ -330,9 +338,12 @@ class _DetailScreenState extends State<DetailScreen> {
                                   width: _currentImageIndex == index ? 24 : 8,
                                   height: 8,
                                   decoration: BoxDecoration(
+                                    // Page-indicator dots render over the
+                                    // hero gallery image, so use the
+                                    // onImage semantic foreground.
                                     color: _currentImageIndex == index
-                                        ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.5),
+                                        ? context.semanticColors.onImage
+                                        : context.semanticColors.onImageMuted,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
@@ -348,13 +359,16 @@ class _DetailScreenState extends State<DetailScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.black54,
+                              // Image-counter pill sits on top of the
+                              // hero gallery photo. Scrim + onImage for
+                              // legibility against any photograph.
+                              color: context.semanticColors.imageScrim,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.photo_library, color: Colors.white, size: 14),
+                                Icon(Icons.photo_library, color: context.semanticColors.onImage, size: 14),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${_currentImageIndex + 1}/${allImages.length}',
@@ -544,8 +558,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               icon: const Icon(Icons.map_outlined, size: 18),
                               label: const Text('View on Map'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                                foregroundColor: Theme.of(context).colorScheme.primary,
+                                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                             ),
@@ -557,8 +571,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               icon: const Icon(Icons.navigation_outlined, size: 18),
                               label: const Text('Navigate'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                side: const BorderSide(color: AppColors.primary, width: 1.5),
+                                foregroundColor: Theme.of(context).colorScheme.primary,
+                                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                             ),
@@ -660,7 +674,9 @@ class _GalleryArrow extends StatelessWidget {
       button: true,
       enabled: enabled,
       child: Material(
-        color: Colors.black.withValues(alpha: 0.4),
+        // Scrim background so the arrow stays legible over any photograph
+        // in the gallery. imageScrim is the role for image overlays.
+        color: context.semanticColors.imageScrim,
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -669,7 +685,11 @@ class _GalleryArrow extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             child: Icon(
               icon,
-              color: enabled ? Colors.white : Colors.white54,
+              // Icon is rendered over the scrim/photograph; use the
+              // fixed-content onImage foreground.
+              color: enabled
+                  ? context.semanticColors.onImage
+                  : context.semanticColors.onImageMuted,
               size: 28,
             ),
           ),

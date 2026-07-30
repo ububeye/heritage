@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
@@ -122,9 +123,9 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_existingImages.isEmpty && _selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please keep at least one image'),
-          backgroundColor: AppColors.error,
+        SnackBar(
+          content: const Text('Please keep at least one image'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -170,9 +171,9 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Site updated successfully'),
-            backgroundColor: AppColors.success,
+          SnackBar(
+            content: const Text('Site updated successfully'),
+            backgroundColor: context.semanticColors.success,
           ),
         );
         Navigator.of(context).pop();
@@ -182,7 +183,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -217,13 +218,13 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                           placeholder: (_, __) => Container(
                             width: 110,
                             height: 110,
-                            color: AppColors.surfaceDark,
+                            color: Theme.of(context).colorScheme.surfaceContainer,
                           ),
                           errorWidget: (_, __, ___) => Container(
                             width: 110,
                             height: 110,
-                            color: AppColors.surfaceDark,
-                            child: const Icon(Icons.broken_image, color: AppColors.textHint),
+                            color: Theme.of(context).colorScheme.surfaceContainer,
+                            child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.outline),
                           ),
                         ),
                       ),
@@ -234,11 +235,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                           onTap: () => _removeExisting(index),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.error,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.close, color: Colors.white, size: 16),
+                            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onError, size: 16),
                           ),
                         ),
                       ),
@@ -249,7 +250,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -257,7 +258,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
-                                  ?.copyWith(color: Colors.white),
+                                  ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
                             ),
                           ),
                         ),
@@ -297,11 +298,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                           onTap: () => _removeSelected(index),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.error,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.close, color: Colors.white, size: 16),
+                            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onError, size: 16),
                           ),
                         ),
                       ),
@@ -311,7 +312,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.accent,
+                            color: Theme.of(context).colorScheme.secondary,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -319,7 +320,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                             style: Theme.of(context)
                                 .textTheme
                                 .labelSmall
-                                ?.copyWith(color: Colors.white),
+                                ?.copyWith(color: Theme.of(context).colorScheme.onSecondary),
                           ),
                         ),
                       ),
@@ -339,12 +340,12 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary),
+              border: Border.all(color: Theme.of(context).colorScheme.primary),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.add_photo_alternate, color: AppColors.primary),
+                Icon(Icons.add_photo_alternate, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Add More Photos',
@@ -416,7 +417,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               height: 400,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: Theme.of(context).colorScheme.outline),
               ),
               clipBehavior: Clip.antiAlias,
               child: HeritageMap.picker(
@@ -467,10 +468,13 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _updateSite,
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Text('Update Site'),
               ),

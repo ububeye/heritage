@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
@@ -28,7 +29,7 @@ class AdminAnalyticsScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: RefreshIndicator(
-        color: AppColors.accent,
+        color: Theme.of(context).colorScheme.secondary,
         onRefresh: () async {
           // Capture cubits before awaits so we don't hold a BuildContext
           // across the async gap (and so we don't re-read it on every
@@ -89,7 +90,7 @@ class _StatsRow extends StatelessWidget {
               icon: Icons.location_city,
               value: state.sites.length.toString(),
               label: tr('analytics_total_sites', 'Total Sites'),
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ),
@@ -100,7 +101,7 @@ class _StatsRow extends StatelessWidget {
               icon: Icons.people,
               value: state.totalUsers.toString(),
               label: tr('analytics_total_users', 'Total Users'),
-              color: AppColors.accent,
+              color: Theme.of(context).colorScheme.secondary,
             ),
           ),
         ),
@@ -111,7 +112,7 @@ class _StatsRow extends StatelessWidget {
               icon: Icons.workspace_premium,
               value: state.premiumUsers.toString(),
               label: tr('analytics_premium_users', 'Premium Users'),
-              color: AppColors.success,
+              color: context.semanticColors.success,
             ),
           ),
         ),
@@ -140,10 +141,10 @@ class _StatTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.semanticColors.shadow,
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -226,7 +227,7 @@ class _CategoryBreakdown extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -281,8 +282,8 @@ class _CategoryBar extends StatelessWidget {
             child: LinearProgressIndicator(
               value: fraction,
               minHeight: 10,
-              backgroundColor: AppColors.surfaceDark,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
             ),
           ),
         ),
@@ -327,7 +328,7 @@ class _TopRatedList extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         children: [
@@ -335,7 +336,7 @@ class _TopRatedList extends StatelessWidget {
             if (i > 0) const Divider(height: 1),
             ListTile(
               leading: CircleAvatar(
-                backgroundColor: AppColors.accent.withValues(alpha: 0.1),
+                backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                 child: Text(
                   '${i + 1}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.accent),
@@ -351,7 +352,7 @@ class _TopRatedList extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.star, size: 16, color: AppColors.rating),
+                  Icon(Icons.star, size: 16, color: context.semanticColors.rating),
                   const SizedBox(width: 4),
                   Text(
                     top[i].rating!.toStringAsFixed(1),
@@ -379,11 +380,11 @@ class _EmptyBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         children: [
-          const Icon(Icons.bar_chart, size: 36, color: AppColors.textHint),
+          Icon(Icons.bar_chart, size: 36, color: Theme.of(context).colorScheme.outline),
           const SizedBox(height: 8),
           Text(
             text,

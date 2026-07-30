@@ -23,7 +23,7 @@ class SiteMapScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(site.getName(uiLanguage)),
         backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: AppColors.textPrimary,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 1,
       ),
       body: Stack(
@@ -45,7 +45,7 @@ class SiteMapScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on, color: AppColors.primary, size: 20),
+                    Icon(Icons.location_on, color: Theme.of(context).colorScheme.primary, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -73,8 +73,8 @@ class SiteMapScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => safePushNavigation(context, site),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.navigation),
         label: const Text('Navigate'),
       ),

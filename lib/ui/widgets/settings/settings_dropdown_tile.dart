@@ -45,7 +45,7 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
       ),
       leading: SettingsTileIcon(
         icon: icon,
-        color: enabled ? iconColor : AppColors.textHint,
+        color: enabled ? iconColor : Theme.of(context).colorScheme.outline,
       ),
       title: Text(
         title,
@@ -70,9 +70,9 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!enabled)
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.lock, size: 16, color: AppColors.textHint),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Icon(Icons.lock, size: 16, color: Theme.of(context).colorScheme.outline),
             ),
           DropdownButton<T>(
             value: effectiveValue,

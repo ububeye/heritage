@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/constants/app_constants.dart';
@@ -122,7 +123,7 @@ class _SettingsBody extends StatelessWidget {
               SettingsCard(children: [
                 _LanguageDropdownTile(
                   icon: Icons.language,
-                  iconColor: AppColors.info,
+                  iconColor: context.semanticColors.info,
                   code: locState.currentLanguage,
                   items: AppConstants.uiLanguages,
                   onChanged: (value) {
@@ -134,7 +135,7 @@ class _SettingsBody extends StatelessWidget {
                 const SettingsDivider(),
                 _LanguageDropdownTile(
                   icon: Icons.record_voice_over,
-                  iconColor: AppColors.warning,
+                  iconColor: context.semanticColors.warning,
                   code: context.watch<LanguageCubit>().state.audioLanguage,
                   items: authState.isPremium
                       ? AppConstants.ttsLanguages
@@ -195,7 +196,7 @@ class _SettingsBody extends StatelessWidget {
                 SettingsCard(children: [
                   SettingsTile(
                     icon: Icons.workspace_premium,
-                    iconColor: AppColors.accent,
+                    iconColor: Theme.of(context).colorScheme.secondary,
                     title: tr(locState, 'upgrade_to_premium'),
                     subtitle: tr(locState, 'unlock_premium'),
                     onTap: () => Navigator.of(context).push(
@@ -377,7 +378,9 @@ class _PlanBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final key = isPremium ? 'premium_badge' : 'free_badge';
-    final color = isPremium ? AppColors.accent : AppColors.textSecondary;
+    final color = isPremium
+        ? Theme.of(context).colorScheme.secondary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -408,7 +411,7 @@ class _AccountRow extends StatelessWidget {
     final email = authState.user?.email;
     return SettingsTile(
       icon: isAuthed ? Icons.person : Icons.person_outline,
-      iconColor: AppColors.primary,
+      iconColor: Theme.of(context).colorScheme.primary,
       title: email ?? '',
       subtitle: authState.isPremium
           ? (context
@@ -421,10 +424,10 @@ class _AccountRow extends StatelessWidget {
                   .state
                   .translations['free_badge'] ??
               'Free'),
-      trailing: const Icon(
+      trailing: Icon(
         CupertinoIcons.chevron_right,
         size: 16,
-        color: AppColors.textHint,
+        color: Theme.of(context).colorScheme.outline,
       ),
       onTap: () {
         if (!isAuthed) {
@@ -468,7 +471,7 @@ class _AutoPlayTileState extends State<_AutoPlayTile> {
     final loc = context.watch<LocalizationCubit>().state;
     return SettingsSwitchTile(
       icon: Icons.play_circle_outline,
-      iconColor: AppColors.primary,
+      iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['auto_play_on_arrival'] ?? 'Auto-play on arrival',
       subtitle: loc.translations['auto_play_on_arrival_subtitle'] ??
           'Start narration as soon as you enter a site',
@@ -503,7 +506,7 @@ class _DistanceUnitsTileState extends State<_DistanceUnitsTile> {
     final loc = context.watch<LocalizationCubit>().state;
     return SettingsSegmentedTile<String>(
       icon: Icons.straighten,
-      iconColor: AppColors.info,
+      iconColor: context.semanticColors.info,
       options: [
         loc.translations['units_metric'] ?? 'Metric',
         loc.translations['units_imperial'] ?? 'Imperial',
@@ -594,7 +597,7 @@ class _PlaybackSpeedTileState extends State<_PlaybackSpeedTile> {
     final safeValue = _options.contains(_speed) ? _speed : 1.0;
     return SettingsDropdownTile<double>(
       icon: Icons.speed,
-      iconColor: AppColors.warning,
+      iconColor: context.semanticColors.warning,
       title: loc.translations['playback_speed'] ?? 'Playback speed',
       subtitle:
           loc.translations['playback_speed_subtitle'] ?? 'Narration pace',
@@ -691,7 +694,7 @@ class _MapProviderTileState extends State<_MapProviderTile> {
         : const <String>[AppConstants.mapProviderOpen];
     return SettingsSegmentedTile<String>(
       icon: Icons.public,
-      iconColor: AppColors.primary,
+      iconColor: Theme.of(context).colorScheme.primary,
       options: options,
       values: values,
       value: _active,
@@ -866,7 +869,7 @@ class _ArrivalRadiusSubTileState extends State<_ArrivalRadiusSubTile> {
     final safeValue = _options.contains(_radiusMeters) ? _radiusMeters : 30;
     return SettingsDropdownTile<int>(
       icon: Icons.adjust,
-      iconColor: AppColors.accent,
+      iconColor: Theme.of(context).colorScheme.secondary,
       title: loc.translations['arrival_radius'] ?? 'Arrival radius',
       subtitle: loc.translations['arrival_radius_subtitle'] ?? '',
       value: safeValue,
@@ -992,7 +995,7 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
           ),
           leading: SettingsTileIcon(
             icon: Icons.bedtime_outlined,
-            color: AppColors.accent,
+            color: Theme.of(context).colorScheme.secondary,
           ),
           title: Text(
             loc.translations['quiet_hours'] ?? 'Quiet hours',
@@ -1149,9 +1152,9 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
           const SizedBox(width: 8),
           if (_bytes > 0)
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 CupertinoIcons.clear_circled_solid,
-                color: AppColors.error,
+                color: Theme.of(context).colorScheme.error,
                 size: 20,
               ),
               onPressed: _onClear,
@@ -1173,7 +1176,7 @@ class _OfflineDataTile extends StatelessWidget {
     final loc = context.watch<LocalizationCubit>().state;
     return SettingsTile(
       icon: Icons.cloud_off_outlined,
-      iconColor: AppColors.primary,
+      iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['offline_data'] ?? 'Offline data',
       subtitle: loc.translations['offline_data_subtitle'] ?? '',
       onTap: () {
@@ -1239,7 +1242,7 @@ class _OpenSourceLicensesTile extends StatelessWidget {
     final loc = context.watch<LocalizationCubit>().state;
     return SettingsTile(
       icon: Icons.balance_outlined,
-      iconColor: AppColors.primary,
+      iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['open_source_licenses'] ?? 'Open-source licenses',
       onTap: () => showLicensePage(
         context: context,
@@ -1258,7 +1261,7 @@ class _PrivacyAndDataTile extends StatelessWidget {
     final loc = context.watch<LocalizationCubit>().state;
     return SettingsTile(
       icon: Icons.privacy_tip_outlined,
-      iconColor: AppColors.primary,
+      iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['privacy_and_data'] ?? 'Privacy & data',
       onTap: () {
         // Stub — no privacy policy in this build. Surface a "coming
@@ -1322,7 +1325,7 @@ class _ReportAProblemTile extends StatelessWidget {
     final loc = context.watch<LocalizationCubit>().state;
     return SettingsTile(
       icon: Icons.bug_report_outlined,
-      iconColor: AppColors.warning,
+      iconColor: context.semanticColors.warning,
       title: loc.translations['report_a_problem'] ?? 'Report a problem',
       onTap: () => _launch(context),
     );
@@ -1356,8 +1359,8 @@ class _SignOutFooter extends StatelessWidget {
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.textOnPrimary,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.button),
               ),
@@ -1388,8 +1391,11 @@ class _SignOutFooter extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: () => _confirmAndSignOut(context),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.error,
-          side: const BorderSide(color: AppColors.error, width: 1.5),
+          foregroundColor: Theme.of(context).colorScheme.error,
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.error,
+            width: 1.5,
+          ),
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.button),

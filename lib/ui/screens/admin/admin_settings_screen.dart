@@ -2,6 +2,7 @@ import '../../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/language_meta.dart';
 import '../../../blocs/auth/auth_cubit.dart';
@@ -62,7 +63,7 @@ class AdminSettingsScreen extends StatelessWidget {
                   SettingsCard(children: [
                     SettingsDropdownTile<String>(
                       icon: Icons.language,
-                      iconColor: AppColors.primary,
+                      iconColor: Theme.of(context).colorScheme.primary,
                       title: _tr(locState, 'app_language'),
                       value: context.watch<LanguageCubit>().state.uiLanguage,
                       items: AppConstants.uiLanguages,
@@ -79,7 +80,7 @@ class AdminSettingsScreen extends StatelessWidget {
                     const SettingsDivider(),
                     SettingsDropdownTile<String>(
                       icon: Icons.record_voice_over,
-                      iconColor: AppColors.warning,
+                      iconColor: context.semanticColors.warning,
                       title: _tr(locState, 'audio_language'),
                       value: context.watch<LanguageCubit>().state.audioLanguage,
                       items: AppConstants.ttsLanguages,
@@ -118,7 +119,7 @@ class AdminSettingsScreen extends StatelessWidget {
                           children: [
                             SettingsSwitchTile(
                               icon: Icons.build_circle_outlined,
-                              iconColor: AppColors.warning,
+                              iconColor: context.semanticColors.warning,
                               title: _tr(
                                 locState,
                                 'admin_maintenance_mode',
@@ -148,7 +149,7 @@ class AdminSettingsScreen extends StatelessWidget {
                     const SettingsDivider(),
                     SettingsTile(
                       icon: Icons.bar_chart,
-                      iconColor: AppColors.accent,
+                      iconColor: Theme.of(context).colorScheme.secondary,
                       title: _tr(locState, 'admin_view_analytics'),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
@@ -208,7 +209,7 @@ class AdminSettingsScreen extends StatelessWidget {
                   SettingsCard(children: [
                     SettingsTile(
                       icon: Icons.logout,
-                      iconColor: AppColors.error,
+                      iconColor: Theme.of(context).colorScheme.error,
                       title: _tr(locState, 'logout'),
                       subtitle: authState.user?.email ?? '',
                       // Suppress the default chevron — this is an action
@@ -254,7 +255,7 @@ class AdminSettingsScreen extends StatelessWidget {
                 (route) => false,
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             child: Text(_tr(locState, 'logout')),
           ),
         ],
@@ -277,7 +278,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: SettingsTileIcon(icon: icon, color: AppColors.primary),
+      leading: SettingsTileIcon(icon: icon, color: Theme.of(context).colorScheme.primary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: Text(
         value,
@@ -301,17 +302,17 @@ class _MaintenanceBanner extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.12),
+        color: context.semanticColors.warning.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.warning.withValues(alpha: 0.4),
+          color: context.semanticColors.warning.withValues(alpha: 0.4),
         ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.warning_amber_rounded,
-            color: AppColors.warning,
+            color: context.semanticColors.warning,
             size: 20,
           ),
           const SizedBox(width: 10),
@@ -355,7 +356,7 @@ class _FreeAudioSecondsTile extends StatelessWidget {
             : 30;
         return SettingsDropdownTile<int>(
           icon: Icons.timer_outlined,
-          iconColor: AppColors.warning,
+          iconColor: context.semanticColors.warning,
           title: locState.translations['admin_free_audio_seconds'] ??
               'Free audio preview length',
           subtitle:
@@ -397,7 +398,7 @@ class _OrsApiKeyTile extends StatelessWidget {
           ),
           leading: SettingsTileIcon(
             icon: Icons.vpn_key_outlined,
-            color: AppColors.accent,
+            color: Theme.of(context).colorScheme.secondary,
           ),
           title: Text(
             locState.translations['admin_ors_api_key'] ??

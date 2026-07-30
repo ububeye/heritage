@@ -48,7 +48,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: widget.controller,
@@ -62,18 +62,18 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
               hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textHint,
                   ),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               suffixIcon: hasText
                   ? Semantics(
                       label: 'Clear search',
                       button: true,
                       child: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.clear,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         onPressed: _clear,
                       ),
