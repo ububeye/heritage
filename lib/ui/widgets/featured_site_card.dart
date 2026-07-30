@@ -91,7 +91,7 @@ class FeaturedSiteCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.secondary,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.sheetBorderSmBorder,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -122,7 +122,7 @@ class FeaturedSiteCard extends StatelessWidget {
                   // Rating pill sits over the hero image — scrim
                   // background and fixed-content foreground.
                   color: context.semanticColors.imageScrim,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppRadius.mdBorder,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../core/theme/app_radius.dart';
 
 class CategoryChips extends StatelessWidget {
 
@@ -47,7 +48,7 @@ class CategoryChips extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: AppRadius.sheetBorderSmBorder,
                     border: Border.all(
                       color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
                     ),

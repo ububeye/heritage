@@ -10,6 +10,7 @@ import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../widgets/heritage_map.dart';
+import '../../../core/theme/app_radius.dart';
 
 class AdminAddSiteScreen extends StatefulWidget {
   const AdminAddSiteScreen({super.key});
@@ -267,7 +268,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: AppRadius.mdBorder,
                         ),
                       ),
                       child: Text(
@@ -306,7 +307,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
         ),
         filled: true,
         fillColor: Theme.of(context).colorScheme.surface,
@@ -319,7 +320,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: DropdownButtonHideUnderline(
@@ -358,7 +359,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                   child: Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.mdBorder,
                         child: Image.file(
                           File(_selectedImages[index].path),
                           width: 120,
@@ -389,7 +390,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: AppRadius.xsBorder,
                             ),
                             child: Text(
                               'Cover',
@@ -410,12 +411,12 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         ],
         InkWell(
           onTap: _pickImages,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdBorder,
               border: Border.all(color: Theme.of(context).colorScheme.primary, style: BorderStyle.solid),
             ),
             child: Column(
@@ -443,7 +444,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
@@ -486,7 +487,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.smBorder,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -515,7 +516,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
         Container(
           height: 400,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           clipBehavior: Clip.antiAlias,
@@ -582,7 +583,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
@@ -639,7 +640,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(

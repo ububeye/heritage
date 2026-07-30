@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_radius.dart';
 
 import '../../blocs/premium/premium_state.dart';
 
@@ -38,7 +39,7 @@ class TrialBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppRadius.badgeBorder,
         border: Border.all(color: accent.withValues(alpha: 0.35)),
       ),
       child: Row(
@@ -48,7 +49,7 @@ class TrialBadge extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.20),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: AppRadius.bannerBorder,
             ),
             child: Icon(Icons.card_giftcard, color: accentOn, size: 22),
           ),

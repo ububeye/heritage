@@ -5,6 +5,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import 'login_screen.dart';
+import '../../core/theme/app_radius.dart';
 
 import '../../data/models/user_model.dart';
 
@@ -74,7 +75,7 @@ class UserProfileScreen extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: context.semanticColors.success.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: AppRadius.smBorder,
                             ),
                             child: Text(
                               'Active',
@@ -156,7 +157,7 @@ class UserProfileScreen extends StatelessWidget {
             Theme.of(context).colorScheme.primary,
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.lgBorder,
       ),
       child: Row(
         children: [
@@ -213,7 +214,7 @@ class UserProfileScreen extends StatelessWidget {
                         .colorScheme
                         .onPrimary
                         .withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppRadius.mdBorder,
                   ),
                   child: Text(
                     user?.role.name.toUpperCase() ?? 'FREE',
@@ -508,7 +509,7 @@ class _SettingsCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(children: children),

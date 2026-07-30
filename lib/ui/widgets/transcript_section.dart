@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/language_meta.dart';
+import '../../core/theme/app_radius.dart';
 
 /// Collapsible "Show transcript" widget. Used on the site detail screen
 /// below the description so deaf / quiet-environment users can read
@@ -86,7 +87,7 @@ class _TranscriptSectionState extends State<TranscriptSection>
     return Container(
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: scheme.outline),
       ),
       child: Column(
@@ -95,7 +96,7 @@ class _TranscriptSectionState extends State<TranscriptSection>
           // Tappable header — title, language flag, and a rotating chevron.
           InkWell(
             onTap: _toggle,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Row(

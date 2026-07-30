@@ -1,5 +1,6 @@
 import '../../../core/theme/app_spacing.dart';
 import 'dart:io';
+import '../../../core/theme/app_radius.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -209,7 +210,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                   child: Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: AppRadius.bannerBorder,
                         child: CachedNetworkImage(
                           imageUrl: _existingImages[index],
                           width: 110,
@@ -251,7 +252,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: AppRadius.xsBorder,
                             ),
                             child: Text(
                               'Cover',
@@ -283,7 +284,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                   child: Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: AppRadius.bannerBorder,
                         child: Image.file(
                           File(_selectedImages[index].path),
                           width: 110,
@@ -313,7 +314,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: AppRadius.xsBorder,
                           ),
                           child: Text(
                             'New',
@@ -334,12 +335,12 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
         ],
         InkWell(
           onTap: _pickImages,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdBorder,
               border: Border.all(color: Theme.of(context).colorScheme.primary),
             ),
             child: Row(
@@ -416,7 +417,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
             Container(
               height: 400,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppRadius.mdBorder,
                 border: Border.all(color: Theme.of(context).colorScheme.outline),
               ),
               clipBehavior: Clip.antiAlias,

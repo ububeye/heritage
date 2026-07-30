@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/theme/app_radius.dart';
 
 import '../../blocs/premium/premium_cubit.dart';
 import '../../blocs/premium/premium_state.dart';
@@ -128,7 +129,7 @@ class UpgradeContent extends StatelessWidget {
                       : () => cubit.purchase(),
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: AppRadius.lgBorder,
                     ),
                   ),
                   child: state.isLoading
@@ -253,7 +254,7 @@ class UpgradeContent extends StatelessWidget {
         final scheme = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: AppRadius.sheetBorderSmBorder,
           ),
           backgroundColor: scheme.surface,
           contentPadding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
@@ -297,7 +298,7 @@ class UpgradeContent extends StatelessWidget {
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppRadius.mdBorder,
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -336,7 +337,7 @@ class _Hero extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [scheme.secondary, scheme.primary],
           ),
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: AppRadius.ctaButtonBorder,
           boxShadow: [
             BoxShadow(
               color: scheme.secondary.withValues(alpha: 0.45),
@@ -410,7 +411,7 @@ class _BenefitsList extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: AppRadius.badgeBorder,
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Column(
@@ -482,7 +483,7 @@ class _ErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.bannerBorder,
         border: Border.all(color: scheme.error.withValues(alpha: 0.6)),
       ),
       child: Row(

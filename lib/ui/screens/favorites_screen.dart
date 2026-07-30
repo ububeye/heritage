@@ -10,6 +10,7 @@ import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
+import '../../core/theme/app_radius.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -199,7 +200,7 @@ class _FavoriteSiteCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lgBorder,
           boxShadow: [
             BoxShadow(
               // Card shadow uses the theme-aware semantic shadow tone.
@@ -216,7 +217,7 @@ class _FavoriteSiteCard extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
                   child: CachedNetworkImage(
                     imageUrl: site.primaryImage,
                     height: 120,
@@ -283,7 +284,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                         // Badge sits over the photo — scrim background
                         // and fixed-content foreground for legibility.
                         color: context.semanticColors.imageScrim,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.smBorder,
                       ),
                       child: Text(
                         site.category!,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/theme/app_radius.dart';
 
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_colors.dart';
@@ -82,7 +83,7 @@ class MaintenanceScreen extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: context.semanticColors.warning.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: AppRadius.fullBorder,
                   ),
                   child: Text(
                     loc.translations['maintenance_back_shortly'] ??

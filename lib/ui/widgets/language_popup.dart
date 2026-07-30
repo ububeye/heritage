@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 
 class LanguagePopup extends StatelessWidget {
 
@@ -17,7 +18,7 @@ class LanguagePopup extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lgBorder,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -88,7 +89,7 @@ class _LanguageButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
         child: Column(

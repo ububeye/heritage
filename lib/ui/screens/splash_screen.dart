@@ -14,6 +14,7 @@ import 'home_screen.dart';
 import 'admin/admin_shell.dart';
 import 'maintenance_screen.dart';
 import 'onboarding_screen.dart';
+import '../../core/theme/app_radius.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -168,7 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
                             height: 140,
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(35),
+                              borderRadius: AppRadius.heroImageBorder,
                               boxShadow: [
                                 BoxShadow(
                                   // Logo shadow — theme-aware.
@@ -179,7 +180,7 @@ class _SplashScreenState extends State<SplashScreen>
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(35),
+                              borderRadius: AppRadius.heroImageBorder,
                               child: Image.asset(
                                 'assets/images/logo.jpeg',
                                 fit: BoxFit.cover,

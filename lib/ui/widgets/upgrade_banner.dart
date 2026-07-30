@@ -37,7 +37,7 @@ class UpgradeBanner extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.onError.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.smBorder,
               ),
               child: Icon(
                 Icons.lock,

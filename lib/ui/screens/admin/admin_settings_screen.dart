@@ -303,7 +303,7 @@ class _MaintenanceBanner extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.semanticColors.warning.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.smBorder,
         border: Border.all(
           color: context.semanticColors.warning.withValues(alpha: 0.4),
         ),

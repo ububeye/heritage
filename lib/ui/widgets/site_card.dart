@@ -150,7 +150,7 @@ class SiteCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.secondary,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: AppRadius.mdBorder,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -230,7 +230,7 @@ class SiteCard extends StatelessWidget {
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: Theme.of(context).colorScheme.secondary,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: AppRadius.smBorder,
                               ),
                               child: Icon(
                                 Icons.navigation,

@@ -8,6 +8,7 @@ import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/site_model.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/tile_cache_service.dart';
+import '../../core/theme/app_radius.dart';
 
 /// Wraps `flutter_map` (OpenStreetMap tiles) with the project's color theme.
 ///
@@ -239,17 +240,17 @@ class _HeritageMapState extends State<HeritageMap> {
               children: [
                 Material(
                   elevation: 4,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: AppRadius.smBorder,
                   child: InkWell(
                     onTap: widget.draggableMarker
                         ? _useCurrentLocation
                         : _resetToAllSites,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: AppRadius.smBorder,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.smBorder,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -285,11 +286,11 @@ class _HeritageMapState extends State<HeritageMap> {
             children: [
               Material(
                 elevation: 4,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.smBorder,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: AppRadius.smBorder,
                   ),
                   child: Column(
                     children: [
@@ -378,7 +379,7 @@ class _PinMarker extends StatelessWidget {
                 // Map-marker label sits over a map tile — fixed white
                 // background so the dark text is legible on any tile.
                 color: context.semanticColors.onImage,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: AppRadius.xsBorder,
                 boxShadow: [
                   BoxShadow(
                     // Marker shadow — theme-aware.

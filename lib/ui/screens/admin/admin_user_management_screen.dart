@@ -5,6 +5,7 @@ import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/user_model.dart';
+import '../../../core/theme/app_radius.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
   const AdminUserManagementScreen({super.key});
@@ -66,11 +67,11 @@ class _UserManagementContent extends StatelessWidget {
                           )
                         : null,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.mdBorder,
                       borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.mdBorder,
                       borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                     ),
                     filled: true,
@@ -98,7 +99,7 @@ class _UserManagementContent extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Row(
@@ -241,7 +242,7 @@ class _UserCard extends StatelessWidget {
     final deleteLabel = loc.translations['delete_user_a11y'] ?? 'Delete user';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -327,7 +328,7 @@ class _UserCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
       ),
       child: Text(
         label,
@@ -344,7 +345,7 @@ class _UserCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.smBorder,
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<UserRole>(

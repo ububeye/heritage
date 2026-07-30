@@ -103,7 +103,7 @@ class PricingCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: scheme.secondary,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: AppRadius.bannerBorder,
                     ),
                     child: Text(
                       badge!,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/debouncer.dart';
+import '../../core/theme/app_radius.dart';
 
 /// A debounced search input with a prefix search icon and a suffix clear
 /// button. The clear button is rendered conditionally based on the
@@ -47,7 +48,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: ValueListenableBuilder<TextEditingValue>(

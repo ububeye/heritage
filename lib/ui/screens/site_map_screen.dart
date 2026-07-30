@@ -5,6 +5,7 @@ import '../../blocs/language/language_cubit.dart';
 import '../../data/models/site_model.dart';
 import '../widgets/heritage_map.dart';
 import '../../core/utils/nav_guard.dart';
+import '../../core/theme/app_radius.dart';
 
 /// Full-screen map view for a single site. Shows the site as a labeled pin
 /// on an OpenStreetMap tile layer, with a Navigate FAB that pushes the
@@ -36,12 +37,12 @@ class SiteMapScreen extends StatelessWidget {
             right: 12,
             child: Material(
               elevation: 2,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdBorder,
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppRadius.mdBorder,
                 ),
                 child: Row(
                   children: [

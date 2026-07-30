@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_radius.dart';
 
 /// Square leading icon chip with a tinted background. Mirrors the
 /// `_ModernIcon` helper previously inlined in `settings_screen.dart`.
@@ -17,7 +18,7 @@ class SettingsTileIcon extends StatelessWidget {
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.smBorder,
       ),
       child: Icon(icon, color: color, size: 20),
     );

@@ -11,6 +11,7 @@ import 'register_screen.dart';
 import 'premium_offer_screen.dart';
 import 'home_screen.dart';
 import 'admin/admin_shell.dart';
+import '../../core/theme/app_radius.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -115,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen>
                         height: 150,
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(35),
+                          borderRadius: AppRadius.heroImageBorder,
                           boxShadow: [
                             BoxShadow(
                               // Card / logo shadow — theme-aware.
@@ -126,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(35),
+                          borderRadius: AppRadius.heroImageBorder,
                           child: Image.asset(
                             'assets/images/logo.jpeg',
                             fit: BoxFit.cover,
@@ -154,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen>
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: AppRadius.xlBorder,
                           boxShadow: [
                             BoxShadow(
                               // Form-card shadow — theme-aware.
@@ -347,22 +348,22 @@ class _LoginScreenState extends State<LoginScreen>
         prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           borderSide: BorderSide(color: Theme.of(context).dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           borderSide: BorderSide(
             color: Theme.of(context).colorScheme.primary,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         ),
         filled: true,
@@ -376,12 +377,12 @@ class _LoginScreenState extends State<LoginScreen>
       color: Colors.transparent,
       child: InkWell(
         onTap: _onGoogleSignIn,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.lgBorder,
         child: Container(
           height: 56,
           decoration: BoxDecoration(
             border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lgBorder,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

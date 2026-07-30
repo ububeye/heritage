@@ -4,6 +4,7 @@ import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import '../../core/theme/app_radius.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -126,7 +127,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                       context,
                                       locState,
                                     ),
-                                    borderRadius: BorderRadius.circular(30),
+                                    borderRadius: AppRadius.ctaButtonBorder,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 14,
@@ -136,7 +137,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                         color: Theme.of(context)
                                             .colorScheme
                                             .surface,
-                                        borderRadius: BorderRadius.circular(30),
+                                        borderRadius: AppRadius.ctaButtonBorder,
                                         border: Border.all(
                                           color: Theme.of(context).dividerColor,
                                         ),
@@ -184,7 +185,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 height: 160,
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(40),
+                                  borderRadius: AppRadius.heroGreetingBorder,
                                   boxShadow: [
                                     BoxShadow(
                                       // Logo shadow — theme-aware.
@@ -195,7 +196,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                   ],
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(40),
+                                  borderRadius: AppRadius.heroGreetingBorder,
                                   child: Image.asset(
                                     'assets/images/logo.jpeg',
                                     fit: BoxFit.cover,
@@ -252,7 +253,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                       style: ElevatedButton.styleFrom(
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(16),
+                                              AppRadius.lgBorder,
                                         ),
                                       ),
                                       child: Text(_tr(locState, 'login')),
@@ -273,7 +274,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                       style: OutlinedButton.styleFrom(
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(16),
+                                              AppRadius.lgBorder,
                                         ),
                                       ),
                                       child: Text(_tr(locState, 'register')),
@@ -324,14 +325,14 @@ class _LanguageOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdBorder,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
               : Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           border: Border.all(
             color: isSelected
                 ? Theme.of(context).colorScheme.primary

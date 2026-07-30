@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_radius.dart';
 
 /// Static FAQ list rendered on the upgrade screen. Each entry is an
 /// [ExpansionTile] so the screen stays single-scroll and the FAQ scales
@@ -33,7 +34,7 @@ class FaqAccordion extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: scheme.surface,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: AppRadius.badgeBorder,
             border: Border.all(color: theme.dividerColor),
           ),
           child: Column(

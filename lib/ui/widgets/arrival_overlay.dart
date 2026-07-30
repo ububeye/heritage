@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../data/models/site_model.dart';
+import '../../core/theme/app_radius.dart';
 
 class ArrivalOverlay extends StatefulWidget {
 
@@ -76,7 +77,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: AppRadius.sheetBorderSmBorder,
                         boxShadow: [
                           BoxShadow(
                             color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
@@ -86,7 +87,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: AppRadius.sheetBorderSmBorder,
                         child: CachedNetworkImage(
                           imageUrl: widget.site.getTransformedImageUrl(
                             transformation: 'w_400,c_fill,q_auto,f_auto',
@@ -137,7 +138,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                           height: 80,
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(40),
+                            borderRadius: AppRadius.heroGreetingBorder,
                             boxShadow: [
                               BoxShadow(
                                 color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),

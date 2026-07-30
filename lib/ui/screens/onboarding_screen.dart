@@ -5,6 +5,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
+import '../../core/theme/app_radius.dart';
 
 class OnboardingScreen extends StatefulWidget {
 
@@ -132,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               color: _currentPage == index
                                   ? Theme.of(context).colorScheme.primary
                                   : Theme.of(context).dividerColor,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: AppRadius.xsBorder,
                             ),
                           ),
                         ),
@@ -146,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             vertical: 16,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: AppRadius.ctaButtonBorder,
                           ),
                         ),
                         child: Text(
@@ -231,7 +232,7 @@ class _LanguageSelector extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Row(

@@ -15,6 +15,7 @@ import 'admin_sites_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_settings_screen.dart';
 import 'admin_analytics_screen.dart';
+import '../../../core/theme/app_radius.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -183,7 +184,7 @@ class _WelcomeCard extends StatelessWidget {
                 Theme.of(context).colorScheme.primary,
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lgBorder,
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
@@ -198,7 +199,7 @@ class _WelcomeCard extends StatelessWidget {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: AppRadius.badgeBorder,
                 ),
                 child: Icon(Icons.admin_panel_settings, color: Theme.of(context).colorScheme.onPrimary, size: 32),
               ),
@@ -303,7 +304,7 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
@@ -421,12 +422,12 @@ class _MenuCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppRadius.lgBorder,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lgBorder,
           border: Border.all(color: Theme.of(context).colorScheme.outline),
           boxShadow: [
             BoxShadow(
@@ -442,7 +443,7 @@ class _MenuCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppRadius.mdBorder,
               ),
               child: Icon(icon, color: color, size: 28),
             ),
@@ -547,12 +548,12 @@ class _QuickActionButton extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
