@@ -1,10 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/firestore_service.dart';
+import '../../data/services/auth_service.dart';
 
 class UserCubit extends Cubit<UserState> {
   UserCubit() : super(const UserState());
   final FirestoreService _firestoreService = FirestoreService();
+  final AuthService _authService = AuthService();
 
   Future<void> loadUsers() async {
     emit(state.copyWith(status: UserStatus.loading, error: null));
@@ -54,6 +56,33 @@ class UserCubit extends Cubit<UserState> {
       await loadUsers();
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> toggleUserDisabled(String userId, bool disabled) async {
+    try {
+      await _firestoreService.setUserDisabled(userId, disabled);
+      await loadUsers();
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> updateUserSubscription(String userId, DateTime? expiry) async {
+    try {
+      await _firestoreService.setUserSubscriptionExpiry(userId, expiry);
+      await loadUsers();
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      await _authService.resetPassword(email);
+    } catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      rethrow;
     }
   }
 

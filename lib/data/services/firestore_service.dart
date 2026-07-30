@@ -187,6 +187,24 @@ class FirestoreService {
     }
   }
 
+  Future<void> setUserDisabled(String uid, bool disabled) async {
+    try {
+      await _usersCollection.doc(uid).update({'disabled': disabled});
+    } catch (e) {
+      throw Exception('Failed to update disabled status: $e');
+    }
+  }
+
+  Future<void> setUserSubscriptionExpiry(String uid, DateTime? expiry) async {
+    try {
+      await _usersCollection.doc(uid).update({
+        'subscription_expiry': expiry?.toIso8601String(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update subscription expiry: $e');
+    }
+  }
+
   /// Read the user's role from roles/{uid}. Returns null if no document
   /// exists (e.g. a brand-new user who hasn't been promoted yet).
   Future<UserRole?> getUserRole(String uid) async {

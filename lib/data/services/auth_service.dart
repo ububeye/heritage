@@ -86,8 +86,6 @@ class AuthService {
     } catch (e) {
       throw Exception('Google sign-in failed: $e');
     }
-  }
-
   /// Persist the user record so admin role changes, preferences, and
   /// future Firestore-backed features can resolve them. Failures used
   /// to be swallowed by [debugPrint] — that hid the path where a user

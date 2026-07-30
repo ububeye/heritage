@@ -53,6 +53,15 @@ class AuthCubit extends Cubit<AuthState> {
             resolved = resolved.copyWith(role: firestoreUser.role);
           }
         }
+        if (resolved.disabled) {
+          await _authService.signOut();
+          emit(state.copyWith(
+            status: AuthStatus.error, 
+            errorMessage: 'Your account has been suspended.',
+          ));
+          return;
+        }
+
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
           userId: resolved.id,
@@ -82,6 +91,15 @@ class AuthCubit extends Cubit<AuthState> {
         final liveRole = await _firestoreService.getUserRole(base.id);
         final resolved =
             liveRole == null ? base : base.copyWith(role: liveRole);
+        if (resolved.disabled) {
+          await _authService.signOut();
+          emit(state.copyWith(
+            status: AuthStatus.error, 
+            errorMessage: 'Your account has been suspended.',
+          ));
+          return;
+        }
+
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
           userId: resolved.id,

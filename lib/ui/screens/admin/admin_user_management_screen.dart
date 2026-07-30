@@ -323,10 +323,7 @@ class _UserManagementContent extends StatelessWidget {
               final user = users[index];
               return _UserCard(
                 user: user,
-                onRoleChange:
-                    (role) =>
-                        context.read<UserCubit>().updateUserRole(user.id, role),
-                onDelete: () => _confirmDelete(context, user),
+                onTap: () => _showUserManagementSheet(context, user),
               );
             },
           ),
@@ -335,46 +332,26 @@ class _UserManagementContent extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, UserModel user) async {
-    final confirmed = await showDialog<bool>(
+  void _showUserManagementSheet(BuildContext context, UserModel user) {
+    showModalBottomSheet(
       context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete User'),
-            content: Text(
-              'Delete user "${user.email}"? This cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: AppRadius.sheetTopBorder,
+      ),
+      builder: (ctx) => _UserManagementSheet(user: user, parentContext: context),
     );
-
-    if (confirmed == true && context.mounted) {
-      await context.read<UserCubit>().deleteUser(user.id);
-    }
   }
 }
 
 class _UserCard extends StatelessWidget {
   const _UserCard({
     required this.user,
-    required this.onRoleChange,
-    required this.onDelete,
+    required this.onTap,
   });
   final UserModel user;
-  final Function(UserRole) onRoleChange;
-  final VoidCallback onDelete;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -383,11 +360,14 @@ class _UserCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
-      child: Padding(
-        padding: AppInsets.card,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: AppInsets.card,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               children: [
                 CircleAvatar(
@@ -439,21 +419,6 @@ class _UserCard extends StatelessWidget {
                 _buildRoleBadge(context),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildRoleDropdown(context)),
-                const SizedBox(width: 12),
-                IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  tooltip: deleteLabel,
-                  onPressed: onDelete,
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -467,12 +432,20 @@ class _UserCard extends StatelessWidget {
       case UserRole.admin:
         color = context.semanticColors.success;
         label = 'Admin';
+        break;
       case UserRole.premium:
         color = Theme.of(context).colorScheme.secondary;
         label = 'Premium';
+        break;
       case UserRole.free:
         color = Theme.of(context).colorScheme.onSurfaceVariant;
         label = 'Free';
+        break;
+    }
+
+    if (user.disabled) {
+      color = Theme.of(context).colorScheme.error;
+      label = 'Disabled';
     }
 
     return Container(
@@ -486,58 +459,6 @@ class _UserCard extends StatelessWidget {
         style: Theme.of(
           context,
         ).textTheme.labelLarge?.copyWith(fontSize: 12, color: color),
-      ),
-    );
-  }
-
-  Widget _buildRoleDropdown(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-        borderRadius: AppRadius.smBorder,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<UserRole>(
-          value: user.role,
-          isExpanded: true,
-          items:
-              UserRole.values.map((role) {
-                return DropdownMenuItem(
-                  value: role,
-                  child: Row(
-                    children: [
-                      Icon(
-                        role == UserRole.admin
-                            ? Icons.admin_panel_settings
-                            : role == UserRole.premium
-                            ? Icons.workspace_premium
-                            : Icons.person,
-                        size: 18,
-                        color:
-                            role == UserRole.admin
-                                ? context.semanticColors.success
-                                : role == UserRole.premium
-                                ? Theme.of(context).colorScheme.secondary
-                                : Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        role.name[0].toUpperCase() + role.name.substring(1),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-          onChanged: (role) {
-            if (role != null && role != user.role) {
-              onRoleChange(role);
-            }
-          },
-        ),
       ),
     );
   }
@@ -587,3 +508,129 @@ class _FilterChip extends StatelessWidget {
     );
   }
 }
+
+class _UserManagementSheet extends StatelessWidget {
+  const _UserManagementSheet({required this.user, required this.parentContext});
+  final UserModel user;
+  final BuildContext parentContext;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: AppInsets.card,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: AppRadius.fullBorder,
+                ),
+              ),
+            ),
+            Text(
+              'Manage User',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              user.email,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Access Level
+            Text(
+              'Access Level',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: UserRole.values.map((role) {
+                final isSelected = user.role == role;
+                return ChoiceChip(
+                  label: Text(role.name[0].toUpperCase() + role.name.substring(1)),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) {
+                      parentContext.read<UserCubit>().updateUserRole(user.id, role);
+                      Navigator.pop(context);
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+
+            // Security
+            Text(
+              'Security',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                user.disabled ? Icons.lock_open : Icons.lock_outline,
+                color: user.disabled ? context.semanticColors.success : Theme.of(context).colorScheme.error,
+              ),
+              title: Text(user.disabled ? 'Unsuspend Account' : 'Suspend Account'),
+              onTap: () {
+                parentContext.read<UserCubit>().toggleUserDisabled(user.id, !user.disabled);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.password),
+              title: const Text('Force Password Reset'),
+              onTap: () async {
+                try {
+                  await parentContext.read<UserCubit>().sendPasswordReset(user.email);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Password reset email sent')),
+                    );
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
+                }
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                parentContext.read<UserCubit>().deleteUser(user.id);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              icon: const Icon(Icons.delete_forever),
+              label: const Text('Delete Account Permanently'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
