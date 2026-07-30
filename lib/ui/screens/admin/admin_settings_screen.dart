@@ -281,10 +281,7 @@ class _InfoRow extends StatelessWidget {
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: Text(
         value,
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
       ),
     );
   }
@@ -321,12 +318,11 @@ class _MaintenanceBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: AppColors.warning,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                height: 1.4,
-              ),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.warning,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
             ),
           ),
         ],
@@ -411,10 +407,10 @@ class _OrsApiKeyTile extends StatelessWidget {
           subtitle: Text(
             locState.translations['admin_ors_api_key_subtitle'] ??
                 'Leave empty to use the OSRM demo (no key required)',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           trailing: IconButton(
             icon: const Icon(Icons.edit_outlined, size: 20),

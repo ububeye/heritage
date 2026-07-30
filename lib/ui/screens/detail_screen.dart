@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
@@ -85,15 +86,13 @@ class _DetailScreenState extends State<DetailScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
                   'Audio Language',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                 ),
               ),
               const Divider(height: 1),
@@ -107,14 +106,16 @@ class _DetailScreenState extends State<DetailScreen> {
                     return ListTile(
                       leading: Text(
                         _audioLanguageName(code).isEmpty ? '🌐' : _flagForCode(code),
-                        style: const TextStyle(fontSize: 22),
+                        style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                              fontSize: 22,
+                            ),
                       ),
                       title: Text(
                         _audioLanguageName(code),
-                        style: TextStyle(
-                          color: locked ? AppColors.textHint : AppColors.textPrimary,
-                          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                        ),
+                        style: Theme.of(sheetContext).textTheme.bodyLarge?.copyWith(
+                              color: locked ? AppColors.textHint : AppColors.textPrimary,
+                              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                            ),
                       ),
                       trailing: locked
                           ? Container(
@@ -123,13 +124,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                 color: AppColors.accent,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'PREMIUM',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textOnAccent,
-                                ),
+                                style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
+                                      color: AppColors.textOnAccent,
+                                    ),
                               ),
                             )
                           : (selected
@@ -359,7 +358,9 @@ class _DetailScreenState extends State<DetailScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   '${_currentImageIndex + 1}/${allImages.length}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: context.semanticColors.onImage,
+                                      ),
                                 ),
                               ],
                             ),
@@ -437,43 +438,34 @@ class _DetailScreenState extends State<DetailScreen> {
                     children: [
                       Text(
                         site.getName(uiLanguage),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+                          Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             site.displayAddress,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         'Explore this place',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         site.getDescription(uiLanguage),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textPrimary,
-                          height: 1.6,
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              height: 1.6,
+                            ),
                       ),
                       const SizedBox(height: 24),
                       // Transcript of what's actually being spoken — sits

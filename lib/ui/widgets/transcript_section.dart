@@ -106,16 +106,14 @@ class _TranscriptSectionState extends State<TranscriptSection>
                   Expanded(
                     child: Text(
                       widget.title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: scheme.onSurface,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: scheme.onSurface,
+                          ),
                     ),
                   ),
                   Text(
                     LanguageMeta.flag(widget.audioLanguageCode),
-                    style: const TextStyle(fontSize: 14),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(width: 4),
                   RotationTransition(
@@ -141,11 +139,11 @@ class _TranscriptSectionState extends State<TranscriptSection>
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                 child: SelectableText(
                   trailingText,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.6,
-                    color: scheme.onSurface,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontSize: 15,
+                        height: 1.6,
+                        color: scheme.onSurface,
+                      ),
                 ),
               ),
             ),

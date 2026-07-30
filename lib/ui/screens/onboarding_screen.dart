@@ -88,12 +88,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _skip,
                     child: Text(
                       loc.translations['onboarding_skip'] ?? 'Skip',
-                      style: TextStyle(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.7),
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
+                          ),
                     ),
                   ),
                 ),
@@ -153,10 +153,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ? (loc.translations['onboarding_get_started'] ??
                                   'Get Started')
                               : (loc.translations['onboarding_next'] ?? 'Next'),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.labelLarge,
                         ),
                       ),
                     ],
@@ -201,25 +198,20 @@ class _OnboardingPageWidget extends StatelessWidget {
           // Title
           Text(
             page.title,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+            style: Theme.of(context).textTheme.displayMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           // Subtitle
           Text(
             page.subtitle,
-            style: TextStyle(
-              fontSize: 16,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.75),
-              height: 1.5,
-            ),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.75),
+                  height: 1.5,
+                ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -250,13 +242,12 @@ class _LanguageSelector extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 'Language:',
-                style: TextStyle(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.7),
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
+                    ),
               ),
               const SizedBox(width: 12),
               Expanded(

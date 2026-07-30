@@ -46,10 +46,7 @@ class AdminAnalyticsScreen extends StatelessWidget {
             children: [
               Text(
                 tr('analytics_subtitle', 'Site & user statistics'),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               _StatsRow(loc: loc),
@@ -166,19 +163,18 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontSize: 22,
+                  color: color,
+                ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -196,11 +192,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      ),
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
     );
   }
 }
@@ -275,7 +267,10 @@ class _CategoryBar extends StatelessWidget {
           width: 110,
           child: Text(
             label,
-            style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -297,11 +292,10 @@ class _CategoryBar extends StatelessWidget {
           child: Text(
             '$count',
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
           ),
         ),
       ],
@@ -344,10 +338,7 @@ class _TopRatedList extends StatelessWidget {
                 backgroundColor: AppColors.accent.withValues(alpha: 0.1),
                 child: Text(
                   '${i + 1}',
-                  style: const TextStyle(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.accent),
                 ),
               ),
               title: Text(
@@ -396,7 +387,7 @@ class _EmptyBlock extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             text,
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

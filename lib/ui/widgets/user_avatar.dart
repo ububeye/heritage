@@ -50,11 +50,10 @@ class UserAvatar extends StatelessWidget {
           : initials.isNotEmpty
               ? Text(
                   initials,
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: radius * 0.7,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.primary,
+                        fontSize: radius * 0.7,
+                      ),
                 )
               : Icon(
                   Icons.person_outline,

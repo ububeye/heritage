@@ -252,9 +252,12 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Cover',
-                              style: TextStyle(color: Colors.white, fontSize: 10),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: Colors.white),
                             ),
                           ),
                         ),
@@ -311,9 +314,12 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                             color: AppColors.accent,
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Text(
+                          child: Text(
                             'New',
-                            style: TextStyle(color: Colors.white, fontSize: 10),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(color: Colors.white),
                           ),
                         ),
                       ),
@@ -337,12 +343,12 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.add_photo_alternate, color: AppColors.primary),
-                SizedBox(width: 8),
+              children: [
+                const Icon(Icons.add_photo_alternate, color: AppColors.primary),
+                const SizedBox(width: 8),
                 Text(
                   'Add More Photos',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
                 ),
               ],
             ),
@@ -487,7 +493,7 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
       ),
     );
   }

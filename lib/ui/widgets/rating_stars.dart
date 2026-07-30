@@ -42,11 +42,11 @@ class RatingStars extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             rating.toStringAsFixed(1),
-            style: TextStyle(
-              fontSize: size * 0.875,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontSize: size * 0.875,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
           ),
         ],
       ],
@@ -83,20 +83,19 @@ class RatingBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             rating.toStringAsFixed(1),
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
           ),
           if (label != null) ...[
             const SizedBox(width: 4),
             Text(
               label!,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
             ),
           ],
         ],

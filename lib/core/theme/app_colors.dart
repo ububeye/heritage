@@ -1,85 +1,146 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+//
+// This file is intentionally split into two parts:
+//
+//  1. `AppPalette` (in app_palette.dart) — raw primitives. The only place
+//     these literal swatches live. UI code must not import that file
+//     directly.
+//
+//  2. `AppColors` (below) — a deprecated compatibility bridge. The values
+//     forward to `AppPalette` so existing UI code keeps compiling while a
+//     separate PR migrates each call site to `ColorScheme` or
+//     `AppSemanticColors`. The bridge is removed at the end of the
+//     migration track.
+
 import 'package:flutter/material.dart';
 
+import 'app_palette.dart';
+
+export 'app_palette.dart';
+
+/// Deprecated token-level colour shortcuts.
+///
+/// Each field forwards to the equivalent value in [AppPalette]. New code
+/// should consume `Theme.of(context).colorScheme` (Material roles) or
+/// `context.semanticColors` (app-specific roles) instead. The `AppColors`
+/// class is scheduled for removal once every UI consumer has migrated.
+@Deprecated('Use Theme.of(context).colorScheme or AppSemanticColors.')
 class AppColors {
   AppColors._();
 
-  // Primary Colors (Coral/Terracotta)
-  static const Color primary = Color(0xFFE07A5F);
-  static const Color primaryDark = Color(0xFFC85A41);
-  static const Color primaryLight = Color(0xFFF2A48C);
+  // Primary
+  @Deprecated('Use Theme.of(context).colorScheme.primary.')
+  static const Color primary = AppPalette.coral500;
+  @Deprecated('Use Theme.of(context).colorScheme.primary.')
+  static const Color primaryDark = AppPalette.coral600;
+  @Deprecated('Use Theme.of(context).colorScheme.primary.')
+  static const Color primaryLight = AppPalette.coral300;
 
-  // Accent Colors (Teal/Turquoise)
-  static const Color accent = Color(0xFF3D5A80);
-  static const Color accentLight = Color(0xFF98C1D9);
-  
-  // Alternative accent (oceanic)
-  static const Color secondary = Color(0xFF29B6F6);
+  // Accent / secondary
+  @Deprecated('Use Theme.of(context).colorScheme.secondary.')
+  static const Color accent = AppPalette.navy500;
+  @Deprecated('Use Theme.of(context).colorScheme.secondary.')
+  static const Color accentLight = AppPalette.sky300;
+  @Deprecated('Use context.semanticColors.info or getColorScheme.secondary.')
+  static const Color secondary = AppPalette.sky500;
 
-  // Surface Colors
-  static const Color surface = Color(0xFFFAF9F6); // Warm off-white
-  static const Color surfaceDark = Color(0xFF1E2124); // Deep charcoal
-  static const Color background = Color(0xFFFAF9F6);
+  // Surface
+  @Deprecated('Use Theme.of(context).colorScheme.surface.')
+  static const Color surface = AppPalette.warmSurface;
+  @Deprecated('Use Theme.of(context).colorScheme.surfaceContainer.')
+  static const Color surfaceDark = AppPalette.charcoal900;
+  @Deprecated('Use Theme.of(context).colorScheme.surface.')
+  static const Color background = AppPalette.warmSurface;
 
-  // Semantic Colors
-  static const Color error = Color(0xFFD32F2F);
-  static const Color success = Color(0xFF2E7D32);
-  static const Color warning = Color(0xFFF57C00);
-  static const Color info = Color(0xFF0288D1);
+  // Semantic
+  @Deprecated('Use Theme.of(context).colorScheme.error.')
+  static const Color error = AppPalette.red600;
+  @Deprecated('Use context.semanticColors.success.')
+  static const Color success = AppPalette.green700;
+  @Deprecated('Use context.semanticColors.warning.')
+  static const Color warning = AppPalette.orange700;
+  @Deprecated('Use context.semanticColors.info.')
+  static const Color info = AppPalette.sky700;
 
-  // Text Colors
+  // Text
+  @Deprecated('Use Theme.of(context).colorScheme.onSurface.')
   static const Color textPrimary = Color(0xFF2C3E50);
-  static const Color textSecondary = Color(0xFF7F8C8D);
-  static const Color textHint = Color(0xFFBDC3C7);
-  static const Color textOnPrimary = Color(0xFFFFFFFF);
-  static const Color textOnAccent = Color(0xFFFFFFFF);
+  @Deprecated('Use Theme.of(context).colorScheme.onSurfaceVariant.')
+  static const Color textSecondary = AppPalette.charcoal500;
+  @Deprecated('Use Theme.of(context).colorScheme.outline.')
+  static const Color textHint = AppPalette.charcoal100;
+  @Deprecated('Use Theme.of(context).colorScheme.onPrimary.')
+  static const Color textOnPrimary = AppPalette.fixedWhite;
+  @Deprecated('Use Theme.of(context).colorScheme.onSecondary.')
+  static const Color textOnAccent = AppPalette.fixedWhite;
 
-  // Rating Colors
-  static const Color rating = Color(0xFFFFC107);
+  // Rating
+  @Deprecated('Use context.semanticColors.rating.')
+  static const Color rating = AppPalette.amber500;
 
-  // Map Colors
-  static const Color mapRoute = Color(0xFF3D5A80);
-  static const Color mapUser = Color(0xFF0288D1);
-  static const Color mapMarker = Color(0xFFE07A5F);
+  // Map
+  @Deprecated('Use context.semanticColors.mapRoute.')
+  static const Color mapRoute = AppPalette.navy500;
+  @Deprecated('Use context.semanticColors.mapUser.')
+  static const Color mapUser = AppPalette.sky700;
+  @Deprecated('Use context.semanticColors.mapMarker.')
+  static const Color mapMarker = AppPalette.coral500;
 
-  // Overlay Colors
+  // Overlays
+  @Deprecated('Use context.semanticColors.imageScrim.')
   static const Color overlayDark = Color(0x99000000);
+  @Deprecated('Use context.semanticColors.onImageMuted.')
   static const Color overlayLight = Color(0x33FFFFFF);
 
-  // Border Colors
-  static const Color border = Color(0xFFE0E0E0);
-  static const Color divider = Color(0xFFEEEEEE);
+  // Borders / dividers
+  @Deprecated('Use Theme.of(context).colorScheme.outline.')
+  static const Color border = AppPalette.charcoal200;
+  @Deprecated('Use Theme.of(context).colorScheme.outlineVariant.')
+  static const Color divider = AppPalette.charcoal100;
 
-  // Dark Theme Tokens
-  static const Color darkOnPrimary = Color(0xFFFFFFFF);
-  static const Color darkOnAccent = Color(0xFFFFFFFF);
-  static const Color darkError = Color(0xFFEF5350);
-  
-  static const Color darkBody = Color(0xFFE0E0E0);
-  static const Color darkMuted = Color(0xFF9E9E9E);
-  static const Color darkHint = Color(0xFF757575);
-  static const Color darkBorder = Color(0xFF424242);
-  
-  static const Color darkScaffold = Color(0xFF121212);
-  static const Color darkSurfaceContainer = Color(0xFF24272A);
-  static const Color darkSurfaceContainerHigh = Color(0xFF2D3034);
-  static const Color darkSurfaceTint = Color(0xFFE07A5F);
+  // Dark tokens
+  @Deprecated('Use Theme.of(context).colorScheme.onPrimary.')
+  static const Color darkOnPrimary = AppPalette.fixedWhite;
+  @Deprecated('Use Theme.of(context).colorScheme.onSecondary.')
+  static const Color darkOnAccent = AppPalette.fixedWhite;
+  @Deprecated('Use Theme.of(context).colorScheme.error.')
+  static const Color darkError = AppPalette.red400;
+  @Deprecated('Use Theme.of(context).colorScheme.onSurface.')
+  static const Color darkBody = AppPalette.charcoal200;
+  @Deprecated('Use Theme.of(context).colorScheme.onSurfaceVariant.')
+  static const Color darkMuted = AppPalette.charcoal400;
+  @Deprecated('Use Theme.of(context).colorScheme.onSurfaceVariant.')
+  static const Color darkHint = AppPalette.charcoal500;
+  @Deprecated('Use Theme.of(context).colorScheme.outline.')
+  static const Color darkBorder = AppPalette.charcoal600;
+  @Deprecated('Use Theme.of(context).colorScheme.surface.')
+  static const Color darkScaffold = AppPalette.charcoal950;
+  @Deprecated('Use Theme.of(context).colorScheme.surfaceContainer.')
+  static const Color darkSurfaceContainer = AppPalette.charcoal850;
+  @Deprecated('Use Theme.of(context).colorScheme.surfaceContainerHigh.')
+  static const Color darkSurfaceContainerHigh = AppPalette.charcoal800;
+  @Deprecated('Use Theme.of(context).colorScheme.surfaceTint.')
+  static const Color darkSurfaceTint = AppPalette.coral500;
 
   // Gradients
+  @Deprecated('Use Theme.of(context) gradients derived from colorScheme.')
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primary, primaryDark],
+    colors: <Color>[AppPalette.coral500, AppPalette.coral600],
   );
 
+  @Deprecated('Use Theme.of(context) gradients derived from colorScheme.')
   static const LinearGradient accentGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [accent, accentLight],
+    colors: <Color>[AppPalette.navy500, AppPalette.sky300],
   );
 
+  @Deprecated('Use context.semanticColors.imageScrim for the overlay.')
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Colors.transparent, Color(0xCC2C3E50)],
+    colors: <Color>[Color(0x00000000), Color(0xCC2C3E50)],
   );
 }

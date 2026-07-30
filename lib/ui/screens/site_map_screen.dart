@@ -50,19 +50,19 @@ class SiteMapScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         site.displayAddress,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
                       ),
                     ),
                     Text(
                       '${site.latitude.toStringAsFixed(4)}, ${site.longitude.toStringAsFixed(4)}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textHint,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontSize: 11,
+                            color: AppColors.textHint,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                     ),
                   ],
                 ),

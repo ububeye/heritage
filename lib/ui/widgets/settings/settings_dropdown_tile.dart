@@ -49,22 +49,21 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          color: enabled
-              ? Theme.of(context).colorScheme.onSurface
-              : AppColors.textHint,
-        ),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: enabled
+                  ? Theme.of(context).colorScheme.onSurface
+                  : AppColors.textHint,
+            ),
       ),
       subtitle: subtitle != null
           ? Text(
               subtitle!,
-              style: TextStyle(
-                color: enabled
-                    ? Theme.of(context).colorScheme.onSurfaceVariant
-                    : AppColors.textHint,
-                fontSize: 12,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: enabled
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : AppColors.textHint,
+                  ),
             )
           : null,
       trailing: Row(
@@ -79,13 +78,13 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
             value: effectiveValue,
             underline: const SizedBox(),
             icon: const Icon(CupertinoIcons.chevron_down, size: 16),
-            style: TextStyle(
-              color: enabled
-                  ? Theme.of(context).colorScheme.onSurface
-                  : AppColors.textHint,
-              fontWeight: FontWeight.w500,
-              fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: enabled
+                      ? Theme.of(context).colorScheme.onSurface
+                      : AppColors.textHint,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+                ),
             items: [
               for (var i = 0; i < items.length; i++)
                 DropdownMenuItem<T>(

@@ -26,7 +26,7 @@ class UserProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               // Profile Header
-              _buildProfileHeader(user),
+              _buildProfileHeader(context, user),
               const SizedBox(height: 24),
 
               // Account Section
@@ -75,13 +75,15 @@ class UserProfileScreen extends StatelessWidget {
                               color: AppColors.success.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Active',
-                              style: TextStyle(
-                                color: AppColors.success,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: AppColors.success,
+                                    fontSize: 12,
+                                  ),
                             ),
                           )
                         : const Icon(Icons.chevron_right),
@@ -116,19 +118,17 @@ class UserProfileScreen extends StatelessWidget {
               Center(
                 child: Column(
                   children: [
-                    const Text(
+                    Text(
                       'Stone Town Guide v1.0.0',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textHint,
-                        fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Made with ❤️ for Zanzibar',
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textHint,
-                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -142,7 +142,7 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(UserModel? user) {
+  Widget _buildProfileHeader(BuildContext context, UserModel? user) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -161,11 +161,10 @@ class UserProfileScreen extends StatelessWidget {
             child: user?.photoUrl == null
                 ? Text(
                     user?.email[0].toUpperCase() ?? 'U',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .displayMedium
+                        ?.copyWith(color: Colors.white),
                   )
                 : null,
           ),
@@ -176,16 +175,14 @@ class UserProfileScreen extends StatelessWidget {
               children: [
                 Text(
                   user?.displayName ?? user?.email ?? 'User',
-                  style: const TextStyle(
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   user?.email ?? '',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 13,
                   ),
@@ -202,7 +199,7 @@ class UserProfileScreen extends StatelessWidget {
                   ),
                   child: Text(
                     user?.role.name.toUpperCase() ?? 'FREE',
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -475,9 +472,7 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
           color: AppColors.textSecondary,
         ),
       ),
@@ -529,16 +524,14 @@ class _ProfileMenuItem extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
           color: AppColors.textPrimary,
         ),
       ),
       subtitle: subtitle != null
           ? Text(
               subtitle!,
-              style: const TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.textSecondary,
               ),
             )

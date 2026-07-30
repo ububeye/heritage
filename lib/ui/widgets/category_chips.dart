@@ -54,11 +54,9 @@ class CategoryChips extends StatelessWidget {
                   ),
                   child: Text(
                     _tr(locState, category),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isSelected ? AppColors.textOnPrimary : AppColors.textPrimary,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: isSelected ? AppColors.textOnPrimary : AppColors.textPrimary,
+                        ),
                   ),
                 ),
               );

@@ -42,11 +42,14 @@ class FavoritesScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         loc.translations['no_favorites'] ?? 'No favorites yet',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Padding(
@@ -55,9 +58,10 @@ class FavoritesScreen extends StatelessWidget {
                           loc.translations['no_favorites_hint'] ??
                               'Tap the heart icon on any site to add it to your favorites',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                       ),
                     ],
@@ -96,20 +100,24 @@ class FavoritesScreen extends StatelessWidget {
                           const SizedBox(height: 16),
                           Text(
                             loc.translations['no_favorites'] ?? 'No favorites yet',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             loc.translations['no_favorites_hint'] ??
                                 'Tap the heart icon on any site to add it to your favorites',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -269,10 +277,10 @@ class _FavoriteSiteCard extends StatelessWidget {
                       ),
                       child: Text(
                         site.category!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: Colors.white),
                       ),
                     ),
                   ),
@@ -287,9 +295,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                   children: [
                     Text(
                       site.getName(uiLanguage),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: AppColors.textPrimary,
                       ),
                       maxLines: 2,
@@ -307,10 +313,13 @@ class _FavoriteSiteCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             site.displayAddress,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textHint,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  fontSize: 11,
+                                  color: AppColors.textHint,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

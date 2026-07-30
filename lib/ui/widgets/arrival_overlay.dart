@@ -110,20 +110,17 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                     const SizedBox(height: 32),
                     Text(
                       'You have arrived at',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       widget.site.getName(widget.uiLanguage),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            color: Colors.white,
+                          ),
                     ),
                     const SizedBox(height: 40),
                     ScaleTransition(
@@ -153,12 +150,11 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Tap to start audio guide',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white70,
+                          ),
                     ),
                   ],
                 ),

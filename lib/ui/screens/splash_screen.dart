@@ -190,12 +190,11 @@ class _SplashScreenState extends State<SplashScreen>
                           offset: Offset(0, _slideAnimation.value),
                           child: Text(
                             'Stone Town Guide',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).textTheme.displayLarge?.color,
-                              letterSpacing: 1.2,
-                            ),
+                            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                  fontSize: 32,
+                                  color: Theme.of(context).textTheme.displayLarge?.color,
+                                  letterSpacing: 1.2,
+                                ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -203,11 +202,10 @@ class _SplashScreenState extends State<SplashScreen>
                           offset: Offset(0, _slideAnimation.value),
                           child: Text(
                             'Explore Zanzibar\'s Heritage',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
-                              letterSpacing: 0.5,
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                                  letterSpacing: 0.5,
+                                ),
                           ),
                         ),
                         const SizedBox(height: 80),

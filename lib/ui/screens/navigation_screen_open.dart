@@ -546,7 +546,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             child: Text(
               text,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.white),
             ),
           ),
         ),
@@ -651,11 +654,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                             widget.site.getName(uiLanguage),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
                           ),
                           const SizedBox(height: 4),
                           Row(
@@ -667,10 +673,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                 nav.distanceToSite != null
                                     ? _formatDistance(nav.distanceToSite!)
                                     : '—',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                    ),
                               ),
                               const SizedBox(width: 12),
                               const Icon(Icons.access_time,
@@ -680,10 +689,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                 nav.estimatedTime != null
                                     ? _formatDuration(nav.estimatedTime!)
                                     : '—',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                    ),
                               ),
                             ],
                           ),
@@ -781,7 +793,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                   instruction,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -791,8 +803,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                 Text(
                   '${_formatDistance(step.distanceMeters)}'
                   '${step.durationSeconds != null ? ' • ${_formatDuration(Duration(seconds: step.durationSeconds!.round()))}' : ''}',
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -832,9 +843,8 @@ class _StatusChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
               color: foreground,
             ),
           ),

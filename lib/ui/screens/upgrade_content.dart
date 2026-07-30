@@ -165,7 +165,9 @@ class UpgradeContent extends StatelessWidget {
                     },
                     child: Text(
                       'Maybe later',
-                      style: TextStyle(color: onSurfaceMuted),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: onSurfaceMuted,
+                      ),
                     ),
                   ),
                 ),
@@ -270,7 +272,7 @@ class UpgradeContent extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Welcome to Premium',
-                style: TextStyle(
+                style: Theme.of(dialogContext).textTheme.headlineLarge?.copyWith(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: scheme.onSurface,
@@ -281,8 +283,7 @@ class UpgradeContent extends StatelessWidget {
                 'You now have full access to audio tours, GPS '
                 'navigation and offline guides.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
+                style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
                   height: 1.4,
                   color: scheme.onSurface.withValues(alpha: 0.75),
                 ),
@@ -367,9 +368,7 @@ class _SectionLabel extends StatelessWidget {
         padding: const EdgeInsets.only(left: 4),
         child: Text(
           text,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: scheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
@@ -403,9 +402,7 @@ class _BenefitsList extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             'What you\'ll get',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: scheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
@@ -460,7 +457,11 @@ class _BenefitRow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 14.5, color: fg, height: 1.3),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 14.5,
+                color: fg,
+                height: 1.3,
+              ),
             ),
           ),
         ],
@@ -491,7 +492,10 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(color: scheme.onErrorContainer, fontSize: 13),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: scheme.onErrorContainer,
+                fontSize: 13,
+              ),
             ),
           ),
         ],
@@ -521,8 +525,7 @@ class _LoadingCta extends StatelessWidget {
         const SizedBox(width: 12),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 16,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.w600,
             color: scheme.onPrimary,
           ),
@@ -549,8 +552,7 @@ class _SettingsSecondaryRow extends StatelessWidget {
           child: Text(
             'Cancel anytime · Manage subscription',
             textAlign: TextAlign.end,
-            style: TextStyle(
-              fontSize: 12,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: scheme.onSurface.withValues(alpha: 0.6),
             ),
           ),

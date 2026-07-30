@@ -59,10 +59,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
             onChanged: _handleChanged,
             decoration: InputDecoration(
               hintText: widget.hintText,
-              hintStyle: const TextStyle(
-                color: AppColors.textHint,
-                fontSize: 14,
-              ),
+              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textHint,
+                  ),
               prefixIcon: const Icon(
                 Icons.search,
                 color: AppColors.textSecondary,

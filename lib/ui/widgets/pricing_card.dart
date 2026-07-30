@@ -88,11 +88,11 @@ class PricingCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: fg,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: fg,
+                      ),
                 ),
                 if (badge != null) ...[
                   const SizedBox(width: 8),
@@ -107,11 +107,10 @@ class PricingCard extends StatelessWidget {
                     ),
                     child: Text(
                       badge!,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: scheme.onSecondary,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSecondary,
+                          ),
                     ),
                   ),
                 ],
@@ -124,16 +123,17 @@ class PricingCard extends StatelessWidget {
               children: [
                 Text(
                   '\$${price.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: fg,
-                  ),
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        fontSize: 28,
+                        color: fg,
+                      ),
                 ),
                 const SizedBox(width: 2),
                 Text(
                   priceSubtitle,
-                  style: TextStyle(fontSize: 14, color: muted),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: muted,
+                      ),
                 ),
               ],
             ),
@@ -141,7 +141,9 @@ class PricingCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 secondaryLine!,
-                style: TextStyle(fontSize: 12, color: muted),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: muted,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],

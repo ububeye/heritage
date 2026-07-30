@@ -100,7 +100,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.search_off, size: 48, color: AppColors.textHint),
+                            Icon(
+                              Icons.search_off,
+                              size: 48,
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
                             const SizedBox(height: 16),
                             // The previous copy here showed the
                             // search-hint string ('Search places…'),
@@ -109,10 +113,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             // filter has no matches.
                             Text(
                               _tr(locState, 'no_results'),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: AppColors.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ),
@@ -229,11 +237,7 @@ class _ListView extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               _tr(locState, 'best_places'),
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
           ),
           const SizedBox(height: 12),
@@ -341,14 +345,18 @@ class _MapView extends StatelessWidget {
             top: false,
             child: Row(
               children: [
-                Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+                Icon(
+                  Icons.location_on,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   '${sites.length} sites on map',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
                 const Spacer(),
                 TextButton.icon(

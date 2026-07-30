@@ -103,9 +103,9 @@ class _UserManagementContent extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('Total', state.totalUsers.toString(), AppColors.primary),
-              _buildStatItem('Premium', state.premiumUsers.toString(), AppColors.accent),
-              _buildStatItem('Admins', state.adminUsers.toString(), AppColors.success),
+              _buildStatItem(context, 'Total', state.totalUsers.toString(), AppColors.primary),
+              _buildStatItem(context, 'Premium', state.premiumUsers.toString(), AppColors.accent),
+              _buildStatItem(context, 'Admins', state.adminUsers.toString(), AppColors.success),
             ],
           ),
         );
@@ -113,23 +113,16 @@ class _UserManagementContent extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value, Color color) {
+  Widget _buildStatItem(BuildContext context, String label, String value, Color color) {
     return Column(
       children: [
         Text(
           value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: color),
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -177,10 +170,7 @@ class _UserManagementContent extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   state.searchQuery.isEmpty ? 'No users found' : 'No matching users',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -267,10 +257,7 @@ class _UserCard extends StatelessWidget {
                   child: user.photoUrl == null
                       ? Text(
                           user.email[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
                         )
                       : null,
                 ),
@@ -281,27 +268,23 @@ class _UserCard extends StatelessWidget {
                     children: [
                       Text(
                         user.displayName ?? user.email,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         user.email,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                _buildRoleBadge(),
+                _buildRoleBadge(context),
               ],
             ),
             const SizedBox(height: 12),
@@ -324,7 +307,7 @@ class _UserCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRoleBadge() {
+  Widget _buildRoleBadge(BuildContext context) {
     Color color;
     String label;
     switch (user.role) {
@@ -347,11 +330,10 @@ class _UserCard extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontSize: 12,
+              color: color,
+            ),
       ),
     );
   }
@@ -388,7 +370,7 @@ class _UserCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     role.name[0].toUpperCase() + role.name.substring(1),
-                    style: const TextStyle(fontSize: 14),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),

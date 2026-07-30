@@ -33,12 +33,12 @@ class PremiumOfferScreen extends StatelessWidget {
             },
             child: Text(
               'Skip',
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.7),
-              ),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
+                  ),
             ),
           ),
           const SizedBox(width: 8),

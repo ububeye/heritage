@@ -205,19 +205,14 @@ class _WelcomeCard extends StatelessWidget {
                   children: [
                     Text(
                       tr(locState, 'admin_welcome'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       authState.user?.email ?? '',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -327,19 +322,18 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontSize: 22,
+                  color: color,
+                ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -399,11 +393,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
-      ),
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
     );
   }
 }
@@ -459,19 +449,18 @@ class _MenuCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                   ),
                 ],
               ),
@@ -569,11 +558,11 @@ class _QuickActionButton extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
               ),
             ],
           ),

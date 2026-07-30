@@ -50,21 +50,18 @@ class UpgradeBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Upgrade for Full Audio',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textOnPrimary,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.textOnPrimary,
+                        ),
                   ),
                   if (message != null)
                     Text(
                       message!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textOnPrimary.withValues(alpha: 0.8),
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                          ),
                     ),
                 ],
               ),

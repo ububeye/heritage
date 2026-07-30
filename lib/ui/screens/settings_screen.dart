@@ -322,10 +322,7 @@ class _ProfileHeroAppBar extends StatelessWidget {
                         Flexible(
                           child: Text(
                             name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -337,8 +334,7 @@ class _ProfileHeroAppBar extends StatelessWidget {
                     if (emailSubtitle != null)
                       Text(
                         emailSubtitle,
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context)
                               .colorScheme
                               .onSurfaceVariant,
@@ -390,8 +386,7 @@ class _PlanBadge extends StatelessWidget {
       ),
       child: Text(
         locState.translations[key] ?? (isPremium ? 'Premium' : 'Free'),
-        style: TextStyle(
-          fontSize: 10,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w700,
           color: color,
           letterSpacing: 0.4,
@@ -1007,9 +1002,8 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
             _expanded
                 ? (loc.translations['quiet_hours_subtitle'] ?? '')
                 : collapsedValue,
-            style: TextStyle(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
             ),
           ),
           trailing: Row(
@@ -1018,9 +1012,8 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
               if (!_expanded)
                 Text(
                   collapsedValue,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
                     color: _enabled
                         ? Theme.of(context).colorScheme.primary
                         : AppColors.textHint,
@@ -1146,9 +1139,8 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
         children: [
           Text(
             sizeLabel,
-            style: TextStyle(
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
               color: _bytes > 0
                   ? Theme.of(context).colorScheme.primary
                   : AppColors.textHint,
@@ -1229,9 +1221,8 @@ class _VersionTile extends StatelessWidget {
           ),
           trailing: Text(
             value,
-            style: const TextStyle(
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
             ),
           ),
         );

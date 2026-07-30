@@ -148,10 +148,9 @@ class AudioPlayerBar extends StatelessWidget {
                         audioState.isLoading
                             ? 'Loading…'
                             : '${audioState.positionText} / ${audioState.durationText}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
                       ),
                     ],
                   ),
@@ -197,11 +196,10 @@ class _LanguageChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               LanguageMeta.name(code),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
             ),
             const SizedBox(width: 2),
             Icon(
@@ -230,13 +228,11 @@ class _PreviewBadge extends StatelessWidget {
         color: AppColors.accent,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Text(
+      child: Text(
         'PREVIEW',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textOnAccent,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textOnAccent,
+            ),
       ),
     );
   }

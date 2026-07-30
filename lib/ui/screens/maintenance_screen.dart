@@ -86,9 +86,8 @@ class MaintenanceScreen extends StatelessWidget {
                   child: Text(
                     loc.translations['maintenance_back_shortly'] ??
                         'Back shortly',
-                    style: const TextStyle(
+                    style: theme.textTheme.labelLarge?.copyWith(
                       color: AppColors.warning,
-                      fontWeight: FontWeight.w600,
                       fontSize: 12,
                       letterSpacing: 0.4,
                     ),

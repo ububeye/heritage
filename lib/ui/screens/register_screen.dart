@@ -134,19 +134,17 @@ class _RegisterScreenState extends State<RegisterScreen>
                       const SizedBox(height: 32),
                       Text(
                         _tr(locState, 'register'),
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).textTheme.displayLarge?.color,
-                        ),
+                        style: Theme.of(context).textTheme.displayMedium,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _tr(locState, 'welcome_subtitle'),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.8),
+                            ),
                       ),
                       const SizedBox(height: 40),
                         Container(
@@ -276,12 +274,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       padding: const EdgeInsets.symmetric(horizontal: 16),
                                       child: Text(
                                         'or',
-                                        style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.7),
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.7),
+                                            ),
                                       ),
                                     ),
                                     Expanded(child: Divider(color: Theme.of(context).dividerColor)),
@@ -299,7 +300,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           children: [
                             Text(
                               _tr(locState, 'have_account'),
-                              style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(context).pushReplacement(
@@ -307,10 +308,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               child: Text(
                                 _tr(locState, 'login'),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                             ),
                           ],
@@ -396,25 +397,22 @@ class _RegisterScreenState extends State<RegisterScreen>
                   color: Colors.red.shade600,
                   shape: BoxShape.circle,
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     'G',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Colors.white,
+                        ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Text(
                 'Continue with Google',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
               ),
             ],
           ),

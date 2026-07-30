@@ -61,19 +61,19 @@ class TrialBadge extends StatelessWidget {
                   isActive
                       ? 'Your free trial is active'
                       : 'Try free for $trialDays days',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   _body(),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: scheme.onSurface.withValues(alpha: 0.75),
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 13,
+                        color: scheme.onSurface.withValues(alpha: 0.75),
+                      ),
                 ),
               ],
             ),

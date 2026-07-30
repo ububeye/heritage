@@ -82,22 +82,21 @@ class FeaturedSiteCard extends StatelessWidget {
                   color: AppColors.accent,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.star,
                       size: 14,
                       color: AppColors.textOnAccent,
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Text(
                       'Featured',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textOnAccent,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            fontSize: 12,
+                            color: AppColors.textOnAccent,
+                          ),
                     ),
                   ],
                 ),
@@ -123,11 +122,10 @@ class FeaturedSiteCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       site.rating?.toStringAsFixed(1) ?? '4.8',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            fontSize: 12,
+                            color: Colors.white,
+                          ),
                     ),
                   ],
                 ),
@@ -144,11 +142,9 @@ class FeaturedSiteCard extends StatelessWidget {
                   children: [
                     Text(
                       site.getName(uiLanguage),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                          ),
                     ),
                     const SizedBox(height: 12),
                     Row(

@@ -232,10 +232,7 @@ class _EmptyState extends StatelessWidget {
             searching
                 ? (loc.translations['no_results'] ?? 'No results')
                 : (loc.translations['no_favorites'] ?? 'No sites yet'),
-            style: const TextStyle(
-              fontSize: 18,
-              color: AppColors.textSecondary,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
           ),
           if (!searching) ...[
             const SizedBox(height: 24),
@@ -325,10 +322,9 @@ class _SiteCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             site.nameEn,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -351,10 +347,7 @@ class _SiteCard extends StatelessWidget {
                       ),
                       child: Text(
                         site.category ?? 'Uncategorized',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.accent,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.accent),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -368,10 +361,7 @@ class _SiteCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           '${site.latitude.toStringAsFixed(4)}, ${site.longitude.toStringAsFixed(4)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textHint,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
                         ),
                       ],
                     ),

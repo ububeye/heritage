@@ -141,7 +141,9 @@ class _HomeContent extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     state.errorMessage ?? _tr(locState, 'error_generic'),
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -160,18 +162,17 @@ class _HomeContent extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.location_city,
                     size: 64,
-                    color: AppColors.textHint,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     _tr(locState, 'best_places'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                   ),
                 ],
               ),

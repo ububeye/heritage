@@ -25,11 +25,9 @@ class FaqAccordion extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface.withValues(alpha: 0.7),
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: scheme.onSurface.withValues(alpha: 0.7),
+                ),
           ),
         ),
         Container(
@@ -89,11 +87,10 @@ class _FaqTile extends StatelessWidget {
             : null,
         title: Text(
           entry.question,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: scheme.onSurface,
-          ),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: 15,
+                color: scheme.onSurface,
+              ),
         ),
         iconColor: scheme.primary,
         collapsedIconColor: scheme.onSurface.withValues(alpha: 0.5),
@@ -102,11 +99,10 @@ class _FaqTile extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               entry.answer,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.4,
-                color: scheme.onSurface.withValues(alpha: 0.75),
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    height: 1.4,
+                    color: scheme.onSurface.withValues(alpha: 0.75),
+                  ),
             ),
           ),
         ],

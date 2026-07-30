@@ -28,22 +28,19 @@ class LanguagePopup extends StatelessWidget {
               color: AppColors.primary,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Choose Your Language',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Select your preferred language for the app interface',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -103,11 +100,11 @@ class _LanguageButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
             ),
           ],
         ),

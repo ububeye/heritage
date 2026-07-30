@@ -155,14 +155,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                             locState.currentLanguage == 'en'
                                                 ? 'EN'
                                                 : 'SW',
-                                            style: TextStyle(
-                                              color: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.color,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge
+                                                ?.copyWith(fontSize: 13),
                                           ),
                                           Icon(
                                             Icons.arrow_drop_down,
@@ -212,15 +208,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               child: Text(
                                 _tr(locState, 'stone_town_guide'),
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .displayLarge
-                                      ?.color,
-                                  letterSpacing: 1.2,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .displayLarge
+                                    ?.copyWith(letterSpacing: 1.2),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -229,15 +220,16 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               child: Text(
                                 _tr(locState, 'welcome_subtitle'),
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.color
-                                      ?.withValues(alpha: 0.8),
-                                  height: 1.5,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.8),
+                                      height: 1.5,
+                                    ),
                               ),
                             ),
                             if (!isCompact) const Spacer() else
@@ -348,18 +340,25 @@ class _LanguageOption extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(flagEmoji, style: const TextStyle(fontSize: 24)),
+            Text(
+              flagEmoji,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(fontSize: 24),
+            ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 languageName,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSurface,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
               ),
             ),
             if (isSelected)

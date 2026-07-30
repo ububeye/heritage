@@ -151,11 +151,10 @@ class SiteCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   loc.translations['added_to_itinerary'] ?? 'Added',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textOnAccent,
-                                  ),
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textOnAccent,
+                                      ),
                                 ),
                               ],
                             ),
@@ -180,11 +179,9 @@ class SiteCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         site.getName(uiLanguage),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -204,11 +201,9 @@ class SiteCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             site.rating!.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
                           ),
                         ] else
                           const SizedBox(),

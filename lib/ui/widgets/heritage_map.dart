@@ -263,11 +263,10 @@ class _HeritageMapState extends State<HeritageMap> {
                           const SizedBox(width: 6),
                           Text(
                             widget.draggableMarker ? 'My location' : 'Reset view',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
+                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  fontSize: 13,
+                                  color: AppColors.primary,
+                                ),
                           ),
                         ],
                       ),
@@ -387,12 +386,11 @@ class _PinMarker extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 90),
               child: Text(
                 label!,
-                style: const TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  height: 1.0,
-                ),
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontSize: 9,
+                      color: AppColors.textPrimary,
+                      height: 1.0,
+                    ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
