@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../core/theme/app_radius.dart';
 
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/language/language_cubit.dart';
@@ -549,7 +550,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         child: Material(
           color: color,
           elevation: 2,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: AppRadius.bannerBorder,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Text(
@@ -603,7 +604,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.sheetBorderSm)),
           boxShadow: [
             BoxShadow(
               // Shadow tone uses the theme-aware semantic shadow colour.
@@ -624,7 +625,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                 Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.mdBorder,
                       child: CachedNetworkImage(
                         imageUrl: widget.site.primaryImage,
                         width: 56,
@@ -776,7 +777,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -850,7 +851,7 @@ class _StatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadius.sheetBorderSmBorder,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
