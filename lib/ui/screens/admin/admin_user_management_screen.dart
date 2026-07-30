@@ -6,6 +6,7 @@ import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/user_model.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
   const AdminUserManagementScreen({super.key});
@@ -53,7 +54,7 @@ class _UserManagementContent extends StatelessWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             child: BlocBuilder<UserCubit, UserState>(
               builder: (context, state) {
                 return TextField(
@@ -96,7 +97,7 @@ class _UserManagementContent extends StatelessWidget {
       builder: (context, state) {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          padding: AppInsets.chipTall,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: AppRadius.mdBorder,
@@ -183,7 +184,7 @@ class _UserManagementContent extends StatelessWidget {
           onRefresh: () => context.read<UserCubit>().loadUsers(),
           color: Theme.of(context).colorScheme.secondary,
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
@@ -244,7 +245,7 @@ class _UserCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppInsets.card,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -325,7 +326,7 @@ class _UserCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: AppInsets.pillTight,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: AppRadius.mdBorder,

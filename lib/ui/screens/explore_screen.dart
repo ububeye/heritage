@@ -14,6 +14,7 @@ import '../widgets/search_bar_widget.dart';
 import '../widgets/heritage_map.dart';
 import 'detail_screen.dart';
 import '../../core/utils/nav_guard.dart';
+import '../../core/theme/app_spacing.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -340,7 +341,7 @@ class _MapView extends StatelessWidget {
         ),
         Container(
           color: Theme.of(context).colorScheme.surface,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: AppInsets.listItem,
           child: SafeArea(
             top: false,
             child: Row(

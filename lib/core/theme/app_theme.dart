@@ -126,10 +126,7 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
           elevation: AppShadows.elevationLow,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
           textStyle: GoogleFonts.inter(
@@ -142,10 +139,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.primary,
           side: BorderSide(color: scheme.primary, width: 1.5),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
           textStyle: GoogleFonts.inter(
@@ -277,10 +271,7 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
           elevation: AppShadows.elevationLow,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
           textStyle: GoogleFonts.inter(
@@ -293,10 +284,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.primary,
           side: BorderSide(color: scheme.primary, width: 1.5),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
           textStyle: GoogleFonts.inter(

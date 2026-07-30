@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 class CategoryChips extends StatelessWidget {
 
@@ -45,7 +46,7 @@ class CategoryChips extends StatelessWidget {
                 onTap: () => onSelected(category == 'all' ? null : category),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: AppInsets.listItem,
                   decoration: BoxDecoration(
                     color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
                     borderRadius: AppRadius.sheetBorderSmBorder,

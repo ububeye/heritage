@@ -16,6 +16,7 @@ import '../../widgets/settings/settings_section_title.dart';
 import '../../widgets/settings/settings_tile.dart';
 import '../../screens/login_screen.dart';
 import 'admin_analytics_screen.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Admin settings surface. The body is a vertical list of four labelled
 /// sections, each a [SettingsCard] or a single tile:
@@ -51,10 +52,7 @@ class AdminSettingsScreen extends StatelessWidget {
           return BlocBuilder<LocalizationCubit, LocalizationState>(
             builder: (context, locState) {
               return ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: AppInsets.listItem,
                 children: [
                   // ── Tour catalogue (admin-side defaults) ──────────────
                   SettingsSectionTitle(
@@ -299,7 +297,7 @@ class _MaintenanceBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: AppInsets.listItem,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.semanticColors.warning.withValues(alpha: 0.12),

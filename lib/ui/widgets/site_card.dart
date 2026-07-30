@@ -1,4 +1,5 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -144,10 +145,7 @@ class SiteCard extends StatelessWidget {
                       child: BlocBuilder<LocalizationCubit, LocalizationState>(
                         builder: (context, loc) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
+                            padding: AppInsets.tag,
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.secondary,
                               borderRadius: AppRadius.mdBorder,

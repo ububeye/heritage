@@ -5,6 +5,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -327,7 +328,7 @@ class _LanguageOption extends StatelessWidget {
       onTap: onTap,
       borderRadius: AppRadius.mdBorder,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: AppInsets.chipTall,
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)

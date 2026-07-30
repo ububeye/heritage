@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 import '../../blocs/premium/premium_cubit.dart';
 import '../../blocs/premium/premium_state.dart';
@@ -480,7 +481,7 @@ class _ErrorBanner extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: AppInsets.bannerInner,
       decoration: BoxDecoration(
         color: scheme.errorContainer,
         borderRadius: AppRadius.bannerBorder,

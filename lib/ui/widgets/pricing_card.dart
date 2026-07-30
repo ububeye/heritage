@@ -1,4 +1,5 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -97,10 +98,7 @@ class PricingCard extends StatelessWidget {
                 if (badge != null) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
+                    padding: AppInsets.pillTiny,
                     decoration: BoxDecoration(
                       color: scheme.secondary,
                       borderRadius: AppRadius.bannerBorder,

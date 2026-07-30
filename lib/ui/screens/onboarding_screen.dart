@@ -6,6 +6,7 @@ import '../../blocs/localization/localization_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 class OnboardingScreen extends StatefulWidget {
 
@@ -229,7 +230,7 @@ class _LanguageSelector extends StatelessWidget {
       builder: (context, state) {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 24),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: AppInsets.listItem,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: AppRadius.mdBorder,

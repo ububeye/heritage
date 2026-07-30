@@ -6,6 +6,7 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import 'login_screen.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 import '../../data/models/user_model.dart';
 
@@ -25,7 +26,7 @@ class UserProfileScreen extends StatelessWidget {
             title: const Text('Profile'),
           ),
           body: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             children: [
               // Profile Header
               _buildProfileHeader(context, user),
@@ -69,10 +70,7 @@ class UserProfileScreen extends StatelessWidget {
                     subtitle: authState.isPremium ? 'Active' : 'Upgrade for more features',
                     trailing: authState.isPremium
                         ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
+                            padding: AppInsets.tag,
                             decoration: BoxDecoration(
                               color: context.semanticColors.success.withValues(alpha: 0.1),
                               borderRadius: AppRadius.smBorder,
@@ -205,10 +203,7 @@ class UserProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
+                  padding: AppInsets.pillTight,
                   decoration: BoxDecoration(
                     color: Theme.of(context)
                         .colorScheme

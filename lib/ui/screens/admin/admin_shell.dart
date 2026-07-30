@@ -16,6 +16,7 @@ import 'admin_user_management_screen.dart';
 import 'admin_settings_screen.dart';
 import 'admin_analytics_screen.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -135,7 +136,7 @@ class _AdminDashboard extends StatelessWidget {
         color: Theme.of(context).colorScheme.secondary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: AppInsets.card,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -301,7 +302,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppInsets.card,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.mdBorder,
@@ -424,7 +425,7 @@ class _MenuCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: AppRadius.lgBorder,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: AppInsets.card,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: AppRadius.lgBorder,

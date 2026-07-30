@@ -382,7 +382,7 @@ class _PlanBadge extends StatelessWidget {
         ? Theme.of(context).colorScheme.secondary
         : Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: AppInsets.badgePadding,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),

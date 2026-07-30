@@ -11,6 +11,7 @@ import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -129,7 +130,7 @@ class FavoritesScreen extends StatelessWidget {
               }
 
               return GridView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: AppInsets.card,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
@@ -276,10 +277,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                     bottom: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: AppInsets.tag,
                       decoration: BoxDecoration(
                         // Badge sits over the photo — scrim background
                         // and fixed-content foreground for legibility.

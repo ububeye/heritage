@@ -1,4 +1,5 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
@@ -88,7 +89,7 @@ class FeaturedSiteCard extends StatelessWidget {
               top: 16,
               left: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: AppInsets.pillSm,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.secondary,
                   borderRadius: AppRadius.sheetBorderSmBorder,
@@ -117,7 +118,7 @@ class FeaturedSiteCard extends StatelessWidget {
               top: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: AppInsets.tag,
                 decoration: BoxDecoration(
                   // Rating pill sits over the hero image — scrim
                   // background and fixed-content foreground.
@@ -149,7 +150,7 @@ class FeaturedSiteCard extends StatelessWidget {
               left: 0,
               right: 0,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: AppInsets.card,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

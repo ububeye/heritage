@@ -1,4 +1,5 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
@@ -68,7 +69,7 @@ class RatingBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: AppInsets.pillRow,
       decoration: BoxDecoration(
         // RatingBadge sits over a hero image — fixed-content scrim so
         // the star + number stay legible on any photograph.

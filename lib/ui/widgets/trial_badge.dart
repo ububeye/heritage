@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 import '../../blocs/premium/premium_state.dart';
 
@@ -36,7 +37,7 @@ class TrialBadge extends StatelessWidget {
     final accentOn = scheme.onSecondary;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: AppInsets.chipTall,
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.12),
         borderRadius: AppRadius.badgeBorder,

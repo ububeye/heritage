@@ -1,4 +1,5 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
@@ -19,7 +20,7 @@ class UpgradeBanner extends StatelessWidget {
       onTap: onUpgrade,
       child: Container(
         margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: AppInsets.chipTall,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.error,
           borderRadius: BorderRadius.circular(AppRadius.card),

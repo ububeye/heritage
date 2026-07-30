@@ -249,7 +249,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                           bottom: 4,
                           left: 4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: AppInsets.badgePadding,
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
                               borderRadius: AppRadius.xsBorder,
@@ -311,7 +311,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                         bottom: 4,
                         left: 4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: AppInsets.badgePadding,
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.secondary,
                             borderRadius: AppRadius.xsBorder,
@@ -337,7 +337,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
           onTap: _pickImages,
           borderRadius: AppRadius.mdBorder,
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: AppRadius.mdBorder,
@@ -375,7 +375,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: AppInsets.card,
           children: [
             const _SectionTitle(title: 'Photos'),
             _buildPhotoSection(),

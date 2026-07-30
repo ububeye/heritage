@@ -11,6 +11,7 @@ import '../../../data/services/cloudinary_service.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../widgets/heritage_map.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class AdminAddSiteScreen extends StatefulWidget {
   const AdminAddSiteScreen({super.key});
@@ -185,7 +186,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
           : Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: AppInsets.card,
                 children: [
                   _buildSectionTitle('Photos (Required - Min 1)'),
                   _buildPhotoSection(),
@@ -387,7 +388,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                           bottom: 4,
                           left: 4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: AppInsets.badgePadding,
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
                               borderRadius: AppRadius.xsBorder,
@@ -460,7 +461,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             child: Column(
               children: [
                 _buildTextField(
@@ -580,7 +581,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
 
   Widget _buildRadiusSlider() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppInsets.card,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.mdBorder,
@@ -678,7 +679,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: AppInsets.tag,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     foregroundColor: Theme.of(context).colorScheme.primary,
