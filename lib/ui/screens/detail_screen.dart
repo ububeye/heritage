@@ -19,6 +19,7 @@ import 'site_map_screen.dart';
 import 'upgrade_screen.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 class DetailScreen extends StatefulWidget {
 
@@ -120,7 +121,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                       trailing: locked
                           ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: AppInsets.pillTiny,
                               decoration: BoxDecoration(
                                 color: Theme.of(sheetContext).colorScheme.secondary,
                                 borderRadius: AppRadius.bannerBorder,
@@ -358,7 +359,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           top: MediaQuery.of(context).padding.top + 56,
                           left: 16,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: AppInsets.pillTight,
                             decoration: BoxDecoration(
                               // Image-counter pill sits on top of the
                               // hero gallery photo. Scrim + onImage for
@@ -447,7 +448,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: AppInsets.card,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
