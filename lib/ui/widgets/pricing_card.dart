@@ -1,4 +1,5 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_durations.dart';
 import 'package:flutter/material.dart';
@@ -71,14 +72,10 @@ class PricingCard extends StatelessWidget {
           border: Border.all(color: borderColor, width: borderWidth),
           boxShadow:
               isPrimary
-                  ? [
-                    // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
-                    BoxShadow(
-                      color: scheme.primary.withValues(alpha: 0.30),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
+                  ? AppShadows.brandHaloFor(
+                    Theme.of(context).brightness,
+                    primaryColor: scheme.primary,
+                  )
                   : null,
         ),
         child: Column(

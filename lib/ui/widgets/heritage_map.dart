@@ -10,6 +10,7 @@ import '../../data/services/location_service.dart';
 import '../../data/services/tile_cache_service.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Wraps `flutter_map` (OpenStreetMap tiles) with the project's color theme.
 ///
@@ -396,14 +397,7 @@ class _PinMarker extends StatelessWidget {
                 // background so the dark text is legible on any tile.
                 color: context.semanticColors.onImage,
                 borderRadius: AppRadius.xsBorder,
-                boxShadow: [
-                  // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
-                  BoxShadow(
-                    // Marker shadow — theme-aware.
-                    color: context.semanticColors.shadow,
-                    blurRadius: 2,
-                  ),
-                ],
+                boxShadow: AppShadows.mapPinFor(context.semanticColors.shadow),
               ),
               constraints: const BoxConstraints(maxWidth: 90),
               child: Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_semantic_colors.dart';
+import '../../core/theme/app_shadows.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import '../../core/theme/app_radius.dart';
@@ -191,15 +192,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surface,
                                   borderRadius: AppRadius.heroGreetingBorder,
-                                  boxShadow: [
-                                    // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
-                                    BoxShadow(
-                                      // Logo shadow — theme-aware.
-                                      color: context.semanticColors.shadow,
-                                      blurRadius: 30,
-                                      offset: const Offset(0, 15),
-                                    ),
-                                  ],
+                                  boxShadow: AppShadows.heroLogoFor(
+                                    Theme.of(context).brightness,
+                                    shadowColor: context.semanticColors.shadow,
+                                  ),
                                 ),
                                 child: ClipRRect(
                                   borderRadius: AppRadius.heroGreetingBorder,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 
 import '../../blocs/premium/premium_cubit.dart';
@@ -348,14 +349,10 @@ class _Hero extends StatelessWidget {
             colors: [scheme.secondary, scheme.primary],
           ),
           borderRadius: AppRadius.ctaButtonBorder,
-          boxShadow: [
-            // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
-            BoxShadow(
-              color: scheme.secondary.withValues(alpha: 0.45),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
+          boxShadow: AppShadows.brandHaloFor(
+            Theme.of(context).brightness,
+            primaryColor: scheme.secondary,
+          ),
         ),
         child: Icon(
           Icons.workspace_premium,

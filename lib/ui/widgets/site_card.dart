@@ -1,6 +1,8 @@
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
+
+import '../../core/theme/app_shadows.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
@@ -38,15 +40,7 @@ class SiteCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          boxShadow: [
-            // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
-            BoxShadow(
-              // Card shadow — theme-aware.
-              color: context.semanticColors.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,14 +111,9 @@ class SiteCard extends StatelessWidget {
                                   // Pill over the hero image — fixed white.
                                   color: context.semanticColors.onImage,
                                   shape: BoxShape.circle,
-                                  boxShadow: [
-                                    // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
-                                    BoxShadow(
-                                      // Pill shadow — theme-aware.
-                                      color: context.semanticColors.shadow,
-                                      blurRadius: 4,
-                                    ),
-                                  ],
+                                  boxShadow: AppShadows.lowFor(
+                                    Theme.of(context).brightness,
+                                  ),
                                 ),
                                 child: Icon(
                                   isFavorite

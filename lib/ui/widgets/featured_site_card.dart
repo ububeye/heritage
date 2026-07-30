@@ -1,4 +1,5 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -31,15 +32,7 @@ class FeaturedSiteCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.card),
-          boxShadow: [
-            // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
-            BoxShadow(
-              // Featured-card shadow — theme-aware.
-              color: context.semanticColors.shadow,
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
         ),
         child: Stack(
           children: [

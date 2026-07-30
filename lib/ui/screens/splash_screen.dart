@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
@@ -173,15 +174,10 @@ class _SplashScreenState extends State<SplashScreen>
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
                               borderRadius: AppRadius.heroImageBorder,
-                              boxShadow: [
-                                // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
-                                BoxShadow(
-                                  // Logo shadow — theme-aware.
-                                  color: context.semanticColors.shadow,
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 15),
-                                ),
-                              ],
+                              boxShadow: AppShadows.heroLogoFor(
+                                Theme.of(context).brightness,
+                                shadowColor: context.semanticColors.shadow,
+                              ),
                             ),
                             child: ClipRRect(
                               borderRadius: AppRadius.heroImageBorder,

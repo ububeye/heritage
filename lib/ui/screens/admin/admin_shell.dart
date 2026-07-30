@@ -184,16 +184,10 @@ class _WelcomeCard extends StatelessWidget {
               ],
             ),
             borderRadius: AppRadius.lgBorder,
-            boxShadow: [
-              // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
-              BoxShadow(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: AppShadows.brandHaloFor(
+              Theme.of(context).brightness,
+              primaryColor: Theme.of(context).colorScheme.primary,
+            ),
           ),
           child: Row(
             children: [
@@ -316,14 +310,7 @@ class _StatCard extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.mdBorder,
         border: Border.all(color: Theme.of(context).colorScheme.outline),
-        boxShadow: [
-          // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
-          BoxShadow(
-            color: context.semanticColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
       ),
       child: Column(
         children: [

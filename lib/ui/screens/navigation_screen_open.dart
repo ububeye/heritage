@@ -10,6 +10,7 @@ import '../../data/services/shared_prefs_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 
 import '../../blocs/auth/auth_cubit.dart';
@@ -619,14 +620,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AppRadius.sheetBorderSm),
           ),
-          boxShadow: [
-            BoxShadow(
-              // Shadow tone uses the theme-aware semantic shadow colour.
-              color: context.semanticColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
+          boxShadow: AppShadows.bottomBarFor(context.semanticColors.shadow),
         ),
         child: SafeArea(
           top: false,
