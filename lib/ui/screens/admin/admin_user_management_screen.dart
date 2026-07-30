@@ -91,6 +91,7 @@ class _UserManagementContent extends StatelessWidget {
             ),
           ),
           _buildStatsBar(),
+          _buildFilterAndSort(),
           Expanded(child: _buildUserList()),
         ],
       ),
@@ -128,6 +129,99 @@ class _UserManagementContent extends StatelessWidget {
                 'Admins',
                 state.adminUsers.toString(),
                 context.semanticColors.success,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterAndSort() {
+    return BlocBuilder<UserCubit, UserState>(
+      builder: (context, state) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: state.roleFilter == null,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(null),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Admins',
+                        isSelected: state.roleFilter == UserRole.admin,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(
+                              UserRole.admin,
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Premium',
+                        isSelected: state.roleFilter == UserRole.premium,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(
+                              UserRole.premium,
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Free',
+                        isSelected: state.roleFilter == UserRole.free,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(
+                              UserRole.free,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  borderRadius: AppRadius.smBorder,
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<UserSortOrder>(
+                    value: state.sortOrder,
+                    icon: const Icon(Icons.sort, size: 18),
+                    style: Theme.of(context).textTheme.bodySmall,
+                    items: const [
+                      DropdownMenuItem(
+                        value: UserSortOrder.nameAsc,
+                        child: Text('A-Z'),
+                      ),
+                      DropdownMenuItem(
+                        value: UserSortOrder.nameDesc,
+                        child: Text('Z-A'),
+                      ),
+                      DropdownMenuItem(
+                        value: UserSortOrder.newestFirst,
+                        child: Text('Newest'),
+                      ),
+                    ],
+                    onChanged: (order) {
+                      if (order != null) {
+                        context.read<UserCubit>().setSortOrder(order);
+                      }
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -443,6 +537,51 @@ class _UserCard extends StatelessWidget {
               onRoleChange(role);
             }
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.pill,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.pill,
+          border: Border.all(
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.onSurface,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
         ),
       ),
     );

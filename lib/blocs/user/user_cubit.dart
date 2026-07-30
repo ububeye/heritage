@@ -60,7 +60,17 @@ class UserCubit extends Cubit<UserState> {
   void searchUsers(String query) {
     emit(state.copyWith(searchQuery: query));
   }
+
+  void setRoleFilter(UserRole? role) {
+    emit(state.copyWith(roleFilter: () => role));
+  }
+
+  void setSortOrder(UserSortOrder sortOrder) {
+    emit(state.copyWith(sortOrder: sortOrder));
+  }
 }
+
+enum UserSortOrder { nameAsc, nameDesc, newestFirst }
 
 class UserState {
   const UserState({
@@ -71,6 +81,8 @@ class UserState {
     this.totalUsers = 0,
     this.premiumUsers = 0,
     this.adminUsers = 0,
+    this.roleFilter,
+    this.sortOrder = UserSortOrder.nameAsc,
   });
   final UserStatus status;
   final List<UserModel> users;
@@ -79,6 +91,8 @@ class UserState {
   final int totalUsers;
   final int premiumUsers;
   final int adminUsers;
+  final UserRole? roleFilter;
+  final UserSortOrder sortOrder;
 
   UserState copyWith({
     UserStatus? status,
@@ -88,6 +102,8 @@ class UserState {
     int? totalUsers,
     int? premiumUsers,
     int? adminUsers,
+    UserRole? Function()? roleFilter,
+    UserSortOrder? sortOrder,
   }) {
     return UserState(
       status: status ?? this.status,
@@ -97,17 +113,50 @@ class UserState {
       totalUsers: totalUsers ?? this.totalUsers,
       premiumUsers: premiumUsers ?? this.premiumUsers,
       adminUsers: adminUsers ?? this.adminUsers,
+      roleFilter: roleFilter != null ? roleFilter() : this.roleFilter,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
   List<UserModel> get filteredUsers {
-    if (searchQuery.isEmpty) return users;
-    return users.where((user) {
-      final email = user.email.toLowerCase();
-      final name = user.displayName?.toLowerCase() ?? '';
+    List<UserModel> result = users;
+
+    if (roleFilter != null) {
+      result = result.where((u) => u.role == roleFilter).toList();
+    }
+
+    if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
-      return email.contains(query) || name.contains(query);
-    }).toList();
+      result = result.where((user) {
+        final email = user.email.toLowerCase();
+        final name = user.displayName?.toLowerCase() ?? '';
+        return email.contains(query) || name.contains(query);
+      }).toList();
+    }
+
+    result = List.from(result);
+    switch (sortOrder) {
+      case UserSortOrder.nameAsc:
+        result.sort((a, b) => (a.displayName ?? a.email)
+            .toLowerCase()
+            .compareTo((b.displayName ?? b.email).toLowerCase()));
+        break;
+      case UserSortOrder.nameDesc:
+        result.sort((a, b) => (b.displayName ?? b.email)
+            .toLowerCase()
+            .compareTo((a.displayName ?? a.email).toLowerCase()));
+        break;
+      case UserSortOrder.newestFirst:
+        result.sort((a, b) {
+          if (a.createdAt == null && b.createdAt == null) return 0;
+          if (a.createdAt == null) return 1;
+          if (b.createdAt == null) return -1;
+          return b.createdAt!.compareTo(a.createdAt!);
+        });
+        break;
+    }
+
+    return result;
   }
 }
 

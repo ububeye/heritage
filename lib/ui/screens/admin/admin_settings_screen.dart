@@ -14,7 +14,7 @@ import '../../widgets/settings/settings_dropdown_tile.dart';
 import '../../widgets/settings/settings_section_title.dart';
 import '../../widgets/settings/settings_tile.dart';
 import '../../screens/login_screen.dart';
-import 'admin_analytics_screen.dart';
+import '../user_profile_screen.dart';
 import '../../../core/theme/app_spacing.dart';
 
 /// Admin settings surface. The body is a vertical list of four labelled
@@ -127,6 +127,19 @@ class AdminSettingsScreen extends StatelessWidget {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              SettingsTile(
+                                icon: Icons.person,
+                                iconColor: Theme.of(context).colorScheme.primary,
+                                title: _tr(locState, 'profile') == 'profile'
+                                    ? 'My Profile'
+                                    : _tr(locState, 'profile'),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const UserProfileScreen(),
+                                  ),
+                                ),
+                              ),
+                              const SettingsDivider(),
                               SettingsSwitchTile(
                                 icon: Icons.build_circle_outlined,
                                 iconColor: context.semanticColors.warning,
