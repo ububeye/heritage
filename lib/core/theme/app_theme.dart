@@ -38,17 +38,31 @@ class AppTheme {
           color: AppColors.textPrimary,
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      // BottomNavigationBarTheme removed — both user and admin shells
+      // now use the M3 NavigationBar styled via navigationBarTheme (below).
+      // M3 NavigationBar — used by the Admin shell. The user app still
+      // uses the M2 BottomNavigationBar (above) so this entry is purely
+      // additive; nothing else needs to change.
+      navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-        selectedLabelStyle: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: TextStyle(fontSize: 12),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
+        elevation: 2,
+        height: 72,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            color: selected ? AppColors.primary : AppColors.textSecondary,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? AppColors.primary : AppColors.textSecondary,
+            size: 24,
+          );
+        }),
       ),
       cardTheme: CardTheme(
         color: AppColors.surface,
@@ -198,17 +212,29 @@ class AppTheme {
           color: AppColors.darkBody,
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surfaceDark,
-        selectedItemColor: AppColors.primaryLight,
-        unselectedItemColor: AppColors.darkMuted,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-        selectedLabelStyle: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: TextStyle(fontSize: 12),
+      // BottomNavigationBarTheme removed — dark variant, same rationale
+      // as the light theme above.
+      // M3 NavigationBar — Admin shell on dark surfaces.
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.darkSurfaceContainer,
+        indicatorColor: AppColors.primaryLight.withValues(alpha: 0.18),
+        elevation: 2,
+        height: 72,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            color: selected ? AppColors.primaryLight : AppColors.darkMuted,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? AppColors.primaryLight : AppColors.darkMuted,
+            size: 24,
+          );
+        }),
       ),
       cardTheme: CardTheme(
         color: AppColors.darkSurfaceContainer,

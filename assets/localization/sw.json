@@ -73,6 +73,10 @@
   "cancel_anytime": "Ondoa wakati wowote",
 
   "admin_dashboard": "Dashibodi ya Msimamizi",
+  "admin_tab_home": "Mwanzo",
+  "admin_tab_sites": "Maeneo",
+  "admin_tab_users": "Watumiaji",
+  "admin_tab_settings": "Mipangilio",
   "add_site": "Ongeza Mahali",
   "edit_site": "Hariri Mahali",
   "user_management": "Usimamizi wa Watumiaji",

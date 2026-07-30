@@ -34,130 +34,62 @@ class _AdminShellState extends State<AdminShell> {
           body: IndexedStack(
             index: _currentIndex,
             children: [
-              _AdminDashboard(locState: locState, tr: _tr),
+              _AdminDashboard(
+                locState: locState,
+                tr: _tr,
+                onNavigateToTab: (i) => setState(() => _currentIndex = i),
+              ),
               const AdminSitesScreen(),
               const AdminUserManagementScreen(),
               const AdminSettingsScreen(),
             ],
           ),
-          bottomNavigationBar: _buildBottomNav(locState),
-        );
-      },
-    );
-  }
-
-  Widget _buildBottomNav(LocalizationState locState) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.dashboard_outlined,
-                activeIcon: Icons.dashboard,
-                label: _tr(locState, 'admin'),
-                isSelected: _currentIndex == 0,
-                onTap: () => setState(() => _currentIndex = 0),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (i) => setState(() => _currentIndex = i),
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.dashboard_outlined),
+                selectedIcon: const Icon(Icons.dashboard),
+                label: _tr(locState, 'admin_tab_home'),
+                tooltip: _tr(locState, 'admin_tab_home'),
               ),
-              _NavItem(
-                icon: Icons.location_city_outlined,
-                activeIcon: Icons.location_city,
-                label: _tr(locState, 'best_places'),
-                isSelected: _currentIndex == 1,
-                onTap: () => setState(() => _currentIndex = 1),
+              NavigationDestination(
+                icon: const Icon(Icons.location_city_outlined),
+                selectedIcon: const Icon(Icons.location_city),
+                label: _tr(locState, 'admin_tab_sites'),
+                tooltip: _tr(locState, 'admin_tab_sites'),
               ),
-              _NavItem(
-                icon: Icons.people_outline,
-                activeIcon: Icons.people,
-                label: _tr(locState, 'user_management'),
-                isSelected: _currentIndex == 2,
-                onTap: () => setState(() => _currentIndex = 2),
+              NavigationDestination(
+                icon: const Icon(Icons.people_outline),
+                selectedIcon: const Icon(Icons.people),
+                label: _tr(locState, 'admin_tab_users'),
+                tooltip: _tr(locState, 'admin_tab_users'),
               ),
-              _NavItem(
-                icon: Icons.settings_outlined,
-                activeIcon: Icons.settings,
-                label: _tr(locState, 'settings'),
-                isSelected: _currentIndex == 3,
-                onTap: () => setState(() => _currentIndex = 3),
+              NavigationDestination(
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                label: _tr(locState, 'admin_tab_settings'),
+                tooltip: _tr(locState, 'admin_tab_settings'),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? AppColors.primary : AppColors.textHint,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? AppColors.primary : AppColors.textHint,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 class _AdminDashboard extends StatelessWidget {
 
-  const _AdminDashboard({required this.locState, required this.tr});
+  const _AdminDashboard({
+    required this.locState,
+    required this.tr,
+    required this.onNavigateToTab,
+  });
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
+  final ValueChanged<int> onNavigateToTab;
 
   @override
   Widget build(BuildContext context) {
@@ -186,9 +118,17 @@ class _AdminDashboard extends StatelessWidget {
               const SizedBox(height: 20),
               _StatsSection(locState: locState, tr: tr),
               const SizedBox(height: 24),
-              _MenuSection(locState: locState, tr: tr),
+              _MenuSection(
+                locState: locState,
+                tr: tr,
+                onNavigateToTab: onNavigateToTab,
+              ),
               const SizedBox(height: 24),
-              _QuickActionsSection(locState: locState, tr: tr),
+              _QuickActionsSection(
+                locState: locState,
+                tr: tr,
+                onNavigateToTab: onNavigateToTab,
+              ),
             ],
           ),
         ),
@@ -241,7 +181,7 @@ class _WelcomeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome, Admin!',
+                      tr(locState, 'admin_welcome'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -285,7 +225,7 @@ class _StatsSection extends StatelessWidget {
               return _StatCard(
                 icon: Icons.location_city,
                 value: state.sites.length.toString(),
-                label: 'Sites',
+                label: tr(locState, 'best_places'),
                 color: AppColors.primary,
               );
             },
@@ -298,7 +238,7 @@ class _StatsSection extends StatelessWidget {
               return _StatCard(
                 icon: Icons.people,
                 value: state.totalUsers.toString(),
-                label: 'Users',
+                label: tr(locState, 'user_management'),
                 color: AppColors.accent,
               );
             },
@@ -311,7 +251,7 @@ class _StatsSection extends StatelessWidget {
               return _StatCard(
                 icon: Icons.workspace_premium,
                 value: state.premiumUsers.toString(),
-                label: 'Premium',
+                label: tr(locState, 'upgrade_to_premium'),
                 color: AppColors.success,
               );
             },
@@ -377,6 +317,9 @@ class _StatCard extends StatelessWidget {
               fontSize: 11,
               color: AppColors.textSecondary,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -386,35 +329,38 @@ class _StatCard extends StatelessWidget {
 
 class _MenuSection extends StatelessWidget {
 
-  const _MenuSection({required this.locState, required this.tr});
+  const _MenuSection({
+    required this.locState,
+    required this.tr,
+    required this.onNavigateToTab,
+  });
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
+  final ValueChanged<int> onNavigateToTab;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title: 'Management'),
+        _SectionHeader(title: tr(locState, 'admin_dashboard_subtitle')),
         const SizedBox(height: 12),
         _MenuCard(
           icon: Icons.location_on,
           title: tr(locState, 'best_places'),
-          subtitle: 'Add, edit & delete sites',
+          subtitle: tr(locState, 'admin_tab_sites'),
           color: AppColors.primary,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AdminSitesScreen()),
-          ),
+          // Switch to the Sites tab (index 1) instead of pushing a new
+          // AdminSitesScreen instance — the bottom nav stays in sync.
+          onTap: () => onNavigateToTab(1),
         ),
         const SizedBox(height: 12),
         _MenuCard(
           icon: Icons.people,
           title: tr(locState, 'user_management'),
-          subtitle: 'View & manage users',
+          subtitle: tr(locState, 'admin_tab_users'),
           color: AppColors.accent,
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AdminUserManagementScreen()),
-          ),
+          onTap: () => onNavigateToTab(2),
         ),
       ],
     );
@@ -431,9 +377,9 @@ class _SectionHeader extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
       ),
     );
   }
@@ -517,9 +463,14 @@ class _MenuCard extends StatelessWidget {
 
 class _QuickActionsSection extends StatelessWidget {
 
-  const _QuickActionsSection({required this.locState, required this.tr});
+  const _QuickActionsSection({
+    required this.locState,
+    required this.tr,
+    required this.onNavigateToTab,
+  });
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
+  final ValueChanged<int> onNavigateToTab;
 
   @override
   Widget build(BuildContext context) {
@@ -535,9 +486,9 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.add_location,
                 label: tr(locState, 'add_site'),
                 color: AppColors.primary,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminSitesScreen(addNew: true)),
-                ),
+                // Drop the redundant AdminSitesScreen(addNew:true) push —
+                // jump to the Sites tab and rely on its own FAB for "+".
+                onTap: () => onNavigateToTab(1),
               ),
             ),
             const SizedBox(width: 12),
@@ -546,6 +497,8 @@ class _QuickActionsSection extends StatelessWidget {
                 icon: Icons.analytics,
                 label: tr(locState, 'analytics'),
                 color: AppColors.accent,
+                // Analytics is a pushed screen (not a tab). Pre-existing
+                // behaviour — keep it so the chip stays useful.
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AdminAnalyticsScreen()),
                 ),

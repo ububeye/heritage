@@ -73,6 +73,10 @@
   "cancel_anytime": "Cancel anytime",
 
   "admin_dashboard": "Admin Dashboard",
+  "admin_tab_home": "Home",
+  "admin_tab_sites": "Sites",
+  "admin_tab_users": "Users",
+  "admin_tab_settings": "Settings",
   "add_site": "Add Site",
   "edit_site": "Edit Site",
   "user_management": "User Management",

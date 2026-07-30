@@ -54,27 +54,34 @@ class _HomeScreenState extends State<HomeScreen> {
               const KeepAlivePage(child: SettingsScreen()),
             ],
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (index) {
+          // M3 NavigationBar. Uses the themed indicator pill + 72dp
+          // height we added to AppTheme — drops the legacy M2
+          // BottomNavigationBar so the user shell matches the admin
+          // shell, which already migrated in PR-A.
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (index) {
               setState(() => _currentIndex = index);
               _pageController.jumpToPage(index);
             },
-            items: [
-              BottomNavigationBarItem(
+            destinations: [
+              NavigationDestination(
                 icon: const Icon(Icons.home_outlined),
-                activeIcon: const Icon(Icons.home),
+                selectedIcon: const Icon(Icons.home),
                 label: _tr(locState, 'home'),
+                tooltip: _tr(locState, 'home'),
               ),
-              BottomNavigationBarItem(
+              NavigationDestination(
                 icon: const Icon(Icons.explore_outlined),
-                activeIcon: const Icon(Icons.explore),
+                selectedIcon: const Icon(Icons.explore),
                 label: _tr(locState, 'explore'),
+                tooltip: _tr(locState, 'explore'),
               ),
-              BottomNavigationBarItem(
+              NavigationDestination(
                 icon: const Icon(Icons.settings_outlined),
-                activeIcon: const Icon(Icons.settings),
+                selectedIcon: const Icon(Icons.settings),
                 label: _tr(locState, 'settings'),
+                tooltip: _tr(locState, 'settings'),
               ),
             ],
           ),
