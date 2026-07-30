@@ -14,9 +14,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:stone_town_heritage_vt_guide/data/services/runtime_config_service.dart';
 import 'package:stone_town_heritage_vt_guide/data/services/routing_service.dart';
 
 void main() {
+  // RoutingService.getRoute reads RuntimeConfigService.instance.orsApiKey on
+  // every call (see routing_service.dart:348) so the ORS key toggle takes
+  // effect without recreating the service. The singleton in turn reads from
+  // SharedPreferences. Tests need both initialised before the first call.
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await RuntimeConfigService.getInstance();
+  });
+
   group('RoutingService.getRoute', () {
     test('parses a successful OSRM GeoJSON response into LatLng points',
         () async {
