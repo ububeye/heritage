@@ -17,6 +17,7 @@ import 'blocs/explore/explore_cubit.dart';
 import 'blocs/user/user_cubit.dart';
 import 'blocs/favorites/favorites_cubit.dart';
 import 'blocs/theme/theme_cubit.dart';
+import 'blocs/runtime_config/runtime_config_cubit.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/billing_provider.dart';
 import 'data/services/fake_billing_provider.dart';
@@ -84,6 +85,14 @@ class StoneTownApp extends StatelessWidget {
         BlocProvider<UserCubit>(create: (_) => UserCubit()),
         BlocProvider<FavoritesCubit>(create: (_) => FavoritesCubit()),
         BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
+        // RuntimeConfigCubit mirrors RuntimeConfigService. Widgets read
+        // values via BlocBuilder / context.watch; the underlying service
+        // is the source of truth that TtsService and RoutingService also
+        // read from. Initialised here so any descendant can subscribe
+        // without an extra Provider indirection.
+        BlocProvider<RuntimeConfigCubit>(
+          create: (_) => RuntimeConfigCubit(),
+        ),
       ],
       child: BlocListener<LocalizationCubit, LocalizationState>(
         // Listen for four distinct signals from LocalizationCubit:

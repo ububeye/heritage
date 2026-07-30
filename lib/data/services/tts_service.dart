@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/constants/app_constants.dart';
 import '../models/audio_state.dart';
+import 'runtime_config_service.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -157,8 +158,21 @@ class TtsService {
     _updateMaxDuration();
   }
 
+  /// Update the free-tier narration cap at runtime. Mirrors [setPremium] —
+  /// call after the admin changes the value through [RuntimeConfigCubit] so
+  /// the next `speak()` reflects the new budget without an app restart.
+  /// Restart also picks up the change because [_updateMaxDuration] re-reads
+  /// from [RuntimeConfigService] on every call.
+  void setFreeAudioMaxSeconds(int seconds) {
+    _updateMaxDuration();
+  }
+
   void _updateMaxDuration() {
-    _maxDurationSeconds = _isPremium ? 0 : AppConstants.freeAudioMaxSeconds;
+    // Re-read on every update so a runtime change takes effect even if a
+    // caller forgets to invoke [setFreeAudioMaxSeconds] explicitly.
+    // Premium users get unlimited playback (0 = no cap).
+    _maxDurationSeconds =
+        _isPremium ? 0 : RuntimeConfigService.instance.freeAudioMaxSeconds;
   }
 
   /// Switch the TTS voice to the locale matching [languageCode].

@@ -135,6 +135,13 @@ class AppConstants {
   static const String keyPlaybackSpeed = 'playback_speed'; // double as string
   static const String keyAutoPlayOnArrival = 'auto_play_on_arrival';
 
+  // Runtime config keys — values that admins change through
+  // admin_settings_screen.dart without rebuilding the app. Backing store
+  // is SharedPreferences; see [RuntimeConfigService].
+  static const String keyFreeAudioMaxSeconds = 'free_audio_max_seconds';
+  static const String keyOrsApiKey = 'ors_api_key';
+  static const String keyMaintenanceMode = 'maintenance_mode';
+
   // Map providers
   /// Map provider identifiers. 'open' is the default key-free path.
   static const String mapProviderOpen = 'open';

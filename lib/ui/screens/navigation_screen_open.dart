@@ -15,6 +15,7 @@ import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../blocs/navigation/navigation_cubit.dart';
 import '../../blocs/navigation/navigation_state.dart';
+import '../../blocs/runtime_config/runtime_config_cubit.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
@@ -432,16 +433,27 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               ),
           ],
         ),
-        RichAttributionWidget(
-          alignment: AttributionAlignment.bottomLeft,
-          attributions: [
-            const TextSourceAttribution('© OpenStreetMap contributors'),
-            TextSourceAttribution(
-              AppConstants.orsApiKey.isNotEmpty
-                  ? 'Routing by OpenRouteService / OSRM'
-                  : 'Routing by OSRM',
-            ),
-          ],
+        // The attribution widget's slot must hold `SourceAttribution`
+        // instances (the class is sealed — no subclassing). To keep the
+        // label reactive when an admin flips the ORS key, we wrap the
+        // whole widget in a BlocBuilder that only rebuilds when the key
+        // changes; the static "© OpenStreetMap contributors" entry is
+        // cheap to recreate alongside.
+        BlocBuilder<RuntimeConfigCubit, RuntimeConfigState>(
+          buildWhen: (prev, curr) => prev.orsApiKey != curr.orsApiKey,
+          builder: (context, state) {
+            return RichAttributionWidget(
+              alignment: AttributionAlignment.bottomLeft,
+              attributions: [
+                const TextSourceAttribution('© OpenStreetMap contributors'),
+                TextSourceAttribution(
+                  state.orsApiKey.isNotEmpty
+                      ? 'Routing by OpenRouteService / OSRM'
+                      : 'Routing by OSRM',
+                ),
+              ],
+            );
+          },
         ),
       ],
     );

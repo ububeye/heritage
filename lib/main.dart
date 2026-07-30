@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
+import 'data/services/runtime_config_service.dart';
 import 'data/services/shared_prefs_service.dart';
 import 'data/services/tile_cache_service.dart';
 
@@ -24,6 +25,11 @@ void main() async {
 
   await Firebase.initializeApp();
   await SharedPrefsService.getInstance();
+  // RuntimeConfigService is read on first frame by TtsService init and
+  // RoutingService — initialise it before runApp so the very first
+  // frame sees persisted values instead of the in-memory defaults
+  // from RuntimeConfigSnapshot.initial().
+  await RuntimeConfigService.getInstance();
 
   // Tile cache init is fire-and-forget — the cache is opportunistic
   // and the map still works even if the directory can't be created.

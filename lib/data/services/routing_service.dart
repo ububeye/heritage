@@ -10,6 +10,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../models/site_model.dart';
 import 'route_cache_service.dart';
+import 'runtime_config_service.dart';
 
 /// A single turn-by-turn instruction returned by the routing engine.
 ///
@@ -341,8 +342,10 @@ class RoutingService {
 
     // 2. Provider chain. We try ORS first only when a key is configured —
     // otherwise the public endpoint will reject every request and we'd
-    // burn the timeout twice for nothing.
-    final providers = AppConstants.orsApiKey.isNotEmpty
+    // burn the timeout twice for nothing. The key is read fresh on each
+    // call so admin-side runtime changes take effect on the next request
+    // without recreating this service.
+    final providers = RuntimeConfigService.instance.orsApiKey.isNotEmpty
         ? const [_RoutingProvider.openRouteService, _RoutingProvider.osrmDemo]
         : const [_RoutingProvider.osrmDemo];
 
@@ -439,7 +442,7 @@ class RoutingService {
         .post(
           Uri.parse(AppConstants.orsBaseUrl),
           headers: {
-            'Authorization': AppConstants.orsApiKey,
+            'Authorization': RuntimeConfigService.instance.orsApiKey,
             'Content-Type': 'application/json',
             'Accept':
                 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
