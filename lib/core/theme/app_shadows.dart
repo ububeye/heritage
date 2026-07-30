@@ -50,4 +50,33 @@ class AppShadows {
     }
     return low;
   }
+
+  /// Brightness-aware medium shadow. Mirrors [lowFor]'s white-halo behaviour
+  /// so cards on dark surfaces still read as elevated.
+  static List<BoxShadow> mediumFor(Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return const [
+        BoxShadow(
+          color: Color(0x18FFFFFF), // white @ ~9.5%
+          blurRadius: 10.0,
+          offset: Offset(0, 4),
+        ),
+      ];
+    }
+    return medium;
+  }
+
+  /// Brightness-aware high shadow.
+  static List<BoxShadow> highFor(Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return const [
+        BoxShadow(
+          color: Color(0x1FFFFFFF), // white @ ~12.5%
+          blurRadius: 18.0,
+          offset: Offset(0, 8),
+        ),
+      ];
+    }
+    return high;
+  }
 }
