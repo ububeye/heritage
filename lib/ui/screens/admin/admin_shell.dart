@@ -148,6 +148,8 @@ class _AdminDashboard extends StatelessWidget {
                 tr: tr,
                 onNavigateToTab: onNavigateToTab,
               ),
+              const SizedBox(height: 40),
+              _RecentActivities(locState: locState, tr: tr),
             ],
           ),
         ),
@@ -414,6 +416,126 @@ class _QuickActionTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentActivities extends StatelessWidget {
+  const _RecentActivities({required this.locState, required this.tr});
+  final LocalizationState locState;
+  final String Function(LocalizationState, String) tr;
+
+  @override
+  Widget build(BuildContext context) {
+    // Stub for recent activities. In a real app this would be driven by a Cubit.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recent Activities',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: AppRadius.lgBorder,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+            ),
+            boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            children: [
+              _ActivityTile(
+                icon: Icons.person_add,
+                title: 'New user registered',
+                subtitle: 'johndoe@example.com joined the app.',
+                time: '10 mins ago',
+              ),
+              const Divider(height: 1),
+              _ActivityTile(
+                icon: Icons.edit_location_alt,
+                title: 'Site updated',
+                subtitle: 'Admin updated "Forodhani Gardens" details.',
+                time: '2 hours ago',
+              ),
+              const Divider(height: 1),
+              _ActivityTile(
+                icon: Icons.star,
+                title: 'Premium upgrade',
+                subtitle: 'User purchased the offline map bundle.',
+                time: '1 day ago',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivityTile extends StatelessWidget {
+  const _ActivityTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.time,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String time;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          ),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4.0),
+        child: Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      trailing: Text(
+        time,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
           ],
         ),
       ),
