@@ -10,6 +10,7 @@ import '../../data/services/shared_prefs_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/language/language_cubit.dart';
@@ -552,7 +553,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           elevation: 2,
           borderRadius: AppRadius.bannerBorder,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: AppInsets.bannerInner,
             child: Text(
               text,
               textAlign: TextAlign.center,
@@ -848,7 +849,7 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: AppInsets.pillRow,
       decoration: BoxDecoration(
         color: color,
         borderRadius: AppRadius.sheetBorderSmBorder,
