@@ -6,6 +6,7 @@ import '../../core/utils/language_meta.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/audio_state.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Bottom-sheet audio player used on the site detail screen.
 ///
@@ -50,7 +51,7 @@ class AudioPlayerBar extends StatelessWidget {
         audioState.wasTruncated && !isPremium && audioState.duration > Duration.zero;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppInsets.card,
       decoration: BoxDecoration(
         color: scheme.surface,
         boxShadow: [
@@ -186,7 +187,7 @@ class _LanguageChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: AppRadius.lgBorder,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: AppInsets.pillTight,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
           borderRadius: AppRadius.lgBorder,
@@ -226,7 +227,7 @@ class _PreviewBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: AppInsets.pillTiny,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondary,
         borderRadius: AppRadius.bannerBorder,
