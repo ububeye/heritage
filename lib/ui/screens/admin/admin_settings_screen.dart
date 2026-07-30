@@ -8,11 +8,13 @@ import '../../../blocs/auth/auth_cubit.dart';
 import '../../../blocs/auth/auth_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/language/language_cubit.dart';
+import '../../../blocs/runtime_config/runtime_config_cubit.dart';
 import '../../widgets/settings/settings_card.dart';
 import '../../widgets/settings/settings_dropdown_tile.dart';
 import '../../widgets/settings/settings_section_title.dart';
 import '../../widgets/settings/settings_tile.dart';
 import '../../screens/login_screen.dart';
+import 'admin_analytics_screen.dart';
 
 /// Admin settings surface. The body is a vertical list of four labelled
 /// sections, each a [SettingsCard] or a single tile:
@@ -98,13 +100,80 @@ class AdminSettingsScreen extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // ── Operational ───────────────────────────────────────
-                  // Header-only placeholder. The Phase 3 commit adds the
-                  // analytics-shortcut tile and the maintenance-mode
-                  // toggle here. Keeping the section header now means the
-                  // layout is stable when those tiles arrive.
                   SettingsSectionTitle(
                     label: _tr(locState, 'admin_section_operational'),
                   ),
+                  SettingsCard(children: [
+                    // Live maintenance indicator + one-tap toggle. We
+                    // wrap the maintenance rows in a BlocBuilder so the
+                    // active banner and the switch state stay in sync
+                    // with the cubit — without this the switch reads
+                    // the initial value once and stops reacting to
+                    // out-of-band changes (e.g. another admin flips it
+                    // via deep link).
+                    BlocBuilder<RuntimeConfigCubit, RuntimeConfigState>(
+                      builder: (context, runtimeState) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SettingsSwitchTile(
+                              icon: Icons.build_circle_outlined,
+                              iconColor: AppColors.warning,
+                              title: _tr(
+                                locState,
+                                'admin_maintenance_mode',
+                              ),
+                              subtitle: _tr(
+                                locState,
+                                'admin_maintenance_mode_subtitle',
+                              ),
+                              value: runtimeState.maintenanceMode,
+                              onChanged: (v) => context
+                                  .read<RuntimeConfigCubit>()
+                                  .setMaintenanceMode(v),
+                            ),
+                            if (runtimeState.maintenanceMode) ...[
+                              const SettingsDivider(),
+                              _MaintenanceBanner(
+                                message: _tr(
+                                  locState,
+                                  'admin_maintenance_active_banner',
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                    const SettingsDivider(),
+                    SettingsTile(
+                      icon: Icons.bar_chart,
+                      iconColor: AppColors.accent,
+                      title: _tr(locState, 'admin_view_analytics'),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AdminAnalyticsScreen(),
+                        ),
+                      ),
+                    ),
+                  ],),
+                  const SizedBox(height: 16),
+
+                  // Runtime configuration — values admins can change
+                  // without rebuilding the app. Each tile shows the
+                  // current value from RuntimeConfigCubit and edits
+                  // round-trip through the cubit, which writes to
+                  // SharedPreferences and re-emits so any consumer
+                  // (TtsService, RoutingService, the navigation
+                  // attribution widget) picks up the new value.
+                  SettingsSectionTitle(
+                    label: _tr(locState, 'admin_runtime_config'),
+                  ),
+                  SettingsCard(children: [
+                    _FreeAudioSecondsTile(locState: locState),
+                    const SettingsDivider(),
+                    _OrsApiKeyTile(locState: locState),
+                  ],),
                   const SizedBox(height: 16),
 
                   // ── App info ──────────────────────────────────────────
@@ -218,5 +287,182 @@ class _InfoRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Inline banner shown inside the Operational card when maintenance
+/// mode is on. Renders the warning icon + the active-state message in
+/// a tinted strip that fits the existing SettingsCard layout.
+class _MaintenanceBanner extends StatelessWidget {
+  const _MaintenanceBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: AppColors.warning,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppColors.warning,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Free-audio preview length tile. Reads the current value from the
+/// cubit and presents a dropdown of common options (15 / 30 / 60 / 90 s).
+/// The dropdown list deliberately excludes degenerate values like 5 s
+/// — the service clamps to a 5 s floor but the UI shouldn't expose
+/// values that aren't useful as previews.
+class _FreeAudioSecondsTile extends StatelessWidget {
+  const _FreeAudioSecondsTile({required this.locState});
+
+  final LocalizationState locState;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<RuntimeConfigCubit, RuntimeConfigState>(
+      buildWhen: (prev, curr) =>
+          prev.freeAudioMaxSeconds != curr.freeAudioMaxSeconds,
+      builder: (context, state) {
+        // Snap persisted values to the option list so the dropdown
+        // doesn't show a stale / unmapped selection.
+        const options = [15, 30, 60, 90];
+        final value = options.contains(state.freeAudioMaxSeconds)
+            ? state.freeAudioMaxSeconds
+            : 30;
+        return SettingsDropdownTile<int>(
+          icon: Icons.timer_outlined,
+          iconColor: AppColors.warning,
+          title: locState.translations['admin_free_audio_seconds'] ??
+              'Free audio preview length',
+          subtitle:
+              locState.translations['admin_free_audio_seconds_subtitle'] ??
+                  'How many seconds of narration free-tier users hear before the upgrade prompt',
+          value: value,
+          items: options,
+          labels: options.map((s) => '$s s').toList(),
+          onChanged: (v) {
+            if (v != null) {
+              context.read<RuntimeConfigCubit>().setFreeAudioMaxSeconds(v);
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+/// OpenRouteService API key tile. The value is sensitive enough that we
+/// show it as plain text — a real production build would mask it behind
+/// a visibility toggle and store it in the platform keystore rather than
+/// SharedPreferences. For v1 (admin-only, single-device) plain text +
+/// SharedPreferences is acceptable; the value never leaves the device.
+class _OrsApiKeyTile extends StatelessWidget {
+  const _OrsApiKeyTile({required this.locState});
+
+  final LocalizationState locState;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<RuntimeConfigCubit, RuntimeConfigState>(
+      buildWhen: (prev, curr) => prev.orsApiKey != curr.orsApiKey,
+      builder: (context, state) {
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
+          leading: SettingsTileIcon(
+            icon: Icons.vpn_key_outlined,
+            color: AppColors.accent,
+          ),
+          title: Text(
+            locState.translations['admin_ors_api_key'] ??
+                'OpenRouteService API key',
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          subtitle: Text(
+            locState.translations['admin_ors_api_key_subtitle'] ??
+                'Leave empty to use the OSRM demo (no key required)',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            tooltip: locState.translations['edit_profile'] ?? 'Edit',
+            onPressed: () => _showEditDialog(context, state.orsApiKey),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showEditDialog(BuildContext context, String currentValue) async {
+    final controller = TextEditingController(text: currentValue);
+    final locState = context.read<LocalizationCubit>().state;
+    final saved = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          locState.translations['admin_ors_api_key'] ??
+              'OpenRouteService API key',
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText:
+                locState.translations['admin_ors_api_key_hint'] ??
+                    'Paste the key here',
+            border: const OutlineInputBorder(),
+          ),
+          // Password-style obscuring would defeat the admin's purpose of
+          // being able to verify the key is correct. Plain text.
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(locState.translations['cancel'] ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text),
+            child: Text(locState.translations['save'] ?? 'Save'),
+          ),
+        ],
+      ),
+    );
+    if (saved == null) return;
+    if (!context.mounted) return;
+    await context.read<RuntimeConfigCubit>().setOrsApiKey(saved);
   }
 }

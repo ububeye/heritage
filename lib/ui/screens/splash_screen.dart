@@ -6,10 +6,12 @@ import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/user_model.dart';
+import '../../data/services/runtime_config_service.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
 import 'home_screen.dart';
 import 'admin/admin_shell.dart';
+import 'maintenance_screen.dart';
 import 'onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -77,6 +79,25 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _navigateBasedOnAuth(AuthState authState) {
     if (!mounted) return;
+
+    // Maintenance gate takes precedence over every other route so a
+    // freshly-launched non-admin user never sees the explore screen
+    // while maintenance is active. Admins bypass the gate — they need
+    // to keep using the admin shell to disable the flag.
+    //
+    // We re-read on every navigation decision (not just init) so a user
+    // who opens the app, leaves it for a while, and re-launches during
+    // an active maintenance window still lands on the maintenance
+    // screen instead of their cached route.
+    final inMaintenance = RuntimeConfigService.instance.maintenanceMode;
+    final isAdmin =
+        authState.user?.role == UserRole.admin;
+    if (inMaintenance && !isAdmin) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MaintenanceScreen()),
+      );
+      return;
+    }
 
     // First-launch onboarding takes precedence over auth routing so the
     // user sees the app intro before any sign-in screen.

@@ -7,6 +7,9 @@ import '../../../blocs/user/user_cubit.dart';
 import '../../../blocs/auth/auth_cubit.dart';
 import '../../../blocs/auth/auth_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
+import '../../../data/models/user_model.dart';
+import '../../../data/services/runtime_config_service.dart';
+import '../maintenance_screen.dart';
 import 'admin_sites_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_settings_screen.dart';
@@ -28,6 +31,26 @@ class _AdminShellState extends State<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Maintenance gate for non-admin users who reach the shell via a
+    // deep link (notification, share, etc.) that bypasses the splash
+    // gate. Admins always see the shell so they can disable the toggle.
+    // We read AuthCubit here — the shell already depends on it for the
+    // dashboard — so the gate rebuilds on auth changes (e.g. an admin
+    // signing out during maintenance shouldn't be locked out).
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, authState) {
+        final isAdmin = authState.user?.role == UserRole.admin;
+        final inMaintenance =
+            RuntimeConfigService.instance.maintenanceMode;
+        if (inMaintenance && !isAdmin) {
+          return const MaintenanceScreen();
+        }
+        return _buildShell(context);
+      },
+    );
+  }
+
+  Widget _buildShell(BuildContext context) {
     return BlocBuilder<LocalizationCubit, LocalizationState>(
       builder: (context, locState) {
         return Scaffold(
