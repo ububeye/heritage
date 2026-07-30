@@ -7,6 +7,7 @@ import '../../../blocs/site_list/site_list_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
 import '../../../data/services/firestore_service.dart';
+import '../../widgets/search_bar_widget.dart';
 import 'admin_add_site_screen.dart';
 import 'admin_edit_site_screen.dart';
 
@@ -59,132 +60,81 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Manage Sites'),
+        title: BlocBuilder<LocalizationCubit, LocalizationState>(
+          builder: (context, loc) {
+            return Text(loc.translations['admin_tab_sites'] ?? 'Sites');
+          },
+        ),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search sites...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.border),
+      body: BlocBuilder<LocalizationCubit, LocalizationState>(
+        builder: (context, loc) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: SearchBarWidget(
+                  controller: _searchController,
+                  hintText: loc.translations['search_sites'] ?? 'Search sites…',
+                  onChanged: (value) => setState(() => _searchQuery = value),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surface,
               ),
-              onChanged: (value) => setState(() => _searchQuery = value),
-            ),
-          ),
-          Expanded(
-            child: BlocBuilder<SiteListCubit, SiteListState>(
-              builder: (context, state) {
-                if (state.status == SiteListStatus.loading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.accent),
-                  );
-                }
+              Expanded(
+                child: BlocBuilder<SiteListCubit, SiteListState>(
+                  builder: (context, state) {
+                    if (state.status == SiteListStatus.loading) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: AppColors.accent),
+                      );
+                    }
 
-                final sites = _filterSites(state.sites);
+                    final sites = _filterSites(state.sites);
 
-                if (sites.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _searchQuery.isEmpty
-                              ? Icons.location_city
-                              : Icons.search_off,
-                          size: 64,
-                          color: AppColors.textHint,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _searchQuery.isEmpty
-                              ? 'No sites yet'
-                              : 'No sites found',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: AppColors.textSecondary,
+                    if (sites.isEmpty) {
+                      return _EmptyState(
+                        query: _searchQuery,
+                        loc: loc,
+                        onAdd: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AdminAddSiteScreen(),
                           ),
-                        ),
-                        if (_searchQuery.isEmpty) ...[
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const AdminAddSiteScreen(),
-                              ),
-                            ),
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add First Site'),
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () => context.read<SiteListCubit>().loadSites(),
-                  color: AppColors.accent,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: sites.length,
-                    itemBuilder: (context, index) {
-                      final site = sites[index];
-                      return Dismissible(
-                        key: Key(site.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        confirmDismiss: (_) => _confirmDelete(context, site),
-                        onDismissed: (_) => _deleteSite(site),
-                        child: _SiteCard(
-                          site: site,
-                          onEdit: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => AdminEditSiteScreen(site: site),
-                            ),
-                          ),
-                          onDelete: () => _confirmDelete(context, site).then((confirmed) {
-                            if (confirmed == true) _deleteSite(site);
-                          }),
                         ),
                       );
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () =>
+                          context.read<SiteListCubit>().loadSites(),
+                      color: AppColors.accent,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                        itemCount: sites.length,
+                        itemBuilder: (context, index) {
+                          final site = sites[index];
+                          return _SiteCard(
+                            site: site,
+                            loc: loc,
+                            onEdit: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => AdminEditSiteScreen(site: site),
+                              ),
+                            ),
+                            onDelete: () async {
+                              final confirmed =
+                                  await _confirmDelete(context, site, loc);
+                              if (confirmed == true) {
+                                await _deleteSite(site, loc);
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(context).push(
@@ -196,42 +146,54 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
     );
   }
 
-  Future<bool?> _confirmDelete(BuildContext context, SiteModel site) {
+  Future<bool?> _confirmDelete(
+    BuildContext context,
+    SiteModel site,
+    LocalizationState loc,
+  ) {
+    final bodyTemplate =
+        loc.translations['delete_site_confirm_body'] ?? 'Are you sure you want to delete "%s"?';
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Site'),
-        content: Text('Are you sure you want to delete "${site.nameEn}"?'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          loc.translations['delete_site_confirm_title'] ?? 'Delete Site',
+        ),
+        content: Text(bodyTemplate.replaceAll('%s', site.nameEn)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(loc.translations['cancel'] ?? 'Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Delete'),
+            child: Text(loc.translations['delete'] ?? 'Delete'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _deleteSite(SiteModel site) async {
+  Future<void> _deleteSite(SiteModel site, LocalizationState loc) async {
     try {
       await _firestoreService.deleteSite(site.id);
       if (mounted) {
         context.read<SiteListCubit>().loadSites();
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.maybeOf(context);
+        final template =
+            loc.translations['site_deleted'] ?? '%s deleted';
+        messenger?.showSnackBar(
           SnackBar(
-            content: Text('${site.nameEn} deleted'),
+            content: Text(template.replaceAll('%s', site.nameEn)),
             backgroundColor: AppColors.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.maybeOf(context);
+        messenger?.showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
             backgroundColor: AppColors.error,
@@ -242,25 +204,76 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
   }
 }
 
+class _EmptyState extends StatelessWidget {
+
+  const _EmptyState({
+    required this.query,
+    required this.loc,
+    required this.onAdd,
+  });
+  final String query;
+  final LocalizationState loc;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final searching = query.isNotEmpty;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            searching ? Icons.search_off : Icons.location_city,
+            size: 64,
+            color: AppColors.textHint,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            searching
+                ? (loc.translations['no_results'] ?? 'No results')
+                : (loc.translations['no_favorites'] ?? 'No sites yet'),
+            style: const TextStyle(
+              fontSize: 18,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (!searching) ...[
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add),
+              label: Text(
+                loc.translations['no_sites_cta'] ?? 'Add First Site',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _SiteCard extends StatelessWidget {
 
   const _SiteCard({
     required this.site,
+    required this.loc,
     required this.onEdit,
     required this.onDelete,
   });
   final SiteModel site;
+  final LocalizationState loc;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    final editLabel = loc.translations['edit_site_a11y'] ?? 'Edit site';
-    final deleteLabel = loc.translations['delete_site_a11y'] ?? 'Delete site';
     final featuredLabel = site.featured
         ? (loc.translations['remove_featured'] ?? 'Remove from featured')
         : (loc.translations['set_featured'] ?? 'Set as featured');
+    final editLabel = loc.translations['edit_site_a11y'] ?? 'Edit site';
+    final deleteLabel =
+        loc.translations['delete_site_a11y'] ?? 'Delete site';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -276,12 +289,12 @@ class _SiteCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 child: CachedNetworkImage(
                   imageUrl: site.primaryImage,
-                  width: 70,
-                  height: 70,
+                  width: 64,
+                  height: 64,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
-                    width: 70,
-                    height: 70,
+                    width: 64,
+                    height: 64,
                     color: AppColors.surfaceDark,
                     child: const Center(
                       child: SizedBox(
@@ -295,8 +308,8 @@ class _SiteCard extends StatelessWidget {
                     ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    width: 70,
-                    height: 70,
+                    width: 64,
+                    height: 64,
                     color: AppColors.surfaceDark,
                     child: const Icon(Icons.image_not_supported, color: AppColors.textHint),
                   ),
@@ -365,31 +378,38 @@ class _SiteCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
+              // Single row of three icon buttons. Replaces the previous
+              // star / [edit, delete] stacked Column — easier to scan,
+              // no thumb-trap, no Dismissible swipe conflict.
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
+                    visualDensity: VisualDensity.compact,
                     icon: Icon(
                       site.featured ? Icons.star : Icons.star_border,
-                      color: site.featured ? AppColors.accent : AppColors.textHint,
+                      color: site.featured
+                          ? AppColors.accent
+                          : AppColors.textHint,
                     ),
                     tooltip: featuredLabel,
                     onPressed: () =>
-                        context.read<SiteListCubit>().setFeatured(site.id, !site.featured),
+                        context.read<SiteListCubit>().setFeatured(
+                              site.id,
+                              !site.featured,
+                            ),
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: AppColors.primary),
-                        tooltip: editLabel,
-                        onPressed: onEdit,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: AppColors.error),
-                        tooltip: deleteLabel,
-                        onPressed: onDelete,
-                      ),
-                    ],
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.edit, color: AppColors.primary),
+                    tooltip: editLabel,
+                    onPressed: onEdit,
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.delete, color: AppColors.error),
+                    tooltip: deleteLabel,
+                    onPressed: onDelete,
                   ),
                 ],
               ),

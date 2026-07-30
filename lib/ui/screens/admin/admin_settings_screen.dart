@@ -3,13 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/language_meta.dart';
 import '../../../blocs/auth/auth_cubit.dart';
 import '../../../blocs/auth/auth_state.dart';
+import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/language/language_cubit.dart';
+import '../../widgets/settings/settings_card.dart';
+import '../../widgets/settings/settings_dropdown_tile.dart';
+import '../../widgets/settings/settings_section_title.dart';
+import '../../widgets/settings/settings_tile.dart';
 import '../../screens/login_screen.dart';
 
 class AdminSettingsScreen extends StatelessWidget {
   const AdminSettingsScreen({super.key});
+
+  String _tr(LocalizationState s, String key) => s.translations[key] ?? key;
 
   @override
   Widget build(BuildContext context) {
@@ -17,181 +25,125 @@ class AdminSettingsScreen extends StatelessWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Admin Settings'),
+        title: BlocBuilder<LocalizationCubit, LocalizationState>(
+          builder: (context, loc) =>
+              Text(loc.translations['admin_tab_settings'] ?? 'Settings'),
+        ),
       ),
       body: BlocBuilder<AuthCubit, AuthState>(
         builder: (context, authState) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildAdminHeader(authState),
-              const SizedBox(height: 24),
-              _SectionTitle(title: 'Preferences'),
-              _SettingsCard(
-                children: [
-                  _DropdownTile(
-                    icon: Icons.language,
-                    title: 'Default App Language',
-                    value: context.watch<LanguageCubit>().state.uiLanguage,
-                    items: const ['en', 'sw'],
-                    labels: const ['English', 'Swahili'],
-                    onChanged: (value) {
-                      if (value != null) {
-                        context.read<LanguageCubit>().setUiLanguage(value);
-                      }
-                    },
-                  ),
-                  const Divider(height: 1),
-                  _DropdownTile(
-                    icon: Icons.record_voice_over,
-                    title: 'Default Audio Language',
-                    value: context.watch<LanguageCubit>().state.audioLanguage,
-                    items: AppConstants.ttsLanguages,
-                    labels: const ['English', 'Swahili', 'French', 'German', 'Arabic', 'Italian', 'Spanish'],
-                    onChanged: (value) {
-                      if (value != null) {
-                        context.read<LanguageCubit>().setAudioLanguage(value);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _SectionTitle(title: 'App Info'),
-              _SettingsCard(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.info_outline, color: AppColors.primary),
-                    title: const Text('App Version'),
-                    trailing: const Text('1.0.0'),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.flutter_dash, color: AppColors.primary),
-                    title: const Text('Flutter'),
-                    trailing: const Text('v3.x'),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.cloud, color: AppColors.primary),
-                    title: const Text('Firebase'),
-                    trailing: const Text('Connected'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _SectionTitle(title: 'Danger Zone'),
-              _SettingsCard(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.logout, color: AppColors.error),
-                    title: const Text('Logout'),
-                    subtitle: Text(
-                      authState.user?.email ?? '',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    onTap: () => _showLogoutDialog(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
-              Center(
-                child: Column(
-                  children: [
-                    const Icon(Icons.admin_panel_settings, size: 48, color: AppColors.textHint),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Stone Town Guide Admin',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '2024',
-                      style: TextStyle(
-                        color: AppColors.textHint,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+          return BlocBuilder<LocalizationCubit, LocalizationState>(
+            builder: (context, locState) {
+              return ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                children: [
+                  // ── Preferences (admin defaults) ─────────────────────
+                  SettingsSectionTitle(
+                    label: _tr(locState, 'preferences'),
+                  ),
+                  SettingsCard(children: [
+                    SettingsDropdownTile<String>(
+                      icon: Icons.language,
+                      iconColor: AppColors.primary,
+                      title: _tr(locState, 'app_language'),
+                      value: context.watch<LanguageCubit>().state.uiLanguage,
+                      items: AppConstants.uiLanguages,
+                      labels: [
+                        '${LanguageMeta.flag('en')} ${LanguageMeta.name('en')}',
+                        '${LanguageMeta.flag('sw')} ${LanguageMeta.name('sw')}',
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          context.read<LanguageCubit>().setUiLanguage(value);
+                        }
+                      },
+                    ),
+                    const SettingsDivider(),
+                    SettingsDropdownTile<String>(
+                      icon: Icons.record_voice_over,
+                      iconColor: AppColors.warning,
+                      title: _tr(locState, 'audio_language'),
+                      value: context.watch<LanguageCubit>().state.audioLanguage,
+                      items: AppConstants.ttsLanguages,
+                      labels: AppConstants.ttsLanguages
+                          .map((c) =>
+                              '${LanguageMeta.flag(c)} ${LanguageMeta.name(c)}',
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          context
+                              .read<LanguageCubit>()
+                              .setAudioLanguage(value);
+                        }
+                      },
+                    ),
+                  ],),
+                  const SizedBox(height: 16),
+
+                  // ── App info ──────────────────────────────────────────
+                  SettingsSectionTitle(label: _tr(locState, 'app_info')),
+                  SettingsCard(children: [
+                    _InfoRow(
+                      icon: Icons.info_outline,
+                      title: _tr(locState, 'version'),
+                      value: '1.0.0',
+                    ),
+                    const SettingsDivider(),
+                    _InfoRow(
+                      icon: Icons.flutter_dash,
+                      title: 'Flutter',
+                      value: 'v3.x',
+                    ),
+                    const SettingsDivider(),
+                    _InfoRow(
+                      icon: Icons.cloud,
+                      title: 'Firebase',
+                      value: 'Connected',
+                    ),
+                  ],),
+                  const SizedBox(height: 24),
+
+                  // ── Footer sign-out (matches user settings) ───────────
+                  SettingsTile(
+                    icon: Icons.logout,
+                    iconColor: AppColors.error,
+                    title: _tr(locState, 'logout'),
+                    subtitle: authState.user?.email ?? '',
+                    onTap: () => _showLogoutDialog(context, locState),
+                  ),
+
+                  const SizedBox(height: 32),
+                  Center(child: _AdminFooter(locState: locState)),
+                  const SizedBox(height: 32),
+                ],
+              );
+            },
           );
         },
       ),
     );
   }
 
-  Widget _buildAdminHeader(AuthState authState) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryDark,
-            AppColors.primary,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(
-              Icons.admin_panel_settings,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Admin Panel',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  authState.user?.email ?? '',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 179),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(
+    BuildContext context,
+    LocalizationState locState,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout from admin panel?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(_tr(locState, 'logout')),
+        content: Text('${_tr(locState, 'logout')}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: Text(_tr(locState, 'cancel')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -203,7 +155,7 @@ class AdminSettingsScreen extends StatelessWidget {
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Logout'),
+            child: Text(_tr(locState, 'logout')),
           ),
         ],
       ),
@@ -211,78 +163,60 @@ class AdminSettingsScreen extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-
-  const _SectionTitle({required this.title});
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+  final IconData icon;
   final String title;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        title,
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: SettingsTileIcon(icon: icon, color: AppColors.primary),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      trailing: Text(
+        value,
         style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
           color: AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 }
 
-class _SettingsCard extends StatelessWidget {
-
-  const _SettingsCard({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(children: children),
-    );
-  }
-}
-
-class _DropdownTile extends StatelessWidget {
-
-  const _DropdownTile({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.items,
-    required this.labels,
-    required this.onChanged,
-  });
-  final IconData icon;
-  final String title;
-  final String value;
-  final List<String> items;
-  final List<String> labels;
-  final Function(String?) onChanged;
+class _AdminFooter extends StatelessWidget {
+  const _AdminFooter({required this.locState});
+  final LocalizationState locState;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(title),
-      trailing: DropdownButton<String>(
-        value: items.contains(value) ? value : items.first,
-        underline: const SizedBox(),
-        items: items.asMap().entries.map((e) {
-          return DropdownMenuItem<String>(
-            value: e.value,
-            child: Text(labels[e.key]),
-          );
-        }).toList(),
-        onChanged: onChanged,
-      ),
+    return Column(
+      children: [
+        const Icon(
+          Icons.admin_panel_settings,
+          size: 36,
+          color: AppColors.textHint,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Stone Town Guide Admin',
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '2024',
+          style: const TextStyle(color: AppColors.textHint, fontSize: 11),
+        ),
+      ],
     );
   }
 }
