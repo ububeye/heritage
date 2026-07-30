@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -20,10 +19,7 @@ class UserProfileScreen extends StatelessWidget {
         final user = authState.user;
 
         return Scaffold(
-          backgroundColor:
-              Theme.of(
-                context,
-              ).scaffoldBackgroundColor, // Replaced AppColors.background
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: const Text('Profile'),
@@ -88,7 +84,7 @@ class UserProfileScreen extends StatelessWidget {
                                 style: Theme.of(
                                   context,
                                 ).textTheme.labelLarge?.copyWith(
-                                  color: AppColors.success,
+                                  color: context.semanticColors.success,
                                   fontSize: 12,
                                 ),
                               ),
@@ -129,14 +125,14 @@ class UserProfileScreen extends StatelessWidget {
                     Text(
                       'Stone Town Guide v1.0.0',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textHint,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Made with ❤️ for Zanzibar',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textHint,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
                   ],
@@ -499,9 +495,9 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -549,17 +545,17 @@ class _ProfileMenuItem extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
       subtitle:
           subtitle != null
               ? Text(
                 subtitle!,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               )
               : null,
       trailing: trailing ?? const Icon(Icons.chevron_right),

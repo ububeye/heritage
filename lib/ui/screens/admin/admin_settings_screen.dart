@@ -1,7 +1,6 @@
 import '../../../core/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/language_meta.dart';
@@ -294,9 +293,9 @@ class _InfoRow extends StatelessWidget {
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: Text(
         value,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -334,7 +333,7 @@ class _MaintenanceBanner extends StatelessWidget {
             child: Text(
               message,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.warning,
+                color: context.semanticColors.warning,
                 fontSize: 13,
                 height: 1.4,
               ),

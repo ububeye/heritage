@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/localization/localization_cubit.dart';
@@ -240,9 +239,9 @@ class _PreviewBadge extends StatelessWidget {
       ),
       child: Text(
         'PREVIEW',
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: AppColors.textOnAccent),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSecondary,
+        ),
       ),
     );
   }

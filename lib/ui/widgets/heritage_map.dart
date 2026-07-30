@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../data/models/site_model.dart';
@@ -278,7 +277,7 @@ class _HeritageMapState extends State<HeritageMap> {
                               context,
                             ).textTheme.labelLarge?.copyWith(
                               fontSize: 13,
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                         ],
@@ -404,7 +403,7 @@ class _PinMarker extends StatelessWidget {
                 label!,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontSize: 9,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   height: 1.0,
                 ),
                 maxLines: 1,

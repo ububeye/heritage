@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../data/models/site_model.dart';
 import '../widgets/heritage_map.dart';
@@ -56,7 +55,7 @@ class SiteMapScreen extends StatelessWidget {
                         site.displayAddress,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           fontSize: 13,
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -64,7 +63,7 @@ class SiteMapScreen extends StatelessWidget {
                       '${site.latitude.toStringAsFixed(4)}, ${site.longitude.toStringAsFixed(4)}',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         fontSize: 11,
-                        color: AppColors.textHint,
+                        color: Theme.of(context).colorScheme.outline,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),

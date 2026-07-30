@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/site_list/site_list_cubit.dart';
@@ -49,7 +48,7 @@ class FavoritesScreen extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -59,8 +58,12 @@ class FavoritesScreen extends StatelessWidget {
                           loc.translations['no_favorites_hint'] ??
                               'Tap the heart icon on any site to add it to your favorites',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppColors.textSecondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ],
@@ -97,7 +100,7 @@ class FavoritesScreen extends StatelessWidget {
                           Icon(
                             Icons.favorite_border,
                             size: 80,
-                            color: AppColors.textHint,
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -108,7 +111,7 @@ class FavoritesScreen extends StatelessWidget {
                             ).textTheme.titleLarge?.copyWith(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -116,8 +119,14 @@ class FavoritesScreen extends StatelessWidget {
                             loc.translations['no_favorites_hint'] ??
                                 'Tap the heart icon on any site to add it to your favorites',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.textSecondary),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -300,7 +309,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                     Text(
                       site.getName(uiLanguage),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -321,7 +330,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                               context,
                             ).textTheme.bodySmall?.copyWith(
                               fontSize: 11,
-                              color: AppColors.textHint,
+                              color: Theme.of(context).colorScheme.outline,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -1035,7 +1034,7 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
                     color:
                         _enabled
                             ? Theme.of(context).colorScheme.primary
-                            : AppColors.textHint,
+                            : Theme.of(context).colorScheme.outline,
                   ),
                 ),
               const SizedBox(width: 8),
@@ -1161,7 +1160,7 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
               color:
                   _bytes > 0
                       ? Theme.of(context).colorScheme.primary
-                      : AppColors.textHint,
+                      : Theme.of(context).colorScheme.outline,
             ),
           ),
           const SizedBox(width: 8),
@@ -1241,9 +1240,9 @@ class _VersionTile extends StatelessWidget {
           ),
           trailing: Text(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         );
       },

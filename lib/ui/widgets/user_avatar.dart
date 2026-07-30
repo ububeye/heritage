@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 
 /// User avatar with photo + initials fallback. Replaces the inline
 /// `CircleAvatar` patterns that lived in `admin_user_management_screen`
@@ -53,7 +52,7 @@ class UserAvatar extends StatelessWidget {
               ? Text(
                 initials,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   fontSize: radius * 0.7,
                 ),
               )

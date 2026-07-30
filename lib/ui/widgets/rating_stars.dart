@@ -1,7 +1,6 @@
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -42,7 +41,7 @@ class RatingStars extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontSize: size * 0.875,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],

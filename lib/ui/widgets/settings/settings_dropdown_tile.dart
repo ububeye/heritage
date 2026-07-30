@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import 'settings_tile.dart';
 
@@ -53,7 +51,7 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
           color:
               enabled
                   ? Theme.of(context).colorScheme.onSurface
-                  : AppColors.textHint,
+                  : Theme.of(context).colorScheme.outline,
         ),
       ),
       subtitle:
@@ -64,7 +62,7 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
                   color:
                       enabled
                           ? Theme.of(context).colorScheme.onSurfaceVariant
-                          : AppColors.textHint,
+                          : Theme.of(context).colorScheme.outline,
                 ),
               )
               : null,
@@ -83,12 +81,12 @@ class SettingsDropdownTile<T extends Object> extends StatelessWidget {
           DropdownButton<T>(
             value: effectiveValue,
             underline: const SizedBox(),
-            icon: const Icon(CupertinoIcons.chevron_down, size: 16),
+            icon: const Icon(Icons.keyboard_arrow_down, size: 16),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color:
                   enabled
                       ? Theme.of(context).colorScheme.onSurface
-                      : AppColors.textHint,
+                      : Theme.of(context).colorScheme.outline,
               fontWeight: FontWeight.w500,
               fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
             ),

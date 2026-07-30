@@ -1,7 +1,6 @@
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 
 class UpgradeBanner extends StatelessWidget {
@@ -51,14 +50,16 @@ class UpgradeBanner extends StatelessWidget {
                   Text(
                     'Upgrade for Full Audio',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppColors.textOnPrimary,
+                      color: Theme.of(context).colorScheme.onError,
                     ),
                   ),
                   if (message != null)
                     Text(
                       message!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textOnPrimary.withValues(alpha: 0.8),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onError.withValues(alpha: 0.8),
                       ),
                     ),
                 ],

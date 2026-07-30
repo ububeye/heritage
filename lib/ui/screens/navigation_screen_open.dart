@@ -21,7 +21,6 @@ import '../../blocs/navigation/navigation_state.dart';
 import '../../blocs/runtime_config/runtime_config_cubit.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_durations.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/polyline_snap.dart';
@@ -689,7 +688,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                             ).textTheme.titleMedium?.copyWith(
                               fontSize: 17,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -712,7 +711,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                   context,
                                 ).textTheme.bodySmall?.copyWith(
                                   fontSize: 13,
-                                  color: AppColors.textSecondary,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -733,7 +735,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                   context,
                                 ).textTheme.bodySmall?.copyWith(
                                   fontSize: 13,
-                                  color: AppColors.textSecondary,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -845,7 +850,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -853,7 +858,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                   '${_formatDistance(step.distanceMeters)}'
                   '${step.durationSeconds != null ? ' • ${_formatDuration(Duration(seconds: step.durationSeconds!.round()))}' : ''}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],

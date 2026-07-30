@@ -1,11 +1,9 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-
-import '../../core/theme/app_shadows.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../blocs/localization/localization_cubit.dart';
@@ -169,7 +167,10 @@ class SiteCard extends StatelessWidget {
                                     context,
                                   ).textTheme.labelSmall?.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.textOnAccent,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondary,
                                   ),
                                 ),
                               ],
@@ -196,7 +197,7 @@ class SiteCard extends StatelessWidget {
                       child: Text(
                         site.getName(uiLanguage),
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -217,8 +218,14 @@ class SiteCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             site.rating!.toStringAsFixed(1),
-                            style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(color: AppColors.textSecondary),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ] else
                           const SizedBox(),

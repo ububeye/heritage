@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/utils/debouncer.dart';
 import '../../core/theme/app_radius.dart';
 
@@ -59,9 +58,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
             onChanged: _handleChanged,
             decoration: InputDecoration(
               hintText: widget.hintText,
-              hintStyle: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textHint),
+              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
               prefixIcon: Icon(
                 Icons.search,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

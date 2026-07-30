@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/user/user_cubit.dart';
@@ -151,9 +150,9 @@ class _UserManagementContent extends StatelessWidget {
         ),
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -212,7 +211,7 @@ class _UserManagementContent extends StatelessWidget {
                       ? 'No users found'
                       : 'No matching users',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -310,8 +309,11 @@ class _UserCard extends StatelessWidget {
                       user.photoUrl == null
                           ? Text(
                             user.email[0].toUpperCase(),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(color: AppColors.primary),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           )
                           : null,
                 ),
@@ -332,7 +334,7 @@ class _UserCard extends StatelessWidget {
                       Text(
                         user.email,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

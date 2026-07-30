@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/language_meta.dart';
@@ -98,7 +97,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: Text(
                   'Audio Language',
                   style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(sheetContext).colorScheme.onSurface,
                   ),
                 ),
               ),

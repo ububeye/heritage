@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
@@ -245,9 +244,9 @@ class _EmptyState extends StatelessWidget {
             searching
                 ? (loc.translations['no_results'] ?? 'No results')
                 : (loc.translations['no_favorites'] ?? 'No sites yet'),
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           if (!searching) ...[
             const SizedBox(height: 24),
@@ -367,7 +366,7 @@ class _SiteCard extends StatelessWidget {
                       child: Text(
                         site.category ?? 'Uncategorized',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.accent,
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ),
@@ -382,8 +381,11 @@ class _SiteCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           '${site.latitude.toStringAsFixed(4)}, ${site.longitude.toStringAsFixed(4)}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppColors.textHint),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                       ],
                     ),

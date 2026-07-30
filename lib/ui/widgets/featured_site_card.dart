@@ -3,7 +3,6 @@ import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
@@ -102,7 +101,7 @@ class FeaturedSiteCard extends StatelessWidget {
                       'Featured',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontSize: 12,
-                        color: AppColors.textOnAccent,
+                        color: Theme.of(context).colorScheme.onSecondary,
                       ),
                     ),
                   ],

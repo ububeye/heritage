@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_radius.dart';
 
 import '../../blocs/localization/localization_cubit.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 
 /// Dead-end screen shown to non-admin users while an admin has flipped
@@ -59,7 +58,7 @@ class MaintenanceScreen extends StatelessWidget {
                       "We're updating the guide",
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: theme.colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -68,7 +67,7 @@ class MaintenanceScreen extends StatelessWidget {
                   loc.translations['maintenance_subtitle'] ??
                       'Stone Town Guide is temporarily down for maintenance. Please check back shortly.',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: theme.colorScheme.onSurfaceVariant,
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -91,7 +90,7 @@ class MaintenanceScreen extends StatelessWidget {
                     loc.translations['maintenance_back_shortly'] ??
                         'Back shortly',
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: AppColors.warning,
+                      color: context.semanticColors.warning,
                       fontSize: 12,
                       letterSpacing: 0.4,
                     ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -66,8 +65,8 @@ class CategoryChips extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color:
                           isSelected
-                              ? AppColors.textOnPrimary
-                              : AppColors.textPrimary,
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
@@ -197,7 +196,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                     Text(
                       _isUploading ? 'Uploading images...' : 'Saving site...',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -233,7 +232,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                     Text(
                       'Fill in the site name and description for every language. The user\'s chosen audio language will be read aloud.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -317,9 +316,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
     );
   }
@@ -466,15 +465,15 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Add from Gallery',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Select multiple photos',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -553,7 +552,7 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
                 color:
                     isSelected
                         ? Theme.of(context).colorScheme.onPrimary
-                        : AppColors.textSecondary,
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -660,9 +659,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
               const Text('Entry Radius'),
               Text(
                 '${_entryRadius.round()} m',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ],
           ),
@@ -682,15 +681,15 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
             children: [
               Text(
                 '10m',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               ),
               Text(
                 '200m',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               ),
             ],
           ),
@@ -727,9 +726,9 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
               const SizedBox(width: 8),
               Text(
                 name,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               const Spacer(),
               if (!isEnglish)
