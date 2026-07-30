@@ -55,10 +55,12 @@ class AuthCubit extends Cubit<AuthState> {
         }
         if (resolved.disabled) {
           await _authService.signOut();
-          emit(state.copyWith(
-            status: AuthStatus.error, 
-            errorMessage: 'Your account has been suspended.',
-          ));
+          emit(
+            state.copyWith(
+              status: AuthStatus.error,
+              errorMessage: 'Your account has been suspended.',
+            ),
+          );
           return;
         }
 
@@ -93,10 +95,12 @@ class AuthCubit extends Cubit<AuthState> {
             liveRole == null ? base : base.copyWith(role: liveRole);
         if (resolved.disabled) {
           await _authService.signOut();
-          emit(state.copyWith(
-            status: AuthStatus.error, 
-            errorMessage: 'Your account has been suspended.',
-          ));
+          emit(
+            state.copyWith(
+              status: AuthStatus.error,
+              errorMessage: 'Your account has been suspended.',
+            ),
+          );
           return;
         }
 

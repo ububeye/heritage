@@ -355,8 +355,6 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    final deleteLabel = loc.translations['delete_user_a11y'] ?? 'Delete user';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
@@ -421,6 +419,7 @@ class _UserCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
