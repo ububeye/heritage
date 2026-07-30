@@ -708,7 +708,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                           Row(
                             children: [
                               Icon(
-                                Icons.straighten,
+                                PhosphorIconsRegular.ruler,
                                 size: 14,
                                 color:
                                     Theme.of(
@@ -716,18 +716,22 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                     ).colorScheme.onSurfaceVariant,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                nav.distanceToSite != null
-                                    ? _formatDistance(nav.distanceToSite!)
-                                    : '—',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.copyWith(
-                                  fontSize: 13,
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
+                              Flexible(
+                                child: Text(
+                                  nav.distanceToSite != null
+                                      ? _formatDistance(nav.distanceToSite!)
+                                      : '—',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.copyWith(
+                                    fontSize: 13,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -740,18 +744,22 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                     ).colorScheme.onSurfaceVariant,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                nav.estimatedTime != null
-                                    ? _formatDuration(nav.estimatedTime!)
-                                    : '—',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodySmall?.copyWith(
-                                  fontSize: 13,
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
+                              Flexible(
+                                child: Text(
+                                  nav.estimatedTime != null
+                                      ? _formatDuration(nav.estimatedTime!)
+                                      : '—',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.copyWith(
+                                    fontSize: 13,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ],
