@@ -204,32 +204,6 @@ class SharedPrefsService {
     await _preferences.setInt(AppConstants.keyArrivalAlertsRadiusM, meters);
   }
 
-  /// Whether quiet-hours are enabled. When true, TTS / arrival alerts
-  /// are suppressed during the configured window. v1: the value is
-  /// stored; consumers land in a follow-up PR.
-  bool get quietHoursEnabled =>
-      _preferences.getBool(AppConstants.keyQuietHoursEnabled) ?? false;
-
-  Future<void> setQuietHoursEnabled(bool enabled) async {
-    await _preferences.setBool(AppConstants.keyQuietHoursEnabled, enabled);
-  }
-
-  /// Quiet-hours window stored as minutes-from-midnight. Default is
-  /// 22:00–07:00 (1320 / 420). Single global range — per-weekday
-  /// granularity is out of scope for v1.
-  int get quietHoursStartMinutes =>
-      _preferences.getInt(AppConstants.keyQuietHoursStartMinutes) ?? (22 * 60);
-
-  int get quietHoursEndMinutes =>
-      _preferences.getInt(AppConstants.keyQuietHoursEndMinutes) ?? (7 * 60);
-
-  Future<void> setQuietHoursStartMinutes(int minutes) async {
-    await _preferences.setInt(AppConstants.keyQuietHoursStartMinutes, minutes);
-  }
-
-  Future<void> setQuietHoursEndMinutes(int minutes) async {
-    await _preferences.setInt(AppConstants.keyQuietHoursEndMinutes, minutes);
-  }
 
   /// Distance display units. 'metric' (m/km) or 'imperial' (ft/mi).
   /// Defaults to metric. Distance formatting helpers in [DistanceCalculator]

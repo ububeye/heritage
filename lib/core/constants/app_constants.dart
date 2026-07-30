@@ -130,9 +130,7 @@ class AppConstants {
   static const String keyArrivalAlertsEnabled = 'arrival_alerts_enabled';
   // PR-B settings — read/write via SharedPrefsService.
   static const String keyArrivalAlertsRadiusM = 'arrival_alerts_radius_m';
-  static const String keyQuietHoursEnabled = 'quiet_hours_enabled';
-  static const String keyQuietHoursStartMinutes = 'quiet_hours_start_min';
-  static const String keyQuietHoursEndMinutes = 'quiet_hours_end_min';
+
   static const String keyDistanceUnits =
       'distance_units'; // 'metric' | 'imperial'
   static const String keyReduceMotion = 'reduce_motion';
