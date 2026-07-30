@@ -450,8 +450,9 @@ class TtsService {
   /// via self-calibration.
   void _onProgress(String text, int start, int end, String word) {
     final fp = _fingerprint(text);
-    if (fp != _activeFingerprint)
+    if (fp != _activeFingerprint) {
       return; // stale callback from a previous speak()
+    }
     if (end <= 0) return;
 
     final nowMs = DateTime.now().millisecondsSinceEpoch;

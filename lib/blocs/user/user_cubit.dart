@@ -137,14 +137,22 @@ class UserState {
     result = List.from(result);
     switch (sortOrder) {
       case UserSortOrder.nameAsc:
-        result.sort((a, b) => (a.displayName ?? a.email)
-            .toLowerCase()
-            .compareTo((b.displayName ?? b.email).toLowerCase()));
+        result.sort(
+          (a, b) => (a.displayName ?? a.email)
+              .toLowerCase()
+              .compareTo(
+                (b.displayName ?? b.email).toLowerCase(),
+              ),
+        );
         break;
       case UserSortOrder.nameDesc:
-        result.sort((a, b) => (b.displayName ?? b.email)
-            .toLowerCase()
-            .compareTo((a.displayName ?? a.email).toLowerCase()));
+        result.sort(
+          (a, b) => (b.displayName ?? b.email)
+              .toLowerCase()
+              .compareTo(
+                (a.displayName ?? a.email).toLowerCase(),
+              ),
+        );
         break;
       case UserSortOrder.newestFirst:
         result.sort((a, b) {

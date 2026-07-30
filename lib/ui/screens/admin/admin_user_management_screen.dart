@@ -557,7 +557,7 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: AppRadius.pill,
+      borderRadius: AppRadius.fullBorder,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -565,7 +565,7 @@ class _FilterChip extends StatelessWidget {
               isSelected
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.pill,
+          borderRadius: AppRadius.fullBorder,
           border: Border.all(
             color:
                 isSelected

@@ -431,14 +431,12 @@ class _ProfileMenuItem extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
-    this.iconColor,
     required this.onTap,
   });
   final IconData icon;
   final String title;
   final String? subtitle;
   final Widget? trailing;
-  final Color? iconColor;
   final VoidCallback onTap;
 
   @override
@@ -446,7 +444,7 @@ class _ProfileMenuItem extends StatelessWidget {
     return ListTile(
       leading: Icon(
         icon,
-        color: iconColor ?? Theme.of(context).colorScheme.primary,
+        color: Theme.of(context).colorScheme.primary,
       ),
       title: Text(
         title,
