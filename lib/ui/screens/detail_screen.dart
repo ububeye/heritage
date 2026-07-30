@@ -18,6 +18,7 @@ import '../widgets/rating_stars.dart';
 import 'site_map_screen.dart';
 import 'upgrade_screen.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../core/theme/app_radius.dart';
 
 class DetailScreen extends StatefulWidget {
 
@@ -70,7 +71,7 @@ class _DetailScreenState extends State<DetailScreen> {
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheetBorderSm)),
       ),
       builder: (sheetContext) {
         return SafeArea(
@@ -83,7 +84,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 decoration: BoxDecoration(
                   color: Theme.of(sheetContext).colorScheme.outline,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: AppRadius.grabHandleBorder,
                 ),
               ),
               Padding(
@@ -122,7 +123,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Theme.of(sheetContext).colorScheme.secondary,
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: AppRadius.bannerBorder,
                               ),
                               child: Text(
                                 'PREMIUM',
@@ -344,7 +345,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                     color: _currentImageIndex == index
                                         ? context.semanticColors.onImage
                                         : context.semanticColors.onImageMuted,
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: AppRadius.xsBorder,
                                   ),
                                 ),
                               ),
@@ -363,7 +364,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               // hero gallery photo. Scrim + onImage for
                               // legibility against any photograph.
                               color: context.semanticColors.imageScrim,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: AppRadius.mdBorder,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
