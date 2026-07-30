@@ -11,6 +11,7 @@ import '../../../data/services/firestore_service.dart';
 import '../../widgets/search_bar_widget.dart';
 import 'admin_add_site_screen.dart';
 import 'admin_edit_site_screen.dart';
+import '../../../core/theme/app_radius.dart';
 
 class AdminSitesScreen extends StatefulWidget {
 
@@ -275,16 +276,16 @@ class _SiteCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
       child: InkWell(
         onTap: onEdit,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: AppRadius.bannerBorder,
                 child: CachedNetworkImage(
                   imageUrl: site.primaryImage,
                   width: 64,
@@ -344,7 +345,7 @@ class _SiteCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: AppRadius.xsBorder,
                       ),
                       child: Text(
                         site.category ?? 'Uncategorized',
