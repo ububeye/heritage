@@ -5,6 +5,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/audio_state.dart';
+import '../../core/theme/app_radius.dart';
 
 /// Bottom-sheet audio player used on the site detail screen.
 ///
@@ -92,7 +93,7 @@ class AudioPlayerBar extends StatelessWidget {
                         height: 56,
                         decoration: BoxDecoration(
                           color: scheme.secondary,
-                          borderRadius: BorderRadius.circular(28),
+                          borderRadius: AppRadius.avatarBorder,
                         ),
                         child: Icon(
                           isPlaying ? Icons.pause : Icons.play_arrow,
@@ -183,12 +184,12 @@ class _LanguageChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppRadius.lgBorder,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lgBorder,
           border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
         child: Row(
@@ -228,7 +229,7 @@ class _PreviewBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondary,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.bannerBorder,
       ),
       child: Text(
         'PREVIEW',
