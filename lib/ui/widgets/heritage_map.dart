@@ -73,7 +73,15 @@ class _HeritageMapState extends State<HeritageMap> {
   @override
   void initState() {
     super.initState();
-    _pickedPoint = LatLng(widget.initialLat, widget.initialLng);
+    // Clamp to the Stone Town box up-front — if the seed coordinates
+    // are outside (e.g. a stale Firestore document from before the box
+    // was enforced, or a developer testing with fake data) the
+    // CameraConstraint.contain assertion in flutter_map will trip on
+    // the first rebuild. Clamping here keeps the constraint strict
+    // for pan/zoom without crashing on bad input.
+    _pickedPoint = StoneTownBounds.clampPoint(
+      LatLng(widget.initialLat, widget.initialLng),
+    );
   }
 
   @override
@@ -81,7 +89,9 @@ class _HeritageMapState extends State<HeritageMap> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialLat != oldWidget.initialLat ||
         widget.initialLng != oldWidget.initialLng) {
-      _pickedPoint = LatLng(widget.initialLat, widget.initialLng);
+      _pickedPoint = StoneTownBounds.clampPoint(
+        LatLng(widget.initialLat, widget.initialLng),
+      );
     }
   }
 
@@ -114,10 +124,26 @@ class _HeritageMapState extends State<HeritageMap> {
   Future<void> _useCurrentLocation() async {
     final position = await _locationService.getCurrentPosition();
     if (position == null || !mounted) return;
-    final newPoint = LatLng(position.latitude, position.longitude);
-    setState(() => _pickedPoint = newPoint);
-    _mapController.move(newPoint, 17);
-    widget.onLocationPicked?.call(position.latitude, position.longitude);
+    // Emulator GPS without a mock fix typically returns (0, 0) — well
+    // outside Stone Town — which would trip the CameraConstraint.contain
+    // assertion on the next rebuild. Clamp to the box and surface a
+    // SnackBar so the admin understands why their fix wasn't used.
+    final rawPoint = LatLng(position.latitude, position.longitude);
+    final clampedPoint = StoneTownBounds.clampPoint(rawPoint);
+    final wasOutsideBox = !StoneTownBounds.contains(rawPoint);
+    setState(() => _pickedPoint = clampedPoint);
+    _mapController.move(clampedPoint, 17);
+    widget.onLocationPicked?.call(clampedPoint.latitude, clampedPoint.longitude);
+    if (wasOutsideBox && mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Location is outside Stone Town — snapped to the closest point.',
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   /// Re-fit the camera to all sites (browse) or centre on the single site.
@@ -158,6 +184,8 @@ class _HeritageMapState extends State<HeritageMap> {
 
   void _onMapTap(TapPosition tapPosition, LatLng point) {
     if (!widget.draggableMarker) return;
+    // Map tap is bounded by the camera constraint, so the point is
+    // always inside the box — no clamp needed here. Just propagate.
     setState(() => _pickedPoint = point);
     widget.onLocationPicked?.call(point.latitude, point.longitude);
   }
@@ -293,8 +321,13 @@ class _HeritageMapState extends State<HeritageMap> {
 
   List<Marker> _buildMarkers() {
     if (widget.draggableMarker) {
-      // Single draggable pin.
-      final point = _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng);
+      // Single draggable pin. Clamp the fallback path too — the `??`
+      // fires before `_pickedPoint` is set on the very first frame, and
+      // an out-of-bounds `widget.initialLat/Lng` would render a marker
+      // the camera is forbidden from centring on.
+      final point = StoneTownBounds.clampPoint(
+        _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng),
+      );
       return [
         Marker(
           point: point,

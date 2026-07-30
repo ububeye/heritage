@@ -32,14 +32,26 @@ class TranscriptSection extends StatefulWidget {
 
 class _TranscriptSectionState extends State<TranscriptSection>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 220),
-    value: widget.defaultExpanded ? 1.0 : 0.0,
-  );
+  late final AnimationController _controller;
+  late final Animation<double> _expandCurve;
 
-  late final Animation<double> _expandCurve =
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+  @override
+  void initState() {
+    super.initState();
+    // Construct the controller in initState so that the TickerProvider can
+    // safely look up the surrounding TickerMode while the element is still
+    // mounted. Doing this as a `late final` lazy initializer would defer
+    // construction until first access — which can be `dispose()` if the
+    // widget is removed before its first build (e.g. no transcript text),
+    // and that would throw "deactivated widget's ancestor is unsafe".
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+      value: widget.defaultExpanded ? 1.0 : 0.0,
+    );
+    _expandCurve =
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+  }
 
   @override
   void dispose() {
