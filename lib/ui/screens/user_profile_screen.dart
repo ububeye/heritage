@@ -97,28 +97,6 @@ class UserProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Danger Zone
-              _SectionTitle(title: 'Danger Zone'),
-              _SettingsCard(
-                children: [
-                  _ProfileMenuItem(
-                    icon: Icons.logout,
-                    title: 'Logout',
-                    iconColor: Theme.of(context).colorScheme.error,
-                    onTap: () => _showLogoutDialog(context),
-                  ),
-                  const Divider(height: 1),
-                  _ProfileMenuItem(
-                    icon: Icons.delete_forever,
-                    title: 'Delete Account',
-                    // Destructive action — same semantic role as Logout.
-                    iconColor: Theme.of(context).colorScheme.error,
-                    onTap: () => _showDeleteAccountDialog(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
               // App Info
               Center(
                 child: Column(
@@ -153,21 +131,27 @@ class UserProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.lgBorder,
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
         boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 36,
-            backgroundColor: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.outline.withValues(alpha: 0.1),
             backgroundImage:
                 user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
             child:
                 user?.photoUrl == null
                     ? Text(
                       user?.email[0].toUpperCase() ?? 'U',
-                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      style: Theme.of(
+                        context,
+                      ).textTheme.displayMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     )
@@ -399,73 +383,6 @@ class UserProfileScreen extends StatelessWidget {
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Close'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Logout'),
-            content: const Text('Are you sure you want to logout?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  context.read<AuthCubit>().signOut();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-                child: const Text('Logout'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showDeleteAccountDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Delete Account'),
-            content: const Text(
-              'This action cannot be undone. All your data will be permanently deleted.\n\n'
-              'Please contact support to delete your account.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                ),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please contact support to delete your account',
-                      ),
-                    ),
-                  );
-                },
-                child: const Text('Contact Support'),
               ),
             ],
           ),

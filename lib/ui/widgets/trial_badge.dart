@@ -34,9 +34,6 @@ class TrialBadge extends StatelessWidget {
     final scheme = theme.colorScheme;
     final isActive = trialActiveUntil != null;
 
-    final accent = scheme.secondary;
-    final accentOn = scheme.onSecondary;
-
     return Container(
       padding: AppInsets.chipTall,
       decoration: BoxDecoration(

@@ -252,7 +252,10 @@ class _StatsRowContainer extends StatelessWidget {
                 builder: (context, state) {
                   return _StatItem(
                     value: state.premiumUsers.toString(),
-                    label: tr(locState, 'upgrade_to_premium'),
+                    label:
+                        tr(locState, 'premium_users') == 'premium_users'
+                            ? 'Premium Users'
+                            : tr(locState, 'premium_users'),
                   );
                 },
               ),
@@ -312,7 +315,7 @@ class _QuickActionsGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          tr(locState, 'start_audio_guide'), // Quick Actions title equivalent
+          'Quick Actions',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
