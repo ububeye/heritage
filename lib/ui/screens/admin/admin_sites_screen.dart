@@ -12,6 +12,7 @@ import '../../widgets/search_bar_widget.dart';
 import 'admin_add_site_screen.dart';
 import 'admin_edit_site_screen.dart';
 import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class AdminSitesScreen extends StatefulWidget {
 
@@ -339,10 +340,7 @@ class _SiteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
+                      padding: AppInsets.pillTiny,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                         borderRadius: AppRadius.xsBorder,
