@@ -96,7 +96,7 @@ class AppShadows {
     if (brightness == Brightness.dark) {
       return [
         BoxShadow(
-          color: primaryColor.withValues(alpha: 0.20),
+          color: primaryColor.withValues(alpha: 0.10),
           blurRadius: 12.0,
           offset: const Offset(0, 5),
         ),
@@ -104,7 +104,7 @@ class AppShadows {
     }
     return [
       BoxShadow(
-        color: primaryColor.withValues(alpha: 0.30),
+        color: primaryColor.withValues(alpha: 0.12),
         blurRadius: 15.0,
         offset: const Offset(0, 6),
       ),

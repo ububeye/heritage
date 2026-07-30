@@ -150,35 +150,24 @@ class UserProfileScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        // Profile banner uses a primary-tone gradient (primaryContainer
-        // → primary) so the onPrimary foreground stays legible.
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primaryContainer,
-            Theme.of(context).colorScheme.primary,
-          ],
-        ),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.lgBorder,
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+        boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 36,
-            // Avatar sits over the primary-tinted gradient; use a
-            // translucent onPrimary fill so it reads as a glassy chip.
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.onPrimary.withValues(alpha: 0.2),
+            backgroundColor: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
             backgroundImage:
                 user?.photoUrl != null ? NetworkImage(user!.photoUrl!) : null,
             child:
                 user?.photoUrl == null
                     ? Text(
                       user?.email[0].toUpperCase() ?? 'U',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.displayMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     )
                     : null,
@@ -191,16 +180,14 @@ class UserProfileScreen extends StatelessWidget {
                 Text(
                   user?.displayName ?? user?.email ?? 'User',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   user?.email ?? '',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimary.withValues(alpha: 0.8),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 13,
                   ),
                 ),

@@ -43,7 +43,7 @@ class UserAvatar extends StatelessWidget {
       radius: radius,
       backgroundColor: Theme.of(
         context,
-      ).colorScheme.primary.withValues(alpha: 0.12),
+      ).colorScheme.outline.withValues(alpha: 0.1),
       backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
       child:
           hasPhoto
@@ -52,14 +52,14 @@ class UserAvatar extends StatelessWidget {
               ? Text(
                 initials,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: radius * 0.7,
                 ),
               )
               : Icon(
                 Icons.person_outline,
-                color: Theme.of(context).colorScheme.primary,
-                size: radius,
+                color: Theme.of(context).colorScheme.onSurface,
+                size: radius * 1.2,
               ),
     );
   }

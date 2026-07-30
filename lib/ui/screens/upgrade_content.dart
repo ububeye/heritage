@@ -343,21 +343,15 @@ class _Hero extends StatelessWidget {
         width: 120,
         height: 120,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [scheme.secondary, scheme.primary],
-          ),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: AppRadius.ctaButtonBorder,
-          boxShadow: AppShadows.brandHaloFor(
-            Theme.of(context).brightness,
-            primaryColor: scheme.secondary,
-          ),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+          boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
         ),
         child: Icon(
           Icons.workspace_premium,
           size: 60,
-          color: scheme.onSecondary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
     );

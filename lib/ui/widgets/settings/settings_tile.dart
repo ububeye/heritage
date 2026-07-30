@@ -15,7 +15,8 @@ class SettingsTileIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
         borderRadius: AppRadius.smBorder,
       ),
       child: Icon(icon, color: color, size: 20),

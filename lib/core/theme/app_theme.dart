@@ -15,23 +15,29 @@ class AppTheme {
   /// the secondary brand colour with a tint of the navy accent.
   static ColorScheme _lightScheme() {
     return ColorScheme.fromSeed(
-      seedColor: AppPalette.coral500,
+      seedColor: Colors.black,
       brightness: Brightness.light,
-      secondary: AppPalette.navy500,
-      tertiary: AppPalette.sky500,
+      primary: Colors.black,
+      onPrimary: Colors.white,
+      secondary: AppPalette.charcoal500,
+      tertiary: AppPalette.charcoal400,
       error: AppPalette.red600,
-      surface: AppPalette.warmSurface,
+      surface: Colors.white,
+      onSurface: Colors.black,
     );
   }
 
   static ColorScheme _darkScheme() {
     return ColorScheme.fromSeed(
-      seedColor: AppPalette.coral500,
+      seedColor: Colors.white,
       brightness: Brightness.dark,
-      secondary: AppPalette.navy300,
-      tertiary: AppPalette.sky300,
+      primary: Colors.white,
+      onPrimary: Colors.black,
+      secondary: AppPalette.charcoal400,
+      tertiary: AppPalette.charcoal500,
       error: AppPalette.red400,
-      surface: AppPalette.charcoal900,
+      surface: Colors.black,
+      onSurface: Colors.white,
     );
   }
 
@@ -43,16 +49,16 @@ class AppTheme {
     onSuccess: AppPalette.fixedWhite,
     warning: AppPalette.orange700,
     onWarning: AppPalette.fixedWhite,
-    info: AppPalette.sky700,
+    info: AppPalette.charcoal700,
     onInfo: AppPalette.fixedWhite,
-    rating: AppPalette.amber500,
-    mapRoute: AppPalette.navy500,
-    mapUser: AppPalette.sky700,
-    mapMarker: AppPalette.coral500,
+    rating: AppPalette.charcoal700,
+    mapRoute: AppPalette.charcoal700,
+    mapUser: AppPalette.charcoal900,
+    mapMarker: Colors.black,
     onImage: AppPalette.fixedWhite,
     onImageMuted: Color(0xCCFFFFFF),
     imageScrim: Color(0x99000000),
-    shadow: Color(0x0D000000),
+    shadow: Color(0x0A000000),
   );
 
   static const AppSemanticColors _darkSemantic = AppSemanticColors(
@@ -60,12 +66,12 @@ class AppTheme {
     onSuccess: AppPalette.fixedWhite,
     warning: AppPalette.orange700,
     onWarning: AppPalette.fixedWhite,
-    info: AppPalette.sky300,
+    info: AppPalette.charcoal300,
     onInfo: AppPalette.fixedWhite,
-    rating: AppPalette.amber500,
-    mapRoute: AppPalette.navy300,
-    mapUser: AppPalette.sky300,
-    mapMarker: AppPalette.coral300,
+    rating: AppPalette.charcoal300,
+    mapRoute: AppPalette.charcoal300,
+    mapUser: AppPalette.charcoal100,
+    mapMarker: Colors.white,
     onImage: AppPalette.fixedWhite,
     onImageMuted: Color(0xCCFFFFFF),
     imageScrim: Color(0x99000000),
@@ -96,7 +102,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,
-        indicatorColor: scheme.primary.withValues(alpha: 0.14),
+        indicatorColor: scheme.outline.withValues(alpha: 0.1),
         elevation: 2,
         height: 72,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {

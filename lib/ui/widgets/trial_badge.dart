@@ -39,9 +39,10 @@ class TrialBadge extends StatelessWidget {
     return Container(
       padding: AppInsets.chipTall,
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.12),
+        color: scheme.surface,
         borderRadius: AppRadius.badgeBorder,
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
+        boxShadow: AppShadows.lowFor(theme.brightness),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -49,10 +50,11 @@ class TrialBadge extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.20),
+              color: scheme.surface,
+              border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
               borderRadius: AppRadius.bannerBorder,
             ),
-            child: Icon(Icons.card_giftcard, color: accentOn, size: 22),
+            child: Icon(Icons.card_giftcard, color: scheme.onSurface, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -74,7 +76,7 @@ class TrialBadge extends StatelessWidget {
                   _body(),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 13,
-                    color: scheme.onSurface.withValues(alpha: 0.75),
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
