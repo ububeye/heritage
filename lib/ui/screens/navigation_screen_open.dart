@@ -323,7 +323,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       },
       builder: (context, state) {
         final navState = state.navigationState;
-        final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
+        final uiLanguage =
+            context.read<LocalizationCubit>().state.currentLanguage;
         final userLatLng =
             navState.currentPosition == null
                 ? null

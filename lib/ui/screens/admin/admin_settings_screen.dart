@@ -64,7 +64,11 @@ class AdminSettingsScreen extends StatelessWidget {
                         icon: Icons.language,
                         iconColor: Theme.of(context).colorScheme.primary,
                         title: _tr(locState, 'app_language'),
-                        value: context.watch<LanguageCubit>().state.uiLanguage,
+                        value:
+                            context
+                                .watch<LocalizationCubit>()
+                                .state
+                                .currentLanguage,
                         items: AppConstants.uiLanguages,
                         labels: [
                           '${LanguageMeta.flag('en')} ${LanguageMeta.name('en')}',
@@ -72,7 +76,9 @@ class AdminSettingsScreen extends StatelessWidget {
                         ],
                         onChanged: (value) {
                           if (value != null) {
-                            context.read<LanguageCubit>().setUiLanguage(value);
+                            context.read<LocalizationCubit>().setLanguage(
+                              value,
+                            );
                           }
                         },
                       ),

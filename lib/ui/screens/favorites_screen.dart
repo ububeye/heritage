@@ -146,9 +146,8 @@ class FavoritesScreen extends StatelessWidget {
                 itemCount: favoriteSites.length,
                 itemBuilder: (context, index) {
                   final site = favoriteSites[index];
-                  final uiLanguage =
-                      context.read<LanguageCubit>().state.uiLanguage;
                   final loc = context.read<LocalizationCubit>().state;
+                  final uiLanguage = loc.currentLanguage;
 
                   return _FavoriteSiteCard(
                     site: site,

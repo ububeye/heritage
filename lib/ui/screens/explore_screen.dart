@@ -133,8 +133,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                     return BlocBuilder<ExploreCubit, ExploreState>(
                       builder: (context, exploreState) {
-                        final uiLanguage =
-                            context.read<LanguageCubit>().state.uiLanguage;
+                        final uiLanguage = locState.currentLanguage;
 
                         // Featured site pinning (B-08): prefer sites explicitly
                         // marked `featured: true` in Firestore, fall back to

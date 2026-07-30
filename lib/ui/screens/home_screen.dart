@@ -203,8 +203,7 @@ class _HomeContent extends StatelessWidget {
               itemCount: sites.length,
               itemBuilder: (context, index) {
                 final site = sites[index];
-                final uiLanguage =
-                    context.read<LanguageCubit>().state.uiLanguage;
+                final uiLanguage = locState.currentLanguage;
 
                 return SiteCard(
                   site: site,

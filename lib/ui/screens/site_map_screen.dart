@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../blocs/language/language_cubit.dart';
+import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import '../widgets/heritage_map.dart';
 import '../../core/utils/nav_guard.dart';
@@ -15,7 +15,7 @@ class SiteMapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
+    final uiLanguage = context.read<LocalizationCubit>().state.currentLanguage;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

@@ -266,8 +266,8 @@ class _DetailScreenState extends State<DetailScreen> {
         // capture meant a user upgrading mid-session would still hear the
         // 30s preview until they rebuilt the screen, and a language pick
         // on this screen could race with an older closure.
-        final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
         final locState = context.read<LocalizationCubit>().state;
+        final uiLanguage = locState.currentLanguage;
         // Needed for the upgrade banner and other build-time conditions.
         final isPremium = context.read<AuthCubit>().state.isPremium;
         final allImages = site.allImages;
