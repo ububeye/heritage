@@ -7,6 +7,7 @@ import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 
 class OnboardingScreen extends StatefulWidget {
 
@@ -56,7 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _nextPage() {
     if (_currentPage < 2) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
+        duration: AppDurations.normal,
         curve: Curves.easeInOut,
       );
     }
@@ -126,7 +127,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         children: List.generate(
                           pages.length,
                           (index) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
+                            duration: AppDurations.fast,
                             margin: const EdgeInsets.only(right: 8),
                             width: _currentPage == index ? 24 : 8,
                             height: 8,

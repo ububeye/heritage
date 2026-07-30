@@ -12,6 +12,7 @@ import 'premium_offer_screen.dart';
 import 'home_screen.dart';
 import 'admin/admin_shell.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_durations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: AppDurations.entranceShort,
     );
     _fadeAnimation = Tween<double>(
       begin: 0.0,

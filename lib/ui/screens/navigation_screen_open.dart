@@ -951,7 +951,7 @@ class _UserMarkerState extends State<_UserMarker>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1400),
+    duration: AppDurations.onboardingReveal,
   )..repeat();
 
   @override

@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../data/models/site_model.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_durations.dart';
 
 class ArrivalOverlay extends StatefulWidget {
 
@@ -32,7 +33,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
   void initState() {
     super.initState();
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: AppDurations.pulse,
       vsync: this,
     )..repeat(reverse: true);
 

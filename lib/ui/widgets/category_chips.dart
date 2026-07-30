@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 
 class CategoryChips extends StatelessWidget {
 
@@ -45,7 +46,7 @@ class CategoryChips extends StatelessWidget {
               return GestureDetector(
                 onTap: () => onSelected(category == 'all' ? null : category),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: AppDurations.fast,
                   padding: AppInsets.listItem,
                   decoration: BoxDecoration(
                     color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,

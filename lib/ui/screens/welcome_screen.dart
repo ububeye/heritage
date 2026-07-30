@@ -6,6 +6,7 @@ import 'login_screen.dart';
 import 'register_screen.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -25,7 +26,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: AppDurations.entranceLong,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(

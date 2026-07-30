@@ -1,5 +1,6 @@
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -62,7 +63,7 @@ class PricingCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.card),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: AppDurations.collapse,
         curve: Curves.easeOut,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(

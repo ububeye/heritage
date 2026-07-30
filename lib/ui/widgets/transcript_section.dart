@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/language_meta.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_durations.dart';
 
 /// Collapsible "Show transcript" widget. Used on the site detail screen
 /// below the description so deaf / quiet-environment users can read
@@ -47,7 +48,7 @@ class _TranscriptSectionState extends State<TranscriptSection>
     // and that would throw "deactivated widget's ancestor is unsafe".
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 220),
+      duration: AppDurations.navigation,
       value: widget.defaultExpanded ? 1.0 : 0.0,
     );
     _expandCurve =

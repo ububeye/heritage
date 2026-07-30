@@ -20,6 +20,7 @@ import 'upgrade_screen.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 
 class DetailScreen extends StatefulWidget {
 
@@ -329,13 +330,13 @@ class _DetailScreenState extends State<DetailScreen> {
                                 onTap: () {
                                   _pageController.animateToPage(
                                     index,
-                                    duration: const Duration(milliseconds: 300),
+                                    duration: AppDurations.normal,
                                     curve: Curves.easeInOut,
                                   );
                                 },
                                 behavior: HitTestBehavior.opaque,
                                 child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
+                                  duration: AppDurations.fast,
                                   margin: const EdgeInsets.symmetric(horizontal: 4),
                                   width: _currentImageIndex == index ? 24 : 8,
                                   height: 8,
@@ -416,7 +417,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               semanticsLabel: locState.translations['previous_image'] ?? 'Previous image',
                               onTap: _currentImageIndex > 0
                                   ? () => _pageController.previousPage(
-                                        duration: const Duration(milliseconds: 300),
+                                        duration: AppDurations.normal,
                                         curve: Curves.easeInOut,
                                       )
                                   : null,
@@ -434,7 +435,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               semanticsLabel: locState.translations['next_image'] ?? 'Next image',
                               onTap: _currentImageIndex < allImages.length - 1
                                   ? () => _pageController.nextPage(
-                                        duration: const Duration(milliseconds: 300),
+                                        duration: AppDurations.normal,
                                         curve: Curves.easeInOut,
                                       )
                                   : null,

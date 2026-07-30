@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/auth/auth_cubit.dart';
@@ -806,7 +807,7 @@ class _ArrivalNotificationsGroupState extends State<_ArrivalNotificationsGroup> 
         // AnimatedSize so the appear/disappear is a soft tween rather
         // than a hard cut.
         AnimatedSize(
-          duration: const Duration(milliseconds: 180),
+          duration: AppDurations.collapse,
           curve: Curves.easeOut,
           alignment: Alignment.topCenter,
           child: _enabled
@@ -897,7 +898,7 @@ class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
 
   late final AnimationController _expandController = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 220),
+    duration: AppDurations.navigation,
   );
 
   @override

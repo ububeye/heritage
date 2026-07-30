@@ -15,6 +15,7 @@ import 'admin/admin_shell.dart';
 import 'maintenance_screen.dart';
 import 'onboarding_screen.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_durations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: AppDurations.splash,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
