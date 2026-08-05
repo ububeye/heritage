@@ -153,7 +153,8 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
               MaterialPageRoute(builder: (_) => const AdminAddSiteScreen()),
             ),
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(PhosphorIconsRegular.plus, color: Theme.of(context).colorScheme.onPrimary),
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        child: const Icon(PhosphorIconsRegular.plus),
       ),
     );
   }

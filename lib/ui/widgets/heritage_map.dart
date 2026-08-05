@@ -38,7 +38,7 @@ class HeritageMap extends StatefulWidget {
     required this.initialLat,
     required this.initialLng,
     required this.onLocationPicked,
-    this.initialZoom = 15,
+    this.initialZoom = 16,
     this.showLocateButton = true,
   }) : sites = const [],
        onSiteTap = null,
@@ -64,6 +64,41 @@ class HeritageMap extends StatefulWidget {
   final bool showLocateButton;
   final bool draggableMarker;
 
+  /// Camera bounds for the picker / browse variants. Picker is
+  /// hard-locked to Stone Town (UNESCO heritage peninsula); browse /
+  /// single-site span all of Unguja so a tourist in Nungwi can plan
+  /// a route to Forodhani. Exposed as a static so widget tests can
+  /// pin the policy without spinning up a MapController.
+  static LatLngBounds boundsFor({required bool isPicker}) {
+    return isPicker ? StoneTownBounds.cameraBounds : UngujaBounds.cameraBounds;
+  }
+
+  /// Clamp a coordinate into the variant's bounding box. Picker clamps
+  /// to Stone Town; browse clamps to Unguja. Exposed as a static so
+  /// widget tests and call sites can apply the same policy.
+  static LatLng clampForPicker(LatLng point, {required bool isPicker}) {
+    return isPicker
+        ? StoneTownBounds.clampPoint(point)
+        : UngujaBounds.clampPoint(point);
+  }
+
+  /// Camera constraint for the variant. Picker uses `containCenter` so
+  /// the camera *centre* stays in Stone Town but the viewport can
+  /// spill past the box when zoomed out — this is the only constraint
+  /// shape that can never return `null` from `constrain()`, which is
+  /// why it's the one we use on the picker: a `null` return is what
+  /// trips the `'MapCamera is no longer within the cameraConstraint'`
+  /// assertion and surfaces as the "Access blocked" red overlay.
+  /// Browse uses `contain` because the larger Unguja box comfortably
+  /// fits the viewport at every permitted zoom.
+  static CameraConstraint constraintFor({required bool isPicker}) {
+    final bounds =
+        isPicker ? StoneTownBounds.cameraBounds : UngujaBounds.cameraBounds;
+    return isPicker
+        ? CameraConstraint.containCenter(bounds: bounds)
+        : CameraConstraint.contain(bounds: bounds);
+  }
+
   @override
   State<HeritageMap> createState() => _HeritageMapState();
 }
@@ -74,16 +109,31 @@ class _HeritageMapState extends State<HeritageMap> {
   LatLng? _pickedPoint;
   bool _firstFitDone = false;
 
+  /// Camera constraint for the current variant. Delegates to
+  /// [HeritageMap.constraintFor] so widget code and tests share one
+  /// definition. Picker uses `containCenter` so the camera *centre*
+  /// stays in Stone Town but the viewport can spill past the box
+  /// when zoomed out — this is the only constraint shape that never
+  /// returns `null` from `constrain()`, which is why the picker uses
+  /// it: a `null` return is what trips the `'MapCamera is no longer
+  /// within the cameraConstraint after an option change'` assertion
+  /// and surfaces as the "Access blocked" red overlay. Browse uses
+  /// `contain` because the larger Unguja box comfortably fits the
+  /// viewport at every permitted zoom.
+  CameraConstraint get _activeConstraint =>
+      HeritageMap.constraintFor(isPicker: widget.draggableMarker);
+
   @override
   void initState() {
     super.initState();
-    // Clamp to the Unguja box up-front — if the seed coordinates
+    // Clamp to the variant's box up-front — if the seed coordinates
     // are outside (e.g. a developer testing with fake data, or a
     // bad manual edit) the CameraConstraint.contain assertion in
     // flutter_map will trip on the first rebuild. Clamping here keeps
     // the constraint strict for pan/zoom without crashing on bad input.
-    _pickedPoint = UngujaBounds.clampPoint(
+    _pickedPoint = HeritageMap.clampForPicker(
       LatLng(widget.initialLat, widget.initialLng),
+      isPicker: widget.draggableMarker,
     );
   }
 
@@ -92,8 +142,9 @@ class _HeritageMapState extends State<HeritageMap> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialLat != oldWidget.initialLat ||
         widget.initialLng != oldWidget.initialLng) {
-      _pickedPoint = UngujaBounds.clampPoint(
+      _pickedPoint = HeritageMap.clampForPicker(
         LatLng(widget.initialLat, widget.initialLng),
+        isPicker: widget.draggableMarker,
       );
     }
   }
@@ -107,7 +158,7 @@ class _HeritageMapState extends State<HeritageMap> {
       final points =
           widget.sites.map((s) => LatLng(s.latitude, s.longitude)).toList();
       final bounds = LatLngBounds.fromPoints(points);
-      _mapController.fitCamera(
+      _safeFitCamera(
         CameraFit.bounds(
           bounds: bounds,
           padding: const EdgeInsets.all(48),
@@ -116,7 +167,7 @@ class _HeritageMapState extends State<HeritageMap> {
         ),
       );
     } else if (widget.sites.length == 1) {
-      _mapController.move(
+      _safeMove(
         LatLng(widget.sites.first.latitude, widget.sites.first.longitude),
         widget.initialZoom,
       );
@@ -127,26 +178,31 @@ class _HeritageMapState extends State<HeritageMap> {
     final position = await _locationService.getCurrentPosition();
     if (position == null || !mounted) return;
     // Emulator GPS without a mock fix typically returns (0, 0) — well
-    // outside Unguja — which would trip the CameraConstraint.contain
-    // assertion on the next rebuild. Clamp to the island box and
+    // outside the variant's box — which would trip the
+    // CameraConstraint.contain assertion on the next rebuild. Clamp to
+    // the variant's box (Stone Town for picker, Unguja for browse) and
     // surface a SnackBar so the admin understands why their fix wasn't
     // used.
     final rawPoint = LatLng(position.latitude, position.longitude);
-    final clampedPoint = UngujaBounds.clampPoint(rawPoint);
-    final wasOutsideBox = !UngujaBounds.contains(rawPoint);
+    final clampedPoint = HeritageMap.clampForPicker(rawPoint, isPicker: widget.draggableMarker);
+    final wasOutsideBox = widget.draggableMarker
+        ? !StoneTownBounds.contains(rawPoint)
+        : !UngujaBounds.contains(rawPoint);
     setState(() => _pickedPoint = clampedPoint);
-    _mapController.move(clampedPoint, 17);
+    _safeMove(clampedPoint, 17);
     widget.onLocationPicked?.call(
       clampedPoint.latitude,
       clampedPoint.longitude,
     );
     if (wasOutsideBox && mounted) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Location is outside Unguja — snapped to the closest point.',
+            widget.draggableMarker
+                ? 'Location is outside Stone Town — snapped to the closest point.'
+                : 'Location is outside Unguja — snapped to the closest point.',
           ),
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -159,7 +215,7 @@ class _HeritageMapState extends State<HeritageMap> {
       final points =
           widget.sites.map((s) => LatLng(s.latitude, s.longitude)).toList();
       final bounds = LatLngBounds.fromPoints(points);
-      _mapController.fitCamera(
+      _safeFitCamera(
         CameraFit.bounds(
           bounds: bounds,
           padding: const EdgeInsets.all(48),
@@ -168,23 +224,78 @@ class _HeritageMapState extends State<HeritageMap> {
         ),
       );
     } else if (widget.sites.length == 1) {
-      _mapController.move(
+      _safeMove(
         LatLng(widget.sites.first.latitude, widget.sites.first.longitude),
         widget.initialZoom,
       );
     } else {
-      _mapController.move(UngujaBounds.centre, widget.initialZoom);
+      _safeMove(UngujaBounds.centre, widget.initialZoom);
     }
   }
 
   void _zoomIn() {
-    final zoom = _mapController.camera.zoom;
-    _mapController.move(_mapController.camera.center, zoom + 1);
+    final cam = _mapController.camera;
+    // Clamp the target zoom into the permitted range AND the centre
+    // into the variant's box BEFORE calling move. Without these clamps,
+    // tapping "+" at maxZoom (or "−" at minZoom) or with the camera
+    // panned to the edge of the box asked the controller for an
+    // out-of-bounds camera; on the next rebuild the
+    // `CameraConstraint.contain` assertion fired ('MapCamera is no
+    // longer within the cameraConstraint after an option change') and
+    // surfaced to the user as the "Access blocked" red overlay.
+    // Clamping both keeps the camera always inside the constraint so
+    // the assertion can never trip.
+    final nextZoom = (cam.zoom + 1).clamp(
+      AppConstants.stoneTownMinZoom,
+      AppConstants.stoneTownMaxZoom,
+    );
+    final nextCenter = HeritageMap.clampForPicker(
+      cam.center,
+      isPicker: widget.draggableMarker,
+    );
+    _safeMove(nextCenter, nextZoom);
   }
 
   void _zoomOut() {
-    final zoom = _mapController.camera.zoom;
-    _mapController.move(_mapController.camera.center, zoom - 1);
+    final cam = _mapController.camera;
+    final nextZoom = (cam.zoom - 1).clamp(
+      AppConstants.stoneTownMinZoom,
+      AppConstants.stoneTownMaxZoom,
+    );
+    final nextCenter = HeritageMap.clampForPicker(
+      cam.center,
+      isPicker: widget.draggableMarker,
+    );
+    _safeMove(nextCenter, nextZoom);
+  }
+
+  /// Wraps [_mapController.move] with a defensive try/catch. The
+  /// `CameraConstraint.contain` assertion is debug-only but on a real
+  /// device the user sees the red "Access blocked" overlay when an
+  /// out-of-bounds camera slips through. The clamps in [_zoomIn] /
+  /// [_zoomOut] / [_onMapTap] / `_useCurrentLocation` should make the
+  /// catch unreachable, but we wrap it anyway — losing a zoom tap is
+  /// cheap, crashing the screen is not.
+  void _safeMove(LatLng center, double zoom) {
+    try {
+      _mapController.move(center, zoom);
+    } catch (_) {
+      // Silent recovery — the next valid interaction will produce a
+      // legal camera. Avoid surfacing the assertion to the user.
+    }
+  }
+
+  /// Same as [_safeMove] but for [_mapController.fitCamera]. Used by
+  /// the "reset to all sites" / on-map-ready paths. `fitCamera` can
+  /// also trip the camera-constraint assertion when the bounds it
+  /// computed from marker positions land partially outside the
+  /// constraint box.
+  void _safeFitCamera(CameraFit fit) {
+    try {
+      _safeFitCamera(fit);
+    } catch (_) {
+      // Silent recovery — same rationale as _safeMove.
+    }
   }
 
   void _onMapTap(TapPosition tapPosition, LatLng point) {
@@ -215,9 +326,7 @@ class _HeritageMapState extends State<HeritageMap> {
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),
-            cameraConstraint: CameraConstraint.contain(
-              bounds: UngujaBounds.cameraBounds,
-            ),
+            cameraConstraint: _activeConstraint,
           ),
           children: [
             TileLayer(
@@ -340,15 +449,17 @@ class _HeritageMapState extends State<HeritageMap> {
 
   List<Marker> _buildMarkers() {
     if (widget.draggableMarker) {
-      // Single draggable pin. Clamp to the Unguja box so the marker is
-      // always within the camera constraint — the `??` fires before
-      // `_pickedPoint` is set on the very first frame, and an
-      // out-of-bounds `widget.initialLat/Lng` would render a marker
-      // the camera is forbidden from centring on. (Heritage sites are
-      // authored from Stone Town data, so the marker will sit inside
-      // Stone Town in practice; the island clamp is just a safety net.)
-      final point = UngujaBounds.clampPoint(
+      // Single draggable pin. Clamp to the variant's box (Stone Town
+      // for picker, Unguja for browse) so the marker is always within
+      // the camera constraint — the `??` fires before `_pickedPoint`
+      // is set on the very first frame, and an out-of-bounds
+      // `widget.initialLat/Lng` would render a marker the camera is
+      // forbidden from centring on. (Heritage sites are authored from
+      // Stone Town data, so the marker will sit inside Stone Town in
+      // practice; the island clamp is just a safety net for browse.)
+      final point = HeritageMap.clampForPicker(
         _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng),
+        isPicker: widget.draggableMarker,
       );
       return [
         Marker(

@@ -15,6 +15,8 @@ import '../../../data/models/activity_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
 import '../../widgets/heritage_map.dart';
+import '../../../core/utils/stone_town_bounds.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminEditSiteScreen extends StatefulWidget {
@@ -508,16 +510,28 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                 ),
               ),
               clipBehavior: Clip.antiAlias,
-              child: HeritageMap.picker(
-                initialLat: widget.site.latitude,
-                initialLng: widget.site.longitude,
-                onLocationPicked: (pickedLat, pickedLng) {
-                  // setState keeps the lat/lng fields in sync visually
-                  // with the map marker.
-                  setState(() {
-                    _latController.text = pickedLat.toStringAsFixed(6);
-                    _lngController.text = pickedLng.toStringAsFixed(6);
-                  });
+              child: Builder(
+                builder: (context) {
+                  // Clamp the seed to Stone Town so legacy sites whose
+                  // coords were authored outside the box (or who round-
+                  // trip through OSRM with a misplaced doorway) don't
+                  // crash the picker's CameraConstraint.contain check
+                  // on first rebuild.
+                  final clamped = StoneTownBounds.clampPoint(
+                    LatLng(widget.site.latitude, widget.site.longitude),
+                  );
+                  return HeritageMap.picker(
+                    initialLat: clamped.latitude,
+                    initialLng: clamped.longitude,
+                    onLocationPicked: (pickedLat, pickedLng) {
+                      // setState keeps the lat/lng fields in sync
+                      // visually with the map marker.
+                      setState(() {
+                        _latController.text = pickedLat.toStringAsFixed(6);
+                        _lngController.text = pickedLng.toStringAsFixed(6);
+                      });
+                    },
+                  );
                 },
               ),
             ),

@@ -198,6 +198,77 @@ void main() {
         service.dispose();
       },
     );
+
+    test(
+      'rejects an origin outside Unguja without hitting the network',
+      () async {
+        // Dar es Salaam — well south of the island box.
+        const dar = LatLng(-6.80, 39.20);
+        const stoneTown = LatLng(-6.1620, 39.1900);
+
+        // A handler that fails the test if it's ever called — the
+        // service must short-circuit before reaching the network.
+        var networkCalled = false;
+        Future<http.Response> handler(http.Request req) async {
+          networkCalled = true;
+          return _okRoute(req);
+        }
+
+        final service = RoutingService(client: MockClient(handler));
+        final result = await service.getRoute(from: dar, to: stoneTown);
+
+        expect(
+          networkCalled,
+          isFalse,
+          reason: 'service must reject outside-Unguja up-front',
+        );
+        expect(result.isFallback, isTrue);
+        expect(result.provider, 'none');
+        expect(result.errorMessage, contains('Origin is outside Zanzibar'));
+        // Fallback polyline is just the two endpoints.
+        expect(result.points, hasLength(2));
+        expect(result.points.first, dar);
+        expect(result.points.last, stoneTown);
+        // Distance is a haversine, not a network-reported value.
+        expect(
+          result.distanceMeters - _haversineMetersForTest(dar, stoneTown),
+          lessThan(1.0),
+        );
+
+        service.dispose();
+      },
+    );
+
+    test(
+      'rejects a destination outside Unguja without hitting the network',
+      () async {
+        const stoneTown = LatLng(-6.1620, 39.1900);
+        // Pemba island — east of Zanzibar, outside the box.
+        const pemba = LatLng(-5.10, 39.75);
+
+        var networkCalled = false;
+        Future<http.Response> handler(http.Request req) async {
+          networkCalled = true;
+          return _okRoute(req);
+        }
+
+        final service = RoutingService(client: MockClient(handler));
+        final result = await service.getRoute(from: stoneTown, to: pemba);
+
+        expect(
+          networkCalled,
+          isFalse,
+          reason: 'service must reject outside-Unguja up-front',
+        );
+        expect(result.isFallback, isTrue);
+        expect(
+          result.errorMessage,
+          contains('Destination is outside Zanzibar'),
+        );
+
+        service.dispose();
+      },
+    );
   });
 }
 
