@@ -189,6 +189,35 @@ The application follows a clean layered architecture using `flutter_bloc`:
 *Site Detail & Audio Player*
 > [Placeholder: Add screenshots of the Site Detail screen and Bottom Audio Player here]
 
+## Firebase
+
+This project uses Firebase for Auth and Cloud Firestore. The
+config files for the Firebase CLI are at the repo root:
+
+- `firebase.json` — tells the CLI what to deploy.
+- `firestore.rules` — security rules (`sites`, `activities`, `users`, `roles`).
+- `firestore.indexes.json` — composite indexes (empty until needed).
+- `.firebaserc` — pins the default project to `stone-town-heritage-vt-guide`.
+
+The Android client reads `android/app/google-services.json` directly.
+iOS / web / desktop clients need a generated `lib/firebase_options.dart`
+— run `flutterfire configure` if you target those.
+
+### Deploy Firestore rules + indexes
+
+```bash
+# One-time per machine
+npm install -g firebase-tools
+firebase login
+
+# From the repo root
+firebase deploy --only firestore
+```
+
+That pushes both `firestore.rules` and `firestore.indexes.json`. To
+preview a rules change without committing it, run
+`firebase emulators:start --only firestore` first.
+
 ## License
 
 MIT License - See LICENSE file
