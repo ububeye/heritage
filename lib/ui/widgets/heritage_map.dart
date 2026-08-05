@@ -338,7 +338,9 @@ class _HeritageMapState extends State<HeritageMap> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              // CartoDB Voyager: A free, lenient tile server perfect for demos
+              // without needing an API key. Replaces OSM to prevent 403 errors.
+              urlTemplate: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.stone_town_heritage_vt_guide',
               maxNativeZoom: 19,
               tileProvider: TileCacheService.instance.tileProvider(),
@@ -348,7 +350,7 @@ class _HeritageMapState extends State<HeritageMap> {
               RichAttributionWidget(
                 alignment: AttributionAlignment.bottomLeft,
                 attributions: [
-                  TextSourceAttribution('© OpenStreetMap contributors'),
+                  TextSourceAttribution('© OpenStreetMap contributors, © CARTO'),
                 ],
               ),
           ],

@@ -286,7 +286,7 @@ class _CachedTileProvider extends TileProvider {
       // Behave like the default provider when there's no template.
       return NetworkImage(
         _populateTemplatePlaceholders(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
           coordinates: coordinates,
         ),
         headers: const {
@@ -334,7 +334,7 @@ class _CachedTileProvider extends TileProvider {
     final t = options.urlTemplate ?? '';
     if (t.isEmpty) {
       return _populateTemplatePlaceholders(
-        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        urlTemplate: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
         coordinates: coordinates,
       );
     }
