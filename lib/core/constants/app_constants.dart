@@ -19,20 +19,32 @@ class AppConstants {
   static const String cloudinaryFull = 'w_1200,c_fill,q_auto,f_auto';
   static const String cloudinaryThumbSmall = 'w_200,c_fill,q_auto,f_auto';
 
-  // Pricing
-  static const double monthlyPrice = 4.99;
-  static const double yearlyPrice = 29.99;
+  // Pricing — 3-tier plan structure
+  // Explorer (replaces legacy monthly) — casual visitor
+  static const double explorerMonthlyPrice = 4.99;
+  static const double explorerYearlyPrice = 29.99;
+  // Legacy aliases — keep so existing code that reads these doesn't break.
+  static const double monthlyPrice = explorerMonthlyPrice;
+  static const double yearlyPrice = explorerYearlyPrice;
+
+  // Pro — repeat visitor / researcher (RECOMMENDED)
+  static const double proMonthlyPrice = 9.99;
+  static const double proYearlyPrice = 59.99;
+
+  // Lifetime — local guide / superfan one-time purchase
+  static const double lifetimePrice = 49.99;
+
   static const int trialDays = 3;
 
-  /// Payment methods accepted via Google Play Billing — surfaced in the
-  /// upgrade screen FAQ. Order is intentional: mobile-money first for
-  /// the local audience, then card networks.
+  /// Payment methods accepted — surfaced in the upgrade screen and payment
+  /// form. Order: card networks first, then mobile-money for local audience.
   static const List<String> acceptedPaymentMethods = [
-    'M-Pesa',
-    'Tigo Pesa',
-    'Airtel Money',
     'Visa',
     'Mastercard',
+    'Amex',
+    'PayPal',
+    'M-Pesa',
+    'Google Pay',
   ];
 
   // Animation Durations moved to app_durations.dart
@@ -54,6 +66,17 @@ class AppConstants {
   static const double stoneTownMaxLat = -6.1570;
   static const double stoneTownMinLng = 39.1830;
   static const double stoneTownMaxLng = 39.1980;
+
+  // Wider camera bounds for the admin picker map (~20 % buffer outward from
+  // the strict Stone Town box). When the camera constraint uses the tight box
+  // the user can accidentally zoom out past its edge; the resulting null from
+  // CameraConstraint.contain trips flutter_map's internal assertion and shows
+  // the red "Access Blocked" overlay. The wider bounds give comfortable scroll
+  // room without letting the camera escape Stone Town's neighbourhood.
+  static const double stoneTownPickerMinLat = -6.1740; // ~20% south buffer
+  static const double stoneTownPickerMaxLat = -6.1510; // ~20% north buffer
+  static const double stoneTownPickerMinLng = 39.1796; // ~20% west buffer
+  static const double stoneTownPickerMaxLng = 39.2014; // ~20% east buffer
 
   // Default camera centre — Forodhani Gardens waterfront, well-mapped on OSM.
   static const double stoneTownCentreLat = -6.1619;

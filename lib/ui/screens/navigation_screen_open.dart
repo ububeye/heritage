@@ -39,9 +39,13 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 /// Stone Town live-navigation screen.
 ///
 /// Polished Google-Maps-style navigation on top of `flutter_map` + OpenStreetMap.
-/// Built for a 1.4 km × 1.7 km heritage peninsula — the camera is clamped to
-/// the Stone Town box, so the user can never pan out to see the rest of
-/// Unguja or empty ocean.
+/// Features:
+///   - Compass-driven map rotation (heading lock) on real devices.
+///   - Large top maneuver card with turn icon + distance.
+///   - Route progress bar (% completed).
+///   - Speed-adaptive zoom (zooms in when close to destination).
+///   - Remaining route distance computed from polyline.
+///   - Turn-by-turn steps with road name.
 class NavigationScreenOpen extends StatefulWidget {
   const NavigationScreenOpen({super.key, required this.site});
   final SiteModel site;
@@ -86,6 +90,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   bool _routeIsFallback = false;
   String? _routeError;
 
+  /// Total route distance in metres (OSRM-reported). Used for progress bar.
+  double _totalRouteDistanceM = 0;
+
+  /// Remaining distance along the polyline from user to destination.
+  double _remainingRouteDistanceM = 0;
+
   /// Incremented on each `_fetchRoute` call so a late OSRM response from a
   /// previous site can't overwrite the current one.
   int _routeRequestId = 0;
@@ -96,6 +106,28 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   LatLng? _cameraTickerEnd;
   LatLng? _lastUserPosition;
   bool _userInsideBox = true;
+
+  // ── Compass / heading ──────────────────────────────────────────────────────
+
+  /// Current device heading in degrees (0 = north, 90 = east). Sourced from
+  /// [Geolocator.getPositionStream] via the `heading` field of each [Position].
+  /// Null until the first GPS fix with a valid heading arrives.
+  double? _headingDeg;
+
+  /// Whether the map is locked to follow the user's heading (compass mode).
+  /// Toggled by the recenter / compass button in the top-right.
+  bool _headingLocked = true;
+
+  // ── Speed-adaptive zoom ────────────────────────────────────────────────────
+
+  /// Returns the target zoom level based on remaining distance.
+  double _adaptiveZoom(double? distanceM) {
+    if (distanceM == null) return AppConstants.defaultZoom;
+    if (distanceM < 80) return 19.0;
+    if (distanceM < 200) return 18.0;
+    if (distanceM < 500) return 17.0;
+    return 16.0;
+  }
 
   @override
   void didChangeDependencies() {
@@ -128,12 +160,17 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
 
     if (!mounted || myId != _routeRequestId) return;
 
-    // Snap destination to polyline as soon as the route is available —
-    // the marker should sit on the road, not 5 m into a doorway.
+    // Snap destination to polyline as soon as the route is available.
     final snapped =
         result.points.length >= 2
             ? PolylineSnap.snapToPolyline(destination, result.points)
             : null;
+
+    // Compute total route distance.
+    final totalDist =
+        result.distanceMeters > 0
+            ? result.distanceMeters
+            : _computePolylineLength(result.points);
 
     setState(() {
       _routePoints = result.points;
@@ -143,12 +180,62 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       _routeLoading = false;
       _routeIsFallback = result.isFallback;
       _routeError = result.errorMessage;
+      _totalRouteDistanceM = totalDist;
+      _remainingRouteDistanceM = totalDist;
     });
   }
 
-  /// Animate the camera from its current centre to [target] in
-  /// [AppDurations.navigation.inMilliseconds], preserving zoom and rotation.
-  void _animateCameraTo(LatLng target) {
+  /// Computes the sum of great-circle distances between consecutive points.
+  double _computePolylineLength(List<LatLng> points) {
+    if (points.length < 2) return 0;
+    double total = 0;
+    for (int i = 0; i < points.length - 1; i++) {
+      total += dc.DistanceCalculator.calculateDistance(
+        points[i].latitude,
+        points[i].longitude,
+        points[i + 1].latitude,
+        points[i + 1].longitude,
+      );
+    }
+    return total;
+  }
+
+  /// Computes the remaining polyline length from [userPos] to the end of
+  /// [_routePoints]. Finds the nearest vertex to the user, then sums
+  /// distances from that vertex to the destination.
+  double _computeRemainingDistance(LatLng userPos) {
+    if (_routePoints.length < 2) return 0;
+    // Find the closest point index on the polyline.
+    int nearest = 0;
+    double minDist = double.infinity;
+    for (int i = 0; i < _routePoints.length; i++) {
+      final d = dc.DistanceCalculator.calculateDistance(
+        userPos.latitude,
+        userPos.longitude,
+        _routePoints[i].latitude,
+        _routePoints[i].longitude,
+      );
+      if (d < minDist) {
+        minDist = d;
+        nearest = i;
+      }
+    }
+    // Sum the polyline from nearest to end.
+    double remaining = minDist; // user to the nearest vertex
+    for (int i = nearest; i < _routePoints.length - 1; i++) {
+      remaining += dc.DistanceCalculator.calculateDistance(
+        _routePoints[i].latitude,
+        _routePoints[i].longitude,
+        _routePoints[i + 1].latitude,
+        _routePoints[i + 1].longitude,
+      );
+    }
+    return remaining;
+  }
+
+  /// Animate the camera from its current centre to [target] preserving
+  /// zoom and applying heading rotation when [_headingLocked] is true.
+  void _animateCameraTo(LatLng target, {double? distanceM}) {
     final clamped =
         UngujaBounds.contains(target) ? target : UngujaBounds.centre;
     if (_lastUserPosition != null &&
@@ -164,6 +251,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         start.longitude == clamped.longitude) {
       return;
     }
+
+    final targetZoom = _adaptiveZoom(distanceM);
 
     _cameraTicker?.dispose();
     _cameraTickerStart = start;
@@ -184,7 +273,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         _cameraTickerEnd!.longitude,
         eased,
       );
-      _mapController.move(LatLng(lat, lng), camera.zoom);
+
+      // Apply heading rotation when locked.
+      if (_headingLocked && _headingDeg != null) {
+        _mapController.moveAndRotate(LatLng(lat, lng), targetZoom, -_headingDeg!);
+      } else {
+        _mapController.move(LatLng(lat, lng), targetZoom);
+      }
 
       if (t >= 1.0) {
         _cameraTicker?.stop();
@@ -213,7 +308,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     _mapController.fitCamera(
       CameraFit.bounds(
         bounds: bounds,
-        padding: const EdgeInsets.fromLTRB(60, 160, 60, 200),
+        padding: const EdgeInsets.fromLTRB(60, 160, 60, 220),
         maxZoom: AppConstants.markerZoom,
         minZoom: AppConstants.stoneTownMinZoom,
       ),
@@ -236,9 +331,6 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               prev.navigationState.status != next.navigationState.status ||
               prev.navigationState.currentPosition !=
                   next.navigationState.currentPosition ||
-              // Fire on a permission-denied transition so we can pop the
-              // "Open Settings" SnackBar. Re-emits with the same error
-              // code do not re-pop (the prev/next inequality gate).
               (prev.navigationState.errorCode !=
                       next.navigationState.errorCode &&
                   next.navigationState.errorCode == 'permission_denied'),
@@ -262,14 +354,30 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           );
         }
 
-        // 2. Camera follow on each subsequent update — animated.
+        // 2. Camera follow on each subsequent update — animated with adaptive zoom.
         if (posLatLng != null && !_routeLoading) {
-          _animateCameraTo(posLatLng);
+          _animateCameraTo(
+            posLatLng,
+            distanceM: navState.distanceToSite,
+          );
         }
 
-        // 2b. Advance the active turn-by-turn step when the user passes
-        //     a maneuver point. Only meaningful once steps have been
-        //     loaded; ignore on the initial pre-route state.
+        // 2b. Update heading from the GPS position.
+        if (pos != null && pos.heading != 0.0) {
+          if (_headingDeg != pos.heading) {
+            setState(() => _headingDeg = pos.heading);
+          }
+        }
+
+        // 2c. Update remaining polyline distance.
+        if (posLatLng != null && _routePoints.length >= 2) {
+          final remaining = _computeRemainingDistance(posLatLng);
+          if ((remaining - _remainingRouteDistanceM).abs() > 2) {
+            setState(() => _remainingRouteDistanceM = remaining);
+          }
+        }
+
+        // 2d. Advance the active turn-by-turn step.
         if (posLatLng != null && _routeSteps.isNotEmpty) {
           final newIdx = RoutingService.currentStepIndex(
             _routeSteps,
@@ -280,8 +388,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           }
         }
 
-        // 3. Track whether the user is inside the island (drives a subtle
-        //    banner so they know GPS hasn't locked onto Unguja yet).
+        // 3. Track whether the user is inside the island.
         if (posLatLng != null) {
           final inside = UngujaBounds.contains(posLatLng);
           if (inside != _userInsideBox) {
@@ -289,9 +396,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           }
         }
 
-        // 4. Show arrival overlay once. Gated by the arrival-alerts preference
-        //    so users who turned off the welcome card in Settings don't get a
-        //    surprise modal as they walk through Stone Town.
+        // 4. Show arrival overlay once.
         if (navState.status == nav_model.NavigationStatus.arrived &&
             !_showArrivalOverlay &&
             SharedPrefsService.instance.arrivalAlertsEnabled) {
@@ -307,17 +412,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           }
         }
 
-        // 5. Error state → stop animating so the user can re-tap recenter.
+        // 5. Error state → stop animating.
         if (navState.status == nav_model.NavigationStatus.error) {
           _cameraTicker?.stop();
           _cameraTicker?.dispose();
           _cameraTicker = null;
         }
 
-        // 6. Permission denied → localized SnackBar with an
-        //    "Open Settings" CTA so the user can grant location
-        //    access without leaving the app and hunting through
-        //    the OS settings tree on their own.
+        // 6. Permission denied SnackBar.
         if (navState.errorCode == 'permission_denied') {
           final locCubit = context.read<LocalizationCubit>();
           final messenger = ScaffoldMessenger.maybeOf(context);
@@ -350,7 +452,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           body: Stack(
             children: [
               _buildMap(context, userLatLng),
-              _buildTopBar(context),
+              // Google-Maps-style top maneuver card (replaces slim row)
+              _buildTopManeuverCard(context, navState),
               _buildBanner(context, navState),
               _buildBottomCard(context, navState, uiLanguage),
               if (_showArrivalOverlay)
@@ -380,14 +483,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        // Default to Stone Town centre so the heritage destination is
-        // visible on first frame; the camera constraint is island-wide
-        // so the user (or the GPS follow) can pan out across Unguja.
         initialCenter: StoneTownBounds.centre,
         initialZoom: AppConstants.defaultZoom,
         minZoom: AppConstants.stoneTownMinZoom,
         maxZoom: AppConstants.stoneTownMaxZoom,
         interactionOptions: const InteractionOptions(
+          // Allow rotate when heading-locked so the compass can drive it;
+          // manual finger rotation is still blocked.
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
         ),
         cameraConstraint: CameraConstraint.contain(
@@ -401,16 +503,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           maxNativeZoom: AppConstants.stoneTownMaxZoom.toInt(),
           tileProvider: TileCacheService.instance.tileProvider(),
         ),
-        // Route polyline — drawn as two stacked layers for a crisp
-        // white-bordered look that matches Google Maps.
+        // Route polyline — white border underlay for a crisp look.
         if (_routePoints.length >= 2)
           PolylineLayer(
             polylines: [
               Polyline(
                 points: _routePoints,
-                // White border underlay drawn under the coloured route
-                // for a crisp Google-Maps look. Fixed-content; uses the
-                // semantic onImage foreground.
                 color: context.semanticColors.onImage,
                 strokeWidth: AppConstants.routePolylineWidth + 4,
               ),
@@ -421,8 +519,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               ),
             ],
           ),
-        // Arrival-zone visualisation — translucent circle around the
-        // destination so the user sees how close they have to get.
+        // Arrival-zone translucent circle.
         CircleLayer(
           circles: [
             CircleMarker(
@@ -441,10 +538,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         ),
         MarkerLayer(
           markers: [
-            // Destination — drop-pin marker. Uses the snapped position so
-            // it lands on the polyline rather than 5 m off into a
-            // doorway; proximity detection still uses the raw coord
-            // (see [CircleMarker] above).
+            // Destination drop-pin.
             Marker(
               point:
                   _snappedDestination ??
@@ -454,7 +548,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               alignment: Alignment.topCenter,
               child: const _DestinationMarker(),
             ),
-            // User — pulsing blue dot. Only when GPS is fixed.
+            // User — pulsing blue dot. Only when GPS is fixed and on-island.
             if (userLatLng != null && _userInsideBox)
               Marker(
                 point: userLatLng,
@@ -464,12 +558,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               ),
           ],
         ),
-        // The attribution widget's slot must hold `SourceAttribution`
-        // instances (the class is sealed — no subclassing). To keep the
-        // label reactive when an admin flips the ORS key, we wrap the
-        // whole widget in a BlocBuilder that only rebuilds when the key
-        // changes; the static "© OpenStreetMap contributors" entry is
-        // cheap to recreate alongside.
+        // Attribution.
         BlocBuilder<RuntimeConfigCubit, RuntimeConfigState>(
           buildWhen: (prev, curr) => prev.orsApiKey != curr.orsApiKey,
           builder: (context, state) {
@@ -490,9 +579,131 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
+  // ── Google Maps-style top maneuver card ─────────────────────────────────
+
+  /// Large card at the very top: left = big turn icon, centre = distance +
+  /// street name, right = back + compass buttons stacked.
+  Widget _buildTopManeuverCard(
+    BuildContext context,
+    nav_model.NavigationState nav,
+  ) {
+    final arrived = nav.status == nav_model.NavigationStatus.arrived;
+    final topPad = MediaQuery.of(context).padding.top;
+
+    // When there are no steps yet or already arrived → just show the back row.
+    if (_routeSteps.isEmpty || arrived) {
+      return _buildMinimalTopBar(context, topPad);
+    }
+
+    final step =
+        _routeSteps[_activeStepIndex.clamp(0, _routeSteps.length - 1)];
+    final loc = context.read<LocalizationCubit>();
+    final instruction = step.localizedDescription(loc.translate);
+    final distToTurn = _formatDistance(step.distanceMeters);
+
     return Positioned(
-      top: MediaQuery.of(context).padding.top + 8,
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(0, topPad, 0, 0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Large turn icon
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: AppRadius.mdBorder,
+                    ),
+                    child: Icon(
+                      step.icon,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // Distance + instruction
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          distToTurn,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          instruction,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.92),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Back + compass buttons
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _NavIconButton(
+                        icon: PhosphorIconsRegular.arrowLeft,
+                        onPressed: () => Navigator.of(context).pop(),
+                        heroTag: 'nav_back',
+                      ),
+                      const SizedBox(height: 6),
+                      _NavIconButton(
+                        icon: _headingLocked
+                            ? PhosphorIconsRegular.compass
+                            : PhosphorIconsRegular.compassTool,
+                        onPressed: _toggleHeadingLock,
+                        heroTag: 'nav_compass',
+                        active: _headingLocked,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Progress bar — fills from left as the route is completed.
+            _buildProgressBar(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMinimalTopBar(BuildContext context, double topPad) {
+    return Positioned(
+      top: topPad + 8,
       left: 12,
       right: 12,
       child: Row(
@@ -507,16 +718,62 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           ),
           const Spacer(),
           FloatingActionButton.small(
-            heroTag: 'nav_recenter',
-            onPressed: () => _recenter(),
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            foregroundColor: Theme.of(context).colorScheme.onSurface,
+            heroTag: 'nav_compass',
+            onPressed: _toggleHeadingLock,
+            backgroundColor: _headingLocked
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.surface,
+            foregroundColor: _headingLocked
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
             elevation: 4,
-            child: const Icon(PhosphorIconsRegular.navigationArrow),
+            child: const Icon(PhosphorIconsRegular.compass),
           ),
         ],
       ),
     );
+  }
+
+  /// Thin coloured bar at the bottom of the top card showing % completed.
+  Widget _buildProgressBar(BuildContext context) {
+    double fraction = 0;
+    if (_totalRouteDistanceM > 0) {
+      fraction = 1.0 -
+          (_remainingRouteDistanceM / _totalRouteDistanceM).clamp(0.0, 1.0);
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            // Background track
+            Container(
+              height: 5,
+              color: Colors.white.withValues(alpha: 0.25),
+            ),
+            // Filled progress
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOut,
+              height: 5,
+              width: constraints.maxWidth * fraction,
+              color: Colors.white,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _toggleHeadingLock() {
+    setState(() => _headingLocked = !_headingLocked);
+    if (!_headingLocked) {
+      // Reset map north-up when unlocking.
+      try {
+        _mapController.rotate(0);
+      } catch (_) {}
+    }
+    // Recenter on user when re-locking.
+    if (_headingLocked) _recenter();
   }
 
   void _recenter() {
@@ -528,8 +785,6 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             : UngujaBounds.centre;
     final target = UngujaBounds.contains(raw) ? raw : UngujaBounds.centre;
 
-    // _fitInitial drives the camera via the map controller; stop any
-    // in-flight animation so the two don't fight each other.
     _cameraTicker?.stop();
     _cameraTicker?.dispose();
     _cameraTicker = null;
@@ -538,9 +793,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     _fitInitial(target);
   }
 
-  /// Banner shown above the map while the route is loading or when the
-  /// engine fell back to a straight line. Localized via the
-  /// [LocalizationCubit] the screen already reads from.
+  /// Small banner shown below the top card while route is loading / error /
+  /// fallback. Hidden once a clean route is loaded.
   Widget _buildBanner(BuildContext context, nav_model.NavigationState nav) {
     final hasError = nav.status == nav_model.NavigationStatus.error;
     if (!_routeLoading && !_routeIsFallback && !hasError) {
@@ -548,14 +802,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     }
     final loc = context.read<LocalizationCubit>();
     String tr(String key) => loc.translate(key);
-    // Auth-failure is a special-case routing errorMessage (the ORS
-    // provider returns the literal key "routing_api_key_invalid"
-    // when it gets a 401/403). Other errorMessage values are treated
-    // as free-text from the engine.
     final isRoutingAuthFailure = _routeError == 'routing_api_key_invalid';
-    // Banner shows an error pill on failure, and a near-black neutral pill
-    // while the route is loading or in fallback mode. The neutral tone
-    // uses onSurface for a high-contrast, theme-aware fill.
     final color =
         hasError
             ? Theme.of(context).colorScheme.error
@@ -571,8 +818,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                     ? '${tr('routing_offline')}\n$_routeError'
                     : tr('routing_offline')));
 
+    // Position below the top card (or top padding if no card yet).
+    final topOffset =
+        _routeSteps.isEmpty ? MediaQuery.of(context).padding.top + 64 : 160.0;
+
     return Positioned(
-      top: MediaQuery.of(context).padding.top + 64,
+      top: topOffset,
       left: 16,
       right: 16,
       child: Center(
@@ -585,8 +836,6 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             child: Text(
               text,
               textAlign: TextAlign.center,
-              // Banner fill is `colorScheme.error` or `colorScheme.onSurface`,
-              // so the text sits on its `on*` counterpart.
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.surface,
               ),
@@ -625,6 +874,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               foreground: Theme.of(context).colorScheme.onPrimary,
               icon: PhosphorIconsRegular.personSimpleWalk,
             );
+
+    // Choose which distance to show: remaining polyline distance (more
+    // accurate) when available, otherwise the straight-line distance from
+    // the cubit.
+    final displayDistance =
+        (!_routeIsFallback && _remainingRouteDistanceM > 0)
+            ? _remainingRouteDistanceM
+            : nav.distanceToSite;
 
     return Positioned(
       bottom: 0,
@@ -722,8 +979,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  nav.distanceToSite != null
-                                      ? _formatDistance(nav.distanceToSite!)
+                                  displayDistance != null
+                                      ? _formatDistance(displayDistance)
                                       : '—',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -731,6 +988,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                                     context,
                                   ).textTheme.bodySmall?.copyWith(
                                     fontSize: 13,
+                                    fontWeight: FontWeight.w600,
                                     color:
                                         Theme.of(
                                           context,
@@ -774,13 +1032,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                     statusChip,
                   ],
                 ),
-                // Turn-by-turn instruction row. Hidden on fallback routes
-                // (no step data) and on the arrived state (the destination
-                // overlay covers navigation). Sits just above the action
-                // button so the eye reads "next move → action".
-                if (_routeSteps.isNotEmpty && !arrived)
-                  _buildTurnInstructionRow(),
                 const SizedBox(height: 12),
+                // Stop button.
                 Row(
                   children: [
                     Expanded(
@@ -808,89 +1061,42 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   String _formatDuration(Duration d) {
     return dc.DistanceCalculator.formatDuration(d);
   }
+}
 
-  /// Builds the next-maneuver card that sits just above the Stop button
-  /// on the bottom sheet. Shows a maneuver icon, the instruction text
-  /// ("Turn left onto Kenyatta Rd"), and the remaining distance to the
-  /// next turn.
-  ///
-  /// Instructions are routed through [RouteStep.localizedDescription] so
-  /// the modifier ("Turn left", "Keep right", ...) renders in the
-  /// user's UI language instead of the hardcoded English that the
-  /// old `step.description` getter returned.
-  Widget _buildTurnInstructionRow() {
-    if (_routeSteps.isEmpty) return const SizedBox.shrink();
-    final step = _routeSteps[_activeStepIndex.clamp(0, _routeSteps.length - 1)];
-    final loc = context.read<LocalizationCubit>();
-    final instruction = step.localizedDescription(loc.translate);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: AppRadius.mdBorder,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+// ── Small icon button used inside the top maneuver card ──────────────────────
+
+class _NavIconButton extends StatelessWidget {
+  const _NavIconButton({
+    required this.icon,
+    required this.onPressed,
+    required this.heroTag,
+    this.active = false,
+  });
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String heroTag;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: active
+          ? Colors.white.withValues(alpha: 0.25)
+          : Colors.white.withValues(alpha: 0.12),
+      borderRadius: AppRadius.smBorder,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: AppRadius.smBorder,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                // TODO(#pr-follow-up): migrate to AppShadows.* with custom colour
-                BoxShadow(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            // Icon sits over a primary-filled circle. Foreground uses
-            // the matching onPrimary for contrast.
-            child: Icon(
-              step.icon,
-              color: Theme.of(context).colorScheme.onPrimary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  instruction,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${_formatDistance(step.distanceMeters)}'
-                  '${step.durationSeconds != null ? ' • ${_formatDuration(Duration(seconds: step.durationSeconds!.round()))}' : ''}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
 }
+
+// ── Status chip ───────────────────────────────────────────────────────────────
 
 class _StatusChip extends StatelessWidget {
   const _StatusChip({
@@ -929,15 +1135,14 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
+// ── Destination pin ───────────────────────────────────────────────────────────
+
 class _DestinationMarker extends StatelessWidget {
   const _DestinationMarker();
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      // Paints are constructed here so the painter can stay BuildContext-
-      // free; the foreground / scrim / shadow colours are read from the
-      // semantic role and forwarded as parameters.
       painter: _PinPainter(
         fillColor: context.semanticColors.mapMarker,
         strokeColor: context.semanticColors.onImage,
@@ -960,7 +1165,6 @@ class _PinPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Drop-pin shape: filled circle on top, tapered tail to a point.
     final radius = size.width * 0.32;
     final center = Offset(size.width / 2, radius + 4);
     final tailBottom = Offset(size.width / 2, size.height - 2);
@@ -1001,6 +1205,8 @@ class _PinPainter extends CustomPainter {
       oldDelegate.strokeColor != strokeColor ||
       oldDelegate.shadowColor != shadowColor;
 }
+
+// ── User location dot ─────────────────────────────────────────────────────────
 
 class _UserMarker extends StatefulWidget {
   @override
@@ -1057,17 +1263,12 @@ class _UserMarkerState extends State<_UserMarker>
               decoration: BoxDecoration(
                 color: context.semanticColors.mapUser,
                 shape: BoxShape.circle,
-                // Border over the user marker uses fixed white so it
-                // stays legible against any map tile hue.
                 border: Border.all(
                   color: context.semanticColors.onImage,
                   width: 3,
                 ),
                 boxShadow: [
-                  // TODO(#pr-follow-up): migrate to AppShadows.* with custom blur/offset
                   BoxShadow(
-                    // Marker shadow uses the theme-aware semantic shadow
-                    // colour.
                     color: context.semanticColors.shadow,
                     blurRadius: 4,
                     offset: const Offset(0, 1),

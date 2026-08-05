@@ -64,36 +64,40 @@ class HeritageMap extends StatefulWidget {
   final bool showLocateButton;
   final bool draggableMarker;
 
-  /// Camera bounds for the picker / browse variants. Picker is
-  /// hard-locked to Stone Town (UNESCO heritage peninsula); browse /
-  /// single-site span all of Unguja so a tourist in Nungwi can plan
-  /// a route to Forodhani. Exposed as a static so widget tests can
+  /// Camera bounds for the picker / browse variants. Picker uses the
+  /// wider [StoneTownBounds.pickerCameraBounds] (~20 % buffer) so the
+  /// admin can zoom out slightly without hitting the constraint wall;
+  /// browse / single-site span all of Unguja so a tourist in Nungwi can
+  /// plan a route to Forodhani. Exposed as a static so widget tests can
   /// pin the policy without spinning up a MapController.
   static LatLngBounds boundsFor({required bool isPicker}) {
-    return isPicker ? StoneTownBounds.cameraBounds : UngujaBounds.cameraBounds;
+    return isPicker
+        ? StoneTownBounds.pickerCameraBounds
+        : UngujaBounds.cameraBounds;
   }
 
   /// Clamp a coordinate into the variant's bounding box. Picker clamps
-  /// to Stone Town; browse clamps to Unguja. Exposed as a static so
-  /// widget tests and call sites can apply the same policy.
+  /// to the strict Stone Town box (for routing / pin position); browse
+  /// clamps to Unguja. Exposed as a static so widget tests and call
+  /// sites can apply the same policy.
   static LatLng clampForPicker(LatLng point, {required bool isPicker}) {
     return isPicker
         ? StoneTownBounds.clampPoint(point)
         : UngujaBounds.clampPoint(point);
   }
 
-  /// Camera constraint for the variant. Picker uses `containCenter` so
-  /// the camera *centre* stays in Stone Town but the viewport can
-  /// spill past the box when zoomed out — this is the only constraint
-  /// shape that can never return `null` from `constrain()`, which is
-  /// why it's the one we use on the picker: a `null` return is what
-  /// trips the `'MapCamera is no longer within the cameraConstraint'`
-  /// assertion and surfaces as the "Access blocked" red overlay.
-  /// Browse uses `contain` because the larger Unguja box comfortably
-  /// fits the viewport at every permitted zoom.
+  /// Camera constraint for the variant. Picker uses `containCenter` on the
+  /// wider pickerCameraBounds so the camera *centre* stays in the buffered
+  /// Stone Town area but the viewport can spill past the box when zoomed
+  /// out — this is the only constraint shape that can never return `null`
+  /// from `constrain()`, which is why it's the one we use on the picker:
+  /// a `null` return is what trips the `'MapCamera is no longer within the
+  /// cameraConstraint'` assertion and surfaces as the "Access blocked" red
+  /// overlay. Browse uses `contain` because the larger Unguja box
+  /// comfortably fits the viewport at every permitted zoom.
   static CameraConstraint constraintFor({required bool isPicker}) {
     final bounds =
-        isPicker ? StoneTownBounds.cameraBounds : UngujaBounds.cameraBounds;
+        isPicker ? StoneTownBounds.pickerCameraBounds : UngujaBounds.cameraBounds;
     return isPicker
         ? CameraConstraint.containCenter(bounds: bounds)
         : CameraConstraint.contain(bounds: bounds);
@@ -290,9 +294,13 @@ class _HeritageMapState extends State<HeritageMap> {
   /// also trip the camera-constraint assertion when the bounds it
   /// computed from marker positions land partially outside the
   /// constraint box.
+  ///
+  /// IMPORTANT: previously this method called itself (infinite recursion bug)
+  /// which meant fitCamera was never called and the map camera stayed
+  /// un-initialised, causing the "Access Blocked" overlay on zoom/scroll.
   void _safeFitCamera(CameraFit fit) {
     try {
-      _safeFitCamera(fit);
+      _mapController.fitCamera(fit);
     } catch (_) {
       // Silent recovery — same rationale as _safeMove.
     }
