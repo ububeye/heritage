@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/stone_town_bounds.dart';
+import '../../core/utils/unguja_bounds.dart';
 import '../models/site_model.dart';
 import 'route_cache_service.dart';
 import 'runtime_config_service.dart';
@@ -292,25 +293,26 @@ class RoutingService {
     required LatLng to,
     SiteModel? site,
   }) async {
-    // 0. Stone Town only — reject anything outside the box up-front. The
-    //    app is a heritage guide for a single peninsula; we don't want to
-    //    burn network requests or render a route to a place we don't cover.
-    if (!StoneTownBounds.contains(to)) {
+    // 0. Unguja only — reject anything outside the island up-front. We
+    //    don't want to burn network requests or render a route to a
+    //    place we don't cover. Routing is open to the whole island so a
+    //    customer in Nungwi can plan a trip to Forodhani.
+    if (!UngujaBounds.contains(to)) {
       return RouteResult.fallback(
         from: from,
         to: to,
         distanceMeters: _haversineMeters(from, to),
         provider: 'none',
-        errorMessage: 'Destination is outside Stone Town',
+        errorMessage: 'Destination is outside Zanzibar',
       );
     }
-    if (!StoneTownBounds.contains(from)) {
+    if (!UngujaBounds.contains(from)) {
       return RouteResult.fallback(
         from: from,
         to: to,
         distanceMeters: _haversineMeters(from, to),
         provider: 'none',
-        errorMessage: 'Origin is outside Stone Town',
+        errorMessage: 'Origin is outside Zanzibar',
       );
     }
 

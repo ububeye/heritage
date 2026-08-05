@@ -12,6 +12,8 @@ import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../widgets/heritage_map.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/unguja_bounds.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminAddSiteScreen extends StatefulWidget {
@@ -574,8 +576,17 @@ class _AdminAddSiteScreenState extends State<AdminAddSiteScreen> {
   }
 
   Widget _buildMapLocation() {
-    final lat = double.tryParse(_latController.text) ?? -6.1621;
-    final lng = double.tryParse(_lngController.text) ?? 39.1835;
+    // Clamp to the Unguja box at the call site so the value that lands
+    // in `HeritageMap.picker`'s `initialLat/Lng` is always inside the
+    // camera constraint. flutter_map's MapController asserts the current
+    // camera satisfies the new constraint on every rebuild; an un-clamped
+    // seed here (e.g. user types 39.9999 by accident) makes the next
+    // rebuild's constraint check fail and crash the screen.
+    final rawLat = double.tryParse(_latController.text) ?? -6.1621;
+    final rawLng = double.tryParse(_lngController.text) ?? 39.1835;
+    final clamped = UngujaBounds.clampPoint(LatLng(rawLat, rawLng));
+    final lat = clamped.latitude;
+    final lng = clamped.longitude;
 
     return Column(
       children: [

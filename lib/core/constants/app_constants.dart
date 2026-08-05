@@ -41,9 +41,10 @@ class AppConstants {
   static const double markerZoom = 17.0;
   static const double routePolylineWidth = 4.0;
 
-  // Stone Town core — the camera is clamped to this box. Everything outside
-  // is rejected by the routing service too, so the user never sees OSM tiles
-  // for the rest of Unguja or the Indian Ocean.
+  // Stone Town core — the heritage site cluster sits inside this box.
+  // It is used to position markers and as the default centre for the
+  // heritage map; routing and the map viewport use the wider Unguja
+  // bounds defined below.
   //
   //   south-west: Mizingani Road / harbour (-6.1680, 39.1830)
   //   north-east: Forodhani Gardens / Old Fort (-6.1570, 39.1980)
@@ -58,8 +59,23 @@ class AppConstants {
   static const double stoneTownCentreLat = -6.1619;
   static const double stoneTownCentreLng = 39.1936;
 
+  // Unguja (Zanzibar main island) — used for the camera viewport and
+  // routing validation. Covers the whole island including Nungwi/Mnemba
+  // in the north, the airport in the west, and the south coast.
+  //
+  //   south-west: ~ -6.50, 39.10
+  //   north-east: ~ -6.10, 39.55
+  static const double ungujaMinLat = -6.50;
+  static const double ungujaMaxLat = -6.10;
+  static const double ungujaMinLng = 39.10;
+  static const double ungujaMaxLng = 39.55;
+
+  // Default island-wide centre.
+  static const double ungujaCentreLat = -6.30;
+  static const double ungujaCentreLng = 39.30;
+
   // Map zoom clamp.
-  static const double stoneTownMinZoom = 14.0;
+  static const double stoneTownMinZoom = 10.0;
   static const double stoneTownMaxZoom = 19.0;
 
   // Navigation camera animation duration moved to app_durations.dart

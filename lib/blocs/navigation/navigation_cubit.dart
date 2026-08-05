@@ -6,6 +6,7 @@ import '../../data/models/navigation_state.dart';
 import '../../data/services/location_service.dart';
 import '../../core/utils/distance_calculator.dart' as dc;
 import '../../core/utils/stone_town_bounds.dart';
+import '../../core/utils/unguja_bounds.dart';
 import 'navigation_state.dart';
 
 class NavigationCubit extends Cubit<NavigationCubitState> {
@@ -52,12 +53,13 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
       ),
     );
 
-    // 2. Reject destinations outside Stone Town up-front — the user can't
-    // navigate to a place we don't cover.
-    if (!StoneTownBounds.contains(LatLng(siteLat, siteLng))) {
+    // 2. Reject destinations outside Unguja up-front — the user can't
+    // navigate to a place we don't cover. The island-wide box allows
+    // any heritage site plus any user origin on the island.
+    if (!UngujaBounds.contains(LatLng(siteLat, siteLng))) {
       _emitError(
         mySession,
-        'Destination is outside Stone Town',
+        'Destination is outside Zanzibar',
         errorCode: 'destination_out_of_bounds',
       );
       return;

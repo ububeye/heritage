@@ -27,6 +27,7 @@ import '../../core/theme/app_durations.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/polyline_snap.dart';
 import '../../core/utils/stone_town_bounds.dart';
+import '../../core/utils/unguja_bounds.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
 import '../../data/models/site_model.dart';
 import '../../data/services/route_cache_service.dart';
@@ -149,7 +150,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   /// [AppDurations.navigation.inMilliseconds], preserving zoom and rotation.
   void _animateCameraTo(LatLng target) {
     final clamped =
-        StoneTownBounds.contains(target) ? target : StoneTownBounds.centre;
+        UngujaBounds.contains(target) ? target : UngujaBounds.centre;
     if (_lastUserPosition != null &&
         _lastUserPosition!.latitude == clamped.latitude &&
         _lastUserPosition!.longitude == clamped.longitude) {
@@ -203,7 +204,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     ];
     if (pts.length < 2) {
       _mapController.move(
-        StoneTownBounds.contains(user) ? user : StoneTownBounds.centre,
+        UngujaBounds.contains(user) ? user : UngujaBounds.centre,
         AppConstants.defaultZoom,
       );
       return;
@@ -250,14 +251,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         // 1. Pull a route once we know where the user is.
         if (_routeLoading && posLatLng != null) {
           _fetchRoute(
-            StoneTownBounds.contains(posLatLng)
+            UngujaBounds.contains(posLatLng)
                 ? posLatLng
-                : StoneTownBounds.centre,
+                : UngujaBounds.centre,
           );
           _fitInitial(
-            StoneTownBounds.contains(posLatLng)
+            UngujaBounds.contains(posLatLng)
                 ? posLatLng
-                : StoneTownBounds.centre,
+                : UngujaBounds.centre,
           );
         }
 
@@ -279,10 +280,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           }
         }
 
-        // 3. Track whether the user is inside the box (drives a subtle
-        //    banner so they know GPS hasn't locked onto Stone Town yet).
+        // 3. Track whether the user is inside the island (drives a subtle
+        //    banner so they know GPS hasn't locked onto Unguja yet).
         if (posLatLng != null) {
-          final inside = StoneTownBounds.contains(posLatLng);
+          final inside = UngujaBounds.contains(posLatLng);
           if (inside != _userInsideBox) {
             setState(() => _userInsideBox = inside);
           }
@@ -379,6 +380,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
+        // Default to Stone Town centre so the heritage destination is
+        // visible on first frame; the camera constraint is island-wide
+        // so the user (or the GPS follow) can pan out across Unguja.
         initialCenter: StoneTownBounds.centre,
         initialZoom: AppConstants.defaultZoom,
         minZoom: AppConstants.stoneTownMinZoom,
@@ -387,7 +391,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
         ),
         cameraConstraint: CameraConstraint.contain(
-          bounds: StoneTownBounds.cameraBounds,
+          bounds: UngujaBounds.cameraBounds,
         ),
       ),
       children: [
@@ -521,8 +525,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     final raw =
         (pos != null)
             ? LatLng(pos.latitude, pos.longitude)
-            : StoneTownBounds.centre;
-    final target = StoneTownBounds.contains(raw) ? raw : StoneTownBounds.centre;
+            : UngujaBounds.centre;
+    final target = UngujaBounds.contains(raw) ? raw : UngujaBounds.centre;
 
     // _fitInitial drives the camera via the map controller; stop any
     // in-flight animation so the two don't fight each other.

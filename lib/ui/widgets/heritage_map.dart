@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/stone_town_bounds.dart';
+import '../../core/utils/unguja_bounds.dart';
 import '../../data/models/site_model.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/tile_cache_service.dart';
@@ -76,13 +77,12 @@ class _HeritageMapState extends State<HeritageMap> {
   @override
   void initState() {
     super.initState();
-    // Clamp to the Stone Town box up-front — if the seed coordinates
-    // are outside (e.g. a stale Firestore document from before the box
-    // was enforced, or a developer testing with fake data) the
-    // CameraConstraint.contain assertion in flutter_map will trip on
-    // the first rebuild. Clamping here keeps the constraint strict
-    // for pan/zoom without crashing on bad input.
-    _pickedPoint = StoneTownBounds.clampPoint(
+    // Clamp to the Unguja box up-front — if the seed coordinates
+    // are outside (e.g. a developer testing with fake data, or a
+    // bad manual edit) the CameraConstraint.contain assertion in
+    // flutter_map will trip on the first rebuild. Clamping here keeps
+    // the constraint strict for pan/zoom without crashing on bad input.
+    _pickedPoint = UngujaBounds.clampPoint(
       LatLng(widget.initialLat, widget.initialLng),
     );
   }
@@ -92,7 +92,7 @@ class _HeritageMapState extends State<HeritageMap> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialLat != oldWidget.initialLat ||
         widget.initialLng != oldWidget.initialLng) {
-      _pickedPoint = StoneTownBounds.clampPoint(
+      _pickedPoint = UngujaBounds.clampPoint(
         LatLng(widget.initialLat, widget.initialLng),
       );
     }
@@ -127,12 +127,13 @@ class _HeritageMapState extends State<HeritageMap> {
     final position = await _locationService.getCurrentPosition();
     if (position == null || !mounted) return;
     // Emulator GPS without a mock fix typically returns (0, 0) — well
-    // outside Stone Town — which would trip the CameraConstraint.contain
-    // assertion on the next rebuild. Clamp to the box and surface a
-    // SnackBar so the admin understands why their fix wasn't used.
+    // outside Unguja — which would trip the CameraConstraint.contain
+    // assertion on the next rebuild. Clamp to the island box and
+    // surface a SnackBar so the admin understands why their fix wasn't
+    // used.
     final rawPoint = LatLng(position.latitude, position.longitude);
-    final clampedPoint = StoneTownBounds.clampPoint(rawPoint);
-    final wasOutsideBox = !StoneTownBounds.contains(rawPoint);
+    final clampedPoint = UngujaBounds.clampPoint(rawPoint);
+    final wasOutsideBox = !UngujaBounds.contains(rawPoint);
     setState(() => _pickedPoint = clampedPoint);
     _mapController.move(clampedPoint, 17);
     widget.onLocationPicked?.call(
@@ -143,7 +144,7 @@ class _HeritageMapState extends State<HeritageMap> {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         const SnackBar(
           content: Text(
-            'Location is outside Stone Town — snapped to the closest point.',
+            'Location is outside Unguja — snapped to the closest point.',
           ),
           duration: Duration(seconds: 2),
         ),
@@ -172,7 +173,7 @@ class _HeritageMapState extends State<HeritageMap> {
         widget.initialZoom,
       );
     } else {
-      _mapController.move(StoneTownBounds.centre, widget.initialZoom);
+      _mapController.move(UngujaBounds.centre, widget.initialZoom);
     }
   }
 
@@ -215,7 +216,7 @@ class _HeritageMapState extends State<HeritageMap> {
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),
             cameraConstraint: CameraConstraint.contain(
-              bounds: StoneTownBounds.cameraBounds,
+              bounds: UngujaBounds.cameraBounds,
             ),
           ),
           children: [
@@ -339,11 +340,14 @@ class _HeritageMapState extends State<HeritageMap> {
 
   List<Marker> _buildMarkers() {
     if (widget.draggableMarker) {
-      // Single draggable pin. Clamp the fallback path too — the `??`
-      // fires before `_pickedPoint` is set on the very first frame, and
-      // an out-of-bounds `widget.initialLat/Lng` would render a marker
-      // the camera is forbidden from centring on.
-      final point = StoneTownBounds.clampPoint(
+      // Single draggable pin. Clamp to the Unguja box so the marker is
+      // always within the camera constraint — the `??` fires before
+      // `_pickedPoint` is set on the very first frame, and an
+      // out-of-bounds `widget.initialLat/Lng` would render a marker
+      // the camera is forbidden from centring on. (Heritage sites are
+      // authored from Stone Town data, so the marker will sit inside
+      // Stone Town in practice; the island clamp is just a safety net.)
+      final point = UngujaBounds.clampPoint(
         _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng),
       );
       return [
