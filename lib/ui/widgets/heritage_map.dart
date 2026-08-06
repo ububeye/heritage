@@ -341,7 +341,7 @@ class _HeritageMapState extends State<HeritageMap> {
               // CartoDB Voyager: A free, lenient tile server perfect for demos
               // without needing an API key. Replaces OSM to prevent 403 errors.
               urlTemplate: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.stone_town_heritage_vt_guide',
+              userAgentPackageName: 'com.stonetown.guide',
               maxNativeZoom: 19,
               tileProvider: TileCacheService.instance.tileProvider(),
             ),

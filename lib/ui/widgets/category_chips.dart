@@ -46,27 +46,23 @@ class CategoryChips extends StatelessWidget {
                 onTap: () => onSelected(category == 'all' ? null : category),
                 child: AnimatedContainer(
                   duration: AppDurations.fast,
-                  padding: AppInsets.listItem,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color:
                         isSelected
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.surface,
-                    borderRadius: AppRadius.sheetBorderSmBorder,
-                    border: Border.all(
-                      color:
-                          isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.outline,
-                    ),
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: AppRadius.fullBorder,
                   ),
-                  child: Text(
-                    _tr(locState, category),
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color:
-                          isSelected
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.onSurface,
+                  child: Center(
+                    child: Text(
+                      _tr(locState, category),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color:
+                            isSelected
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),

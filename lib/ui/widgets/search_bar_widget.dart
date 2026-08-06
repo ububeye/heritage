@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/debouncer.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// A debounced search input with a prefix search icon and a suffix clear
@@ -46,9 +47,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.mdBorder,
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: AppRadius.fullBorder,
+        boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
       ),
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: widget.controller,

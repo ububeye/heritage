@@ -499,7 +499,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       children: [
         TileLayer(
           urlTemplate: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.stone_town_heritage_vt_guide',
+          userAgentPackageName: 'com.stonetown.guide',
           maxNativeZoom: 19,
           tileProvider: TileCacheService.instance.tileProvider(),
         ),
