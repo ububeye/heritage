@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/audio_state.dart';
 import '../../data/repositories/site_repository.dart';
@@ -27,6 +29,26 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   /// of a faster second load. Without this, fast taps can paint site A
   /// into the detail screen for site B's id.
   int _loadSequenceId = 0;
+
+  /// Wall-clock ticker that advances `AudioState.position` while the
+  /// engine is playing. The engine's `setProgressHandler` fires
+  /// infrequently on Android (sometimes only at word boundaries), so
+  /// the visible seconds-counter and progress bar would otherwise
+  /// stall in long gaps between callbacks. The reporter's own
+  /// callbacks can still override the ticker when they arrive (the
+  /// existing `(clamped - current.position).inMilliseconds < 0` guard
+  /// at line ~94 filters out backwards movement).
+  Timer? _positionTicker;
+
+  /// Single-shot latch for end-of-chunk handling. Both the reporter
+  /// and the ticker independently detect end-of-chunk via
+  /// `position >= duration`, and both fire the preview-ended
+  /// SnackBar. Without coordination they can double-emit when the
+  /// engine's last progress callback lands in the same microtask
+  /// drain as a timer tick. Setting this flag on the first emit
+  /// ensures the second emit is a no-op. Reset every time a new
+  /// play or resume starts.
+  bool _endOfChunkSignaled = false;
 
   Future<void> loadSite(String siteId) async {
     final myId = ++_loadSequenceId;
@@ -80,6 +102,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     required String spokenText,
     required int baseline,
   }) {
+    // Reset the end-of-chunk latch so this fresh play is allowed to
+    // signal completion exactly once. The ticker is also starting
+    // fresh — both will check this flag before emitting the
+    // preview-ended SnackBar.
+    _endOfChunkSignaled = false;
     _ttsService.startReportingPosition(
       spokenText,
       budget: state.audioState.duration,
@@ -93,7 +120,8 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         // the bar shoot to the end on a single noisy callback.
         if ((clamped - current.position).inMilliseconds < 0) return;
         emit(state.copyWith(audioState: current.copyWith(position: clamped)));
-        if (clamped >= current.duration) {
+        if (clamped >= current.duration && !_endOfChunkSignaled) {
+          _endOfChunkSignaled = true;
           _ttsService.stopReportingPosition();
           emit(
             state.copyWith(
@@ -111,6 +139,56 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         }
       },
     );
+  }
+
+  /// Start the wall-clock position ticker. Called after the reporter is
+  /// installed for a fresh play or a resume. The ticker advances
+  /// `AudioState.position` by 100ms every 100ms while playing, so the
+  /// seconds text and progress bar move smoothly even when the engine
+  /// is between `setProgressHandler` callbacks. Real progress callbacks
+  /// still override the ticker when they arrive (the reporter's
+  /// emissions pass through the existing monotonicity guard).
+  void _startPositionTicker() {
+    _positionTicker?.cancel();
+    _positionTicker = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (isClosed) return;
+      final current = state.audioState;
+      if (!current.isPlaying) {
+        _stopPositionTicker();
+        return;
+      }
+      final next = current.position + const Duration(milliseconds: 100);
+      if (next >= current.duration && !_endOfChunkSignaled) {
+        // Hit end-of-chunk. Mirror the reporter's end-of-chunk branch
+        // so the bar pins to the end and we surface the preview-ended
+        // SnackBar exactly once. The shared latch prevents the
+        // reporter and ticker from double-firing when the engine's
+        // last progress callback lands in the same tick window.
+        _endOfChunkSignaled = true;
+        _ttsService.stopReportingPosition();
+        _stopPositionTicker();
+        emit(
+          state.copyWith(
+            audioState: current.copyWith(
+              position: current.duration,
+              isPlaying: false,
+            ),
+          ),
+        );
+        if (current.wasTruncated && current.maxDurationSeconds != null) {
+          _localizationCubit?.reportTtsPreviewEnded(
+            maxSeconds: current.maxDurationSeconds!,
+          );
+        }
+        return;
+      }
+      emit(state.copyWith(audioState: current.copyWith(position: next)));
+    });
+  }
+
+  void _stopPositionTicker() {
+    _positionTicker?.cancel();
+    _positionTicker = null;
   }
 
   Future<void> playAudio(String languageCode, {bool isPremium = false}) async {
@@ -158,12 +236,14 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // startReportingPosition — the engine's progress callback fires
       // with char offsets into the *spoken* text, so the chunk we
       // report against must equal the chunk the engine is saying.
-      // Premium playback passes the full text straight through; the
-      // chunk is identical for non-truncated cases.
+      // Pass the precomputed chunk back into speak() so the engine
+      // speaks exactly the same string we report against, even if a
+      // premium flip races between the two calls.
       final chunk = _ttsService.previewChunkFor(text);
       final speakResult = await _ttsService.speak(
         text,
         languageCode: languageCode,
+        precomputedChunk: chunk,
       );
 
       if (isClosed) return;
@@ -193,8 +273,10 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // we just emit clamped positions and detect end-of-chunk via the
       // existing duration gate (preview-ended SnackBar still fires here).
       _reinstallProgressReporter(baseline: 0, spokenText: chunk.text);
+      _startPositionTicker();
     } catch (e) {
       _ttsService.stopReportingPosition();
+      _stopPositionTicker();
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -209,6 +291,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
 
   Future<void> pauseAudio() async {
     _ttsService.stopReportingPosition();
+    _stopPositionTicker();
     if (isClosed) return;
     // pauseForRestart is platform-aware: iOS uses native pause (engine
     // keeps its position internally), Android stops the engine and
@@ -255,6 +338,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         baseline: resumeOffsetChars,
         spokenText: state.audioState.spokenText,
       );
+      _startPositionTicker();
       return;
     }
 
@@ -284,6 +368,9 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     // the bar freezes. The baseline keeps [_offsetToDuration]
     // monotonic so the visible position doesn't snap back to zero.
     final suffix = point.text.substring(point.charOffset);
+    // Reset the end-of-chunk latch so the resume is allowed to signal
+    // completion exactly once (see _reinstallProgressReporter).
+    _endOfChunkSignaled = false;
     _ttsService.restartReportingWithSuffix(
       suffix: suffix,
       baseline: point.charOffset,
@@ -294,7 +381,8 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         final clamped = pos > current.duration ? current.duration : pos;
         if ((clamped - current.position).inMilliseconds < 0) return;
         emit(state.copyWith(audioState: current.copyWith(position: clamped)));
-        if (clamped >= current.duration) {
+        if (clamped >= current.duration && !_endOfChunkSignaled) {
+          _endOfChunkSignaled = true;
           _ttsService.stopReportingPosition();
           emit(
             state.copyWith(
@@ -313,10 +401,13 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       },
       budget: state.audioState.duration,
     );
+    _startPositionTicker();
   }
 
   Future<void> stopAudio() async {
     _ttsService.stopReportingPosition();
+    _stopPositionTicker();
+    _endOfChunkSignaled = false;
     await _ttsService.stop();
     if (isClosed) return;
     emit(state.copyWith(audioState: const AudioState()));
@@ -325,6 +416,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   @override
   Future<void> close() {
     _ttsService.stopReportingPosition();
+    _stopPositionTicker();
     _ttsService.stop();
     return super.close();
   }

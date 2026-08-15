@@ -243,7 +243,11 @@ class TtsService {
   /// Result of a [speak] call. [wasTruncated] is true for free-tier users
   /// whose narration hit the per-session time cap; the audio stopped at a
   /// sentence boundary and the UI should prompt the user to upgrade.
-  Future<TtsSpeakResult> speak(String text, {String? languageCode}) async {
+  Future<TtsSpeakResult> speak(
+    String text, {
+    String? languageCode,
+    TtsChunk? precomputedChunk,
+  }) async {
     if (text.isEmpty) {
       return const TtsSpeakResult(wasTruncated: false);
     }
@@ -252,21 +256,28 @@ class TtsService {
       await setLanguage(languageCode);
     }
 
-    if (_isPremium) {
-      await _flutterTts.speak(text);
-      _state = TtsState.playing;
-      return const TtsSpeakResult(wasTruncated: false);
-    }
-
-    // Free tier: take the longest sentence-bounded prefix that fits in the
-    // time budget so the preview doesn't end mid-clause. If even the first
-    // sentence overflows, fall back to that one sentence rather than
-    // chopping at an arbitrary word boundary — better to hear a complete
-    // thought than to stop on "the".
-    final chunk = _chunkForDuration(text, _maxDurationSeconds);
-    await _flutterTts.speak(chunk.text);
+    // If the caller already computed a chunk (via [previewChunkFor]),
+    // speak it verbatim. This guarantees the engine is speaking the
+    // exact text the progress reporter's fingerprint was built from —
+    // crucially, it prevents a premium flip between previewChunkFor
+    // and speak from producing a different chunk at the engine layer
+    // than the one the reporter is tracking.
+    final resolvedChunk = precomputedChunk ?? _speakChunk(text);
+    await _flutterTts.speak(resolvedChunk.text);
     _state = TtsState.playing;
-    return TtsSpeakResult(wasTruncated: chunk.wasCut);
+    return TtsSpeakResult(wasTruncated: resolvedChunk.wasCut);
+  }
+
+  /// Compute the chunk the engine will speak for [text] under the
+  /// current premium/maxDuration settings. Extracted from [speak] so
+  /// it can be called once and shared between the cubit (which uses
+  /// the result for its fingerprint) and [speak] (which uses it for
+  /// the actual engine call).
+  TtsChunk _speakChunk(String text) {
+    if (_isPremium) {
+      return TtsChunk(text: text, wasCut: false);
+    }
+    return _chunkForDuration(text, _maxDurationSeconds);
   }
 
   /// Sentence-boundary chunker. Walks the input looking for terminators
@@ -365,8 +376,19 @@ class TtsService {
   /// [startReportingPosition] (the engine's progress callback uses the
   /// spoken text as its source of offsets, so the chunk we report
   /// progress for must equal the chunk the engine is speaking).
-  TtsChunk previewChunkFor(String text) =>
-      _chunkForDuration(text, _maxDurationSeconds);
+  ///
+  /// Premium users get the full text back as-is. Without this guard,
+  /// `_chunkForDuration` would compute `maxWords = 0` (since
+  /// `_maxDurationSeconds` is 0 for premium) and always truncate on
+  /// the first word — the reporter's fingerprint would then mismatch
+  /// the full text the engine is actually speaking, and every
+  /// progress callback would be filtered as stale.
+  TtsChunk previewChunkFor(String text) {
+    if (_isPremium) {
+      return TtsChunk(text: text, wasCut: false);
+    }
+    return _chunkForDuration(text, _maxDurationSeconds);
+  }
 
   // --- Progress-reporting driver --------------------------------------
 
@@ -393,9 +415,27 @@ class TtsService {
     _activeSpokenText = spokenText;
     _activeOnPosition = onPosition;
     _activeResumeBaseline = resumeBaseline;
-    _lastObservedOffset = 0;
-    _lastObservationMs = 0;
-    _msPerChar = 80; // 12.5 chars/sec seed until first callback refines it
+    // Reset the first-observation latch so the next progress callback
+    // is treated as the first sample (no calibration update).
+    _firstObservationSinceStart = true;
+    if (resumeBaseline > 0) {
+      // Resume call — the engine is now speaking a suffix of the
+      // original chunk. The cubit pre-sets AudioState.position using
+      // the *currently calibrated* msPerChar (see
+      // SiteDetailCubit.resumeAudio), so the first progress callback
+      // must use the same rate or the bar will jump. Reset the
+      // observation anchor to the resume point so the first callback
+      // enters the calibration loop directly instead of the
+      // uncalibrated "first observation" branch.
+      _lastObservedOffset = resumeBaseline;
+      _lastObservationMs = DateTime.now().millisecondsSinceEpoch;
+    } else {
+      // Fresh play — seed the rate and observation anchors so the
+      // first callback calibrates from the population estimate.
+      _lastObservedOffset = 0;
+      _lastObservationMs = 0;
+      _msPerChar = 80; // 12.5 chars/sec seed until first callback refines it
+    }
   }
 
   /// Stop forwarding; safe to call multiple times or without a prior
@@ -456,12 +496,28 @@ class TtsService {
     if (end <= 0) return;
 
     final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final isFirst = _firstObservationSinceStart;
     final deltaOffset = end - _lastObservedOffset;
     final deltaMs = nowMs - _lastObservationMs;
+    _firstObservationSinceStart = false;
+
     if (_lastObservedOffset == 0 || deltaOffset <= 0 || deltaMs <= 0) {
       // First valid observation since startReportingPosition — just
       // remember it and emit the seed position so the bar advances on
       // the very first callback.
+      _lastObservedOffset = end;
+      _lastObservationMs = nowMs;
+      _activeOnPosition?.call(_offsetToDuration(end));
+      return;
+    }
+
+    if (isFirst) {
+      // First post-startReportingPosition sample. The Android engine
+      // often fires a single huge `end` (the entire suffix on resume)
+      // which would dramatically shift `_msPerChar` if we let it
+      // through the 60/40 calibration mix. Just remember the sample
+      // and emit the position — calibration picks up from the next
+      // callback.
       _lastObservedOffset = end;
       _lastObservationMs = nowMs;
       _activeOnPosition?.call(_offsetToDuration(end));
@@ -488,6 +544,15 @@ class TtsService {
       milliseconds: ((charOffset + _activeResumeBaseline) * _msPerChar).round(),
     );
   }
+
+  /// True until the first *post-startReportingPosition* progress
+  /// callback has been observed. The first sample is always noisy —
+  /// on Android resume especially, the engine can fire a single
+  /// huge `end` (the entire suffix) immediately, which would
+  /// dramatically shift `_msPerChar` if we let it through the
+  /// 60/40 calibration mix. We use this flag to skip the calibration
+  /// update on the first sample and emit the position only.
+  bool _firstObservationSinceStart = true;
 
   /// Current self-calibrated ms/char rate. Exposed so the cubit can
   /// compute a baseline-adjusted position synchronously on Android

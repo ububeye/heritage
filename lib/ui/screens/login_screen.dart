@@ -368,51 +368,73 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildGoogleButton() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _onGoogleSignIn,
-        borderRadius: AppRadius.lgBorder,
-        child: Container(
-          height: 56,
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
+    // Mirror the email button's loading guard (see _buildEmailButton
+    // above) so a quick double-tap on the Google button can't race two
+    // credential exchanges. The cubit also short-circuits on
+    // AuthStatus.loading, but the UI guard is what actually prevents
+    // the second tap from firing.
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, authState) {
+        final isLoading = authState.status == AuthStatus.loading;
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isLoading ? null : _onGoogleSignIn,
             borderRadius: AppRadius.lgBorder,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                // Brand-explicit Google red — kept literal so the
-                // sign-in badge stays consistent with Google's brand.
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD32F2F),
-                  shape: BoxShape.circle,
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Theme.of(context).dividerColor,
                 ),
-                child: Center(
-                  child: Text(
-                    'G',
-                    // White foreground over the brand-literal red pill
-                    // — fixed-content, not theme-aware.
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: const Color(0xFFFFFFFF),
+                borderRadius: AppRadius.lgBorder,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    // Brand-explicit Google red — kept literal so the
+                    // sign-in badge stays consistent with Google's brand.
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFD32F2F),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'G',
+                        // White foreground over the brand-literal red pill
+                        // — fixed-content, not theme-aware.
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: const Color(0xFFFFFFFF),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  if (isLoading)
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.primary,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  else
+                    Text(
+                      'Continue with Google',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(
-                'Continue with Google',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

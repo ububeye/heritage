@@ -159,26 +159,62 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
-    emit(state.copyWith(status: AuthStatus.loading));
+    // Re-entrancy guard: the Google button previously had no loading
+    // state, so a quick double-tap could race two credential exchanges
+    // and leave the second call with a half-cancelled UI. Mirror the
+    // email sign-in re-entrancy guard at the top of [signIn].
+    if (state.status == AuthStatus.loading) return;
 
+    // Wait for the native picker to resolve *before* emitting loading.
+    // The previous behaviour emitted loading immediately, which made
+    // both auth buttons show a spinner for the ~100-500ms gap between
+    // the tap and the picker actually appearing on screen. Holding the
+    // loading emit until we know the user didn't cancel eliminates the
+    // spinner flash entirely.
     try {
       final user = await _authService.signInWithGoogle();
-      if (user != null) {
-        final liveRole = await _firestoreService.getUserRole(user.id);
-        final resolved =
-            liveRole == null ? user : user.copyWith(role: liveRole);
-        await SharedPrefsService.instance.setUserLoggedIn(
-          true,
-          userId: resolved.id,
-          userRole: resolved.role.name,
-        );
-        emit(state.copyWith(status: AuthStatus.authenticated, user: resolved));
-      } else {
+      if (isClosed) return;
+      if (user == null) {
+        // User cancelled the picker — return to the unauthenticated
+        // baseline silently. The previous behaviour emitted
+        // AuthStatus.unauthenticated here, which the login screen's
+        // BlocListener has no branch for, so a real cancellation looked
+        // like a silent failure to the user.
         emit(state.copyWith(status: AuthStatus.unauthenticated));
+        return;
       }
+
+      // Picker succeeded and Firebase credentials were exchanged —
+      // now flip to loading so the buttons reflect the in-flight
+      // role lookup (the only remaining async work).
+      emit(state.copyWith(status: AuthStatus.loading));
+
+      final liveRole = await _firestoreService.getUserRole(user.id);
+      if (isClosed) return;
+      final resolved =
+          liveRole == null ? user : user.copyWith(role: liveRole);
+      await SharedPrefsService.instance.setUserLoggedIn(
+        true,
+        userId: resolved.id,
+        userRole: resolved.role.name,
+      );
+      if (isClosed) return;
+      emit(state.copyWith(status: AuthStatus.authenticated, user: resolved));
     } catch (e) {
+      // AuthService routes its own FirebaseAuthException through
+      // _handleAuthError, which returns a localised String (the email
+      // paths throw that string directly — same pattern). The Google
+      // path also throws Exception('Google sign-in is unavailable on
+      // this device') for PlatformException-style failures. e.toString()
+      // gives the user-facing message either way, but strip the
+      // leading "Exception: " prefix so the SnackBar reads cleanly.
+      if (isClosed) return;
+      final raw = e.toString();
+      final message = raw.startsWith('Exception: ')
+          ? raw.substring('Exception: '.length)
+          : raw;
       emit(
-        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+        state.copyWith(status: AuthStatus.error, errorMessage: message),
       );
     }
   }
