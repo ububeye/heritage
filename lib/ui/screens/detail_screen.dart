@@ -66,12 +66,15 @@ class _DetailScreenState extends State<DetailScreen> {
   /// the 5 premium languages greyed out with a "Premium" badge; tapping a
   /// free language updates the cubit and (if audio is currently playing)
   /// restarts playback in the new language.
-  Future<void> _showAudioLanguagePicker(
-    BuildContext context,
-    bool isPremium,
-  ) async {
+  Future<void> _showAudioLanguagePicker(BuildContext context) async {
+    // All context-dependent values are captured BEFORE the first await
+    // so we never touch BuildContext across an async gap
+    // (use_build_context_synchronously lint — Bug 9 + Bug 10 fix).
     final cubit = context.read<LanguageCubit>();
     final siteDetailCubit = context.read<SiteDetailCubit>();
+    // Re-read live premium state at call time (not build time) so a
+    // purchase that completes before the picker opens is applied.
+    final isPremium = context.read<AuthCubit>().state.isPremium;
 
     final picked = await showModalBottomSheet<String>(
       context: context,
@@ -214,7 +217,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
     // If audio was playing in the old language, stop and restart in the
     // new one. The bottom sheet's play/pause button reads from the cubit
-    // so it stays in sync.
+    // so it stays in sync. isPremium was captured before the first await
+    // so it's safe to use here without touching the BuildContext again.
     if (wasPlaying) {
       await siteDetailCubit.stopAudio();
       if (!mounted) return;
@@ -749,7 +753,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   }
                 },
                 onLanguageTap:
-                    () => _showAudioLanguagePicker(sheetContext, liveIsPremium),
+                    () => _showAudioLanguagePicker(sheetContext),
                 onReplay: () async {
                   final cubit = context.read<SiteDetailCubit>();
                   // Read live values BEFORE the await so we never use

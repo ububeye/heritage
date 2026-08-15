@@ -35,12 +35,40 @@ import 'ui/screens/admin/admin_shell.dart';
 final GlobalKey<ScaffoldMessengerState> _rootMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
-class StoneTownApp extends StatelessWidget {
+class StoneTownApp extends StatefulWidget {
   const StoneTownApp({super.key});
 
   @override
+  State<StoneTownApp> createState() => _StoneTownAppState();
+}
+
+class _StoneTownAppState extends State<StoneTownApp> {
+  // TtsService is constructed once and shared across cubits via injection.
+  // init() installs flutter_tts handlers (progress, completion, cancel, error)
+  // and MUST be awaited before the first speak() call. We fire it in
+  // initState so it runs before the first frame paints.
+  final TtsService _ttsService = TtsService();
+  bool _ttsReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ttsService.init().then((_) {
+      if (mounted) setState(() => _ttsReady = true);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ttsService = TtsService();
+    // Show a minimal loading scaffold while the TTS engine initialises.
+    // In practice this takes < 200 ms; the splash screen covers it.
+    if (!_ttsReady) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: SizedBox.shrink()),
+      );
+    }
+    final ttsService = _ttsService;
 
     // Singleton for now; the real RevenueCat provider will own its own
     // lifecycle. Switching providers is a one-line change here.

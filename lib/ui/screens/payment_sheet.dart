@@ -166,10 +166,13 @@ class _PaymentSheetState extends State<PaymentSheet>
   // ── Expiry formatting ───────────────────────────────────────────────────────
 
   void _onExpiryChanged(String raw) {
-    final digits = raw.replaceAll(RegExp(r'\D'), '').substring(
-      0,
-      raw.length.clamp(0, 4),
-    );
+    // Strip non-digits then cap at 4 digits (MMYY). The previous
+    // version clamped raw.length (which counts the auto-inserted '/')
+    // instead of the post-strip digits.length, so a 4-character input
+    // that already contained a '/' produced a 3-digit string and
+    // substring(0, 4) threw RangeError.
+    final digitsOnly = raw.replaceAll(RegExp(r'\D'), '');
+    final digits = digitsOnly.substring(0, digitsOnly.length.clamp(0, 4));
     String formatted = digits;
     if (digits.length >= 3) {
       formatted = '${digits.substring(0, 2)}/${digits.substring(2)}';

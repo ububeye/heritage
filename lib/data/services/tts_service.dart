@@ -91,6 +91,35 @@ class TtsService {
     _onError = onError;
   }
 
+  // --- Real-duration measurement (Fix 1) ------------------------------
+  //
+  // flutter_tts has no API to query "how long will this text take?".
+  // We measure the actual elapsed time: record a wall-clock timestamp
+  // when speak() is called, then compute (now - startTime) when the
+  // engine's completion handler fires. The cubit receives this via the
+  // _onCompletion callback and updates AudioState.duration so every
+  // subsequent replay shows the exact real MM:SS from the very first
+  // loop iteration.
+
+  /// Wall-clock time at which the most recent speak() call was issued.
+  /// Null when nothing is playing (cleared on stop/cancel).
+  int? _speakStartMs;
+
+  /// Callback invoked when the engine completes an utterance naturally
+  /// (not on stop() or cancel()). Receives the actual measured Duration
+  /// of the completed utterance so the cubit can update AudioState and
+  /// trigger infinite-loop replay for premium users.
+  ///
+  /// Set via [setOnCompletion]; may be null when not attached (tests).
+  ValueChanged<Duration>? _onCompletion;
+
+  /// Install a completion callback. Pass null to detach.
+  void setOnCompletion(ValueChanged<Duration>? onCompletion) {
+    _onCompletion = onCompletion;
+  }
+
+  // --------------------------------------------------------------------
+
   /// Char offset added to every observed progress event. Set non-zero on
   /// Android resume so the visible position jumps forward to where the
   /// engine actually picks up, instead of resetting to 0.
@@ -117,10 +146,26 @@ class TtsService {
 
     _flutterTts.setCompletionHandler(() {
       _state = TtsState.stopped;
+      // Measure how long the utterance actually took and report it.
+      // We only fire _onCompletion when the engine reached the natural
+      // end of text — not on stop() or cancel() — so the cubit can
+      // safely trigger replay without a double-fire race.
+      final startMs = _speakStartMs;
+      _speakStartMs = null;
+      if (startMs != null) {
+        final realDuration = Duration(
+          milliseconds: DateTime.now().millisecondsSinceEpoch - startMs,
+        );
+        _onCompletion?.call(realDuration);
+      }
     });
 
     _flutterTts.setCancelHandler(() {
       _state = TtsState.stopped;
+      // Cancel is triggered by stop() or a new speak() — do NOT fire
+      // the completion callback here; we don't want a replay triggered
+      // by a user-initiated stop.
+      _speakStartMs = null;
     });
 
     _flutterTts.setErrorHandler((msg) {
@@ -252,9 +297,17 @@ class TtsService {
       return const TtsSpeakResult(wasTruncated: false);
     }
 
-    if (languageCode != null) {
-      await setLanguage(languageCode);
-    }
+    // Fix 3: Always re-apply the engine language before every speak().
+    //
+    // After flutter_tts.stop() some Android engine builds silently
+    // release the active voice. Subsequent speak() calls produce no
+    // audio because the engine has no voice handle — even though
+    // _currentLanguage still holds the correct BCP-47 tag. Calling
+    // setLanguage() unconditionally here (bypassing the equality guard
+    // inside setLanguage() itself) restores the engine's voice handle
+    // before every new utterance, at negligible cost.
+    final langToApply = languageCode ?? _currentLanguage;
+    await _forceApplyLanguage(langToApply);
 
     // If the caller already computed a chunk (via [previewChunkFor]),
     // speak it verbatim. This guarantees the engine is speaking the
@@ -263,9 +316,31 @@ class TtsService {
     // and speak from producing a different chunk at the engine layer
     // than the one the reporter is tracking.
     final resolvedChunk = precomputedChunk ?? _speakChunk(text);
+    // Fix 1: Stamp the wall-clock time so the completion handler can
+    // compute the real utterance duration.
+    _speakStartMs = DateTime.now().millisecondsSinceEpoch;
     await _flutterTts.speak(resolvedChunk.text);
     _state = TtsState.playing;
     return TtsSpeakResult(wasTruncated: resolvedChunk.wasCut);
+  }
+
+  /// Apply [languageCode] to the engine unconditionally, bypassing the
+  /// availability guard in [setLanguage]. Used internally by [speak] to
+  /// restore the engine's voice handle after a stop/cancel cycle without
+  /// an extra async availability query on every utterance.
+  Future<void> _forceApplyLanguage(String languageCode) async {
+    const languageMap = {
+      'en': 'en-US',
+      'sw': 'sw-KE',
+      'fr': 'fr-FR',
+      'de': 'de-DE',
+      'ar': 'ar-SA',
+      'it': 'it-IT',
+      'es': 'es-ES',
+    };
+    final ttsLang = languageMap[languageCode] ?? _currentLanguage;
+    await _flutterTts.setLanguage(ttsLang);
+    _currentLanguage = ttsLang;
   }
 
   /// Compute the chunk the engine will speak for [text] under the
@@ -346,6 +421,10 @@ class TtsService {
   }
 
   Future<void> stop() async {
+    // Clear the start-time stamp before stop() so the cancel handler
+    // (which flutter_tts fires on stop()) does not accidentally compute
+    // a bogus duration and trigger replay.
+    _speakStartMs = null;
     await _flutterTts.stop();
     _state = TtsState.stopped;
   }
@@ -356,6 +435,12 @@ class TtsService {
   }
 
   Future<void> resume() async {
+    // flutter_tts v4.x has no resume() method — the plugin's pause() calls
+    // AVSpeechSynthesizer.pauseSpeaking() natively but there is no
+    // corresponding unpause channel method. Both iOS and Android resume
+    // by re-speaking the suffix via resumeFrom() / resumeAudio().
+    // This method now only updates the internal state flag; the actual
+    // audio is re-started by the cubit calling resumeFrom().
     _state = TtsState.continued;
   }
 
@@ -369,6 +454,32 @@ class TtsService {
 
   int? getMaxDuration() {
     return _isPremium ? null : _maxDurationSeconds;
+  }
+
+  /// Estimate how long [text] will take to speak at the default speech
+  /// rate (2.5 words/sec). Used as the initial bar duration before the
+  /// engine's self-calibration kicks in. The returned value matches what
+  /// the chunker uses, so the bar never shows longer than the chunk.
+  ///
+  /// For free-tier users this caps at [_maxDurationSeconds] (just like
+  /// the chunker). For premium users the full text is estimated.
+  Duration estimateDuration(String text) {
+    if (text.trim().isEmpty) return Duration.zero;
+    if (_isPremium) {
+      return _durationForText(text);
+    }
+    // Free-tier cap: never estimate longer than the preview budget.
+    final uncapped = _durationForText(text);
+    final cap = Duration(seconds: _maxDurationSeconds);
+    return uncapped < cap ? uncapped : cap;
+  }
+
+  /// Convert [text] word-count to a Duration at 2.5 words/sec.
+  Duration _durationForText(String text) {
+    const wordsPerSecond = 2.5;
+    final wordCount = text.trim().split(RegExp(r'\s+')).length;
+    final seconds = (wordCount / wordsPerSecond).ceil().clamp(1, 3600);
+    return Duration(seconds: seconds);
   }
 
   /// Sentence-bounded preview chunk for the active free-tier settings.
@@ -573,14 +684,19 @@ class TtsService {
   /// [PausedResumePoint] on Android when we successfully captured a
   /// restart point.
   Future<PausedResumePoint?> pauseForRestart() async {
-    if (Platform.isIOS) {
-      await _flutterTts.pause();
-      _state = TtsState.paused;
-      return null;
-    }
+    // flutter_tts v4.x has no resume() method, so we use the same
+    // stop-and-respeak approach on both iOS and Android. On iOS,
+    // _flutterTts.pause() does call AVSpeechSynthesizer.pauseSpeaking(),
+    // but there is no corresponding channel method to unpause, so the
+    // engine would stay paused forever. Using stop() here on both
+    // platforms is safe and ensures resumeFrom() can re-speak the
+    // suffix correctly.
     final captured = _lastObservedOffset;
     final fp = _activeFingerprint;
     final text = _activeSpokenText;
+    // Clear _speakStartMs before stop() so the cancel handler doesn't
+    // try to compute a duration from a now-stale start time.
+    _speakStartMs = null;
     await _flutterTts.stop();
     _state = TtsState.paused;
     if (fp == null || text == null || captured <= 0) return null;
@@ -602,6 +718,19 @@ class TtsService {
       // before asking the engine for a new one.
       await _flutterTts.stop();
     }
+    // Bug 6 fix: re-apply language before speaking. pauseForRestart()
+    // calls _flutterTts.stop() on Android, which can silently release
+    // the engine's voice handle. Without this, the resumed suffix plays
+    // in silence — the same root cause as the stop→play voice loss.
+    await _forceApplyLanguage(_currentLanguage);
+    // Bug 7 fix: stamp the start time so the completion handler can
+    // compute the real duration and fire _onCompletion. Without this,
+    // _speakStartMs is null after a pause→resume cycle (because
+    // pauseForRestart() triggers setCancelHandler which clears it).
+    // As a result the loop never restarts for premium users after a
+    // pause, and the bar keeps showing the estimate instead of the
+    // real duration.
+    _speakStartMs = DateTime.now().millisecondsSinceEpoch;
     await _flutterTts.speak(suffix);
     _state = TtsState.playing;
   }

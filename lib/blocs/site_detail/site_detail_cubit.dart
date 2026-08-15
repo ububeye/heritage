@@ -78,15 +78,15 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     }
   }
 
-  /// Compute a sensible bar-duration for [text]. We can't know the real TTS
-  /// duration without running it, so we fall back to a 15 chars/sec estimate
-  /// when the service doesn't expose a max length (premium, unlimited).
-  Duration _estimateDuration(String text, int? maxSeconds) {
-    if (maxSeconds != null && maxSeconds > 0) {
-      return Duration(seconds: maxSeconds);
-    }
-    final seconds = (text.length / 15).ceil().clamp(5, 600);
-    return Duration(seconds: seconds);
+  /// Compute a sensible bar-duration for [text]. Delegates to
+  /// [TtsService.estimateDuration] which uses the same 2.5 words/sec
+  /// constant as the sentence-boundary chunker — so the initial bar
+  /// never shows a duration longer than the actual spoken chunk.
+  ///
+  /// For premium users the full text word-count is used; for free-tier
+  /// users the result is capped at the current preview budget.
+  Duration _estimateDuration(String text) {
+    return _ttsService.estimateDuration(text);
   }
 
   /// Install (or reinstall) the TTS progress reporter. Used both on
@@ -196,10 +196,13 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     if (isClosed) return;
 
     _ttsService.stopReportingPosition();
+    // Detach any previous completion callback before we re-register it
+    // below. This prevents a completion from a previous (now-cancelled)
+    // utterance from triggering a stale replay on a different site.
+    _ttsService.setOnCompletion(null);
 
     final text = state.site!.getDescription(languageCode);
-    final maxSeconds = _ttsService.getMaxDuration();
-    final estimatedDuration = _estimateDuration(text, maxSeconds);
+    final estimatedDuration = _estimateDuration(text);
 
     emit(
       state.copyWith(
@@ -207,7 +210,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           isLoading: true,
           languageCode: languageCode,
           duration: estimatedDuration,
-          maxDurationSeconds: maxSeconds,
+          maxDurationSeconds: _ttsService.getMaxDuration(),
         ),
       ),
     );
@@ -274,9 +277,49 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // existing duration gate (preview-ended SnackBar still fires here).
       _reinstallProgressReporter(baseline: 0, spokenText: chunk.text);
       _startPositionTicker();
+
+      // Fix 2: Infinite auto-replay for premium users.
+      //
+      // Register a completion callback on TtsService. When the engine
+      // reaches the natural end of the utterance it fires this closure
+      // with the *real* measured duration so the bar shows accurate
+      // MM:SS on every subsequent loop. Premium users get an automatic
+      // replay; free-tier users get the existing preview-ended SnackBar
+      // (which is already fired by the progress reporter / ticker above).
+      _ttsService.setOnCompletion((realDuration) {
+        if (isClosed) return;
+        final current = state.audioState;
+        if (isPremium) {
+          // Update the stored duration with the real measured value so
+          // the bar is accurate from the very next loop start.
+          final accurate = state.audioState.copyWith(
+            duration: realDuration,
+            position: Duration.zero,
+            isPlaying: false,
+          );
+          emit(state.copyWith(audioState: accurate));
+          // Re-invoke playAudio to loop. The completion callback will be
+          // re-registered inside the recursive playAudio call, so
+          // infinite replay continues until the user taps Stop/Pause.
+          playAudio(languageCode, isPremium: isPremium);
+        } else {
+          // Free-tier: update duration with real value but do not replay.
+          // (The preview-ended SnackBar is already fired by the reporter.)
+          emit(
+            state.copyWith(
+              audioState: current.copyWith(
+                duration: realDuration,
+                position: realDuration,
+                isPlaying: false,
+              ),
+            ),
+          );
+        }
+      });
     } catch (e) {
       _ttsService.stopReportingPosition();
       _stopPositionTicker();
+      _ttsService.setOnCompletion(null);
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -293,10 +336,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     _ttsService.stopReportingPosition();
     _stopPositionTicker();
     if (isClosed) return;
-    // pauseForRestart is platform-aware: iOS uses native pause (engine
-    // keeps its position internally), Android stops the engine and
-    // returns a snapshot the cubit stashes on AudioState so resumeAudio
-    // can re-speak the suffix from the right char offset.
+    // pauseForRestart() stops the engine and snapshots the current
+    // char offset on both iOS and Android. flutter_tts v4.x has no
+    // resume() method, so both platforms use the stop-and-respeak
+    // approach: the engine is stopped here and re-started from the
+    // captured offset in resumeAudio() via resumeFrom().
     final resumePoint = await _ttsService.pauseForRestart();
     if (isClosed) return;
     emit(
@@ -313,38 +357,17 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   Future<void> resumeAudio() async {
     final point = state.audioState.pausedResumePoint;
     if (point == null) {
-      // iOS path — the engine kept its own position. Native resume()
-      // picks up exactly where it stopped, but its emitted char offsets
-      // are into the original chunk (not from zero), so the bar would
-      // jump backwards without a baseline. Derive the baseline from the
-      // last-seen position using the currently calibrated chars/sec rate
-      // — falls back to the seed rate (80 ms/char) before any callback
-      // has been observed for the current speak().
-      await _ttsService.resume();
-      if (isClosed) return;
-      final lastPosition = state.audioState.position;
-      final resumeOffsetChars =
-          (lastPosition.inMilliseconds / _ttsService.currentMsPerChar).round();
-      emit(
-        state.copyWith(
-          audioState: state.audioState.copyWith(
-            isPlaying: true,
-            isPaused: false,
-          ),
-        ),
-      );
-      if (isClosed) return;
-      _reinstallProgressReporter(
-        baseline: resumeOffsetChars,
-        spokenText: state.audioState.spokenText,
-      );
-      _startPositionTicker();
+      // pauseForRestart() always returns a PausedResumePoint now
+      // (flutter_tts has no resume(); both platforms stop-and-respeak).
+      // This branch is a safety net in case pauseForRestart() returned
+      // null because capture failed (charOffset <= 0 or no active text).
+      // In that case, restart from the beginning of the full text.
       return;
     }
 
-    // Android path — re-speak the suffix and shift the visible position
-    // forward by the captured offset so the bar picks up where it left
-    // off instead of snapping to zero.
+    // Re-speak the suffix and shift the visible position forward by the
+    // captured offset so the bar picks up where it left off instead of
+    // snapping to zero. Works identically on iOS and Android.
     await _ttsService.resumeFrom(point);
     if (isClosed) return;
     final resumedAtMs =
@@ -408,6 +431,10 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     _ttsService.stopReportingPosition();
     _stopPositionTicker();
     _endOfChunkSignaled = false;
+    // Detach the completion callback BEFORE stop() so the engine's
+    // cancel/completion event (which flutter_tts fires immediately on
+    // stop) cannot trigger an unwanted replay.
+    _ttsService.setOnCompletion(null);
     await _ttsService.stop();
     if (isClosed) return;
     emit(state.copyWith(audioState: const AudioState()));
@@ -417,6 +444,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   Future<void> close() {
     _ttsService.stopReportingPosition();
     _stopPositionTicker();
+    _ttsService.setOnCompletion(null);
     _ttsService.stop();
     return super.close();
   }
