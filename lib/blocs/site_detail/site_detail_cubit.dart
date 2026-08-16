@@ -230,7 +230,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     // below. This prevents a completion from a previous (now-cancelled)
     // utterance from triggering a stale replay on a different site.
     _ttsService.setOnCompletion(null);
-
+    _ttsService.setPremium(isPremium);
     final text = state.site!.getDescription(languageCode);
     final estimatedDuration = _estimateDuration(text);
 
@@ -248,7 +248,6 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     if (isClosed || opId != _audioOpSeq) return;
 
     try {
-      _ttsService.setPremium(isPremium);
       // Switch the TTS voice to the requested language *before* speak so
       // we can detect a missing voice and surface it via LocalizationCubit
       // (the same SnackBar listener that handles UI-language changes).

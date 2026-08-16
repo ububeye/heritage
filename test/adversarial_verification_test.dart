@@ -67,9 +67,12 @@ class _TestTtsService implements TtsService {
   @override
   void setOnError(ValueChanged<String>? onError) {}
 
+  bool _isPremium = false;
+
   @override
   void setPremium(bool isPremium) {
     setPremiumCalls++;
+    _isPremium = isPremium;
   }
 
   @override
@@ -93,7 +96,7 @@ class _TestTtsService implements TtsService {
   Future<List<String>> getAvailableLanguages() async => const ['en', 'sw'];
 
   @override
-  int? getMaxDuration() => maxDurationOverride ?? 30;
+  int? getMaxDuration() => _isPremium ? null : (maxDurationOverride ?? 30);
 
   @override
   Duration estimateDuration(String text) {
@@ -580,6 +583,110 @@ void main() {
       });
     });
 
+    test('Play -> Pause -> Resume -> Premium infinite auto-replay works cleanly', () {
+      fakeAsync((async) {
+        final tts = _TestTtsService();
+        final site = _createSite();
+        final cubit = SiteDetailCubit(
+          siteRepository: _TestSiteRepository(site),
+          ttsService: tts,
+        );
+
+        cubit.loadSite('site-1');
+        async.flushMicrotasks();
+
+        // 1. Play as premium
+        cubit.playAudio('en', isPremium: true);
+        async.flushMicrotasks();
+
+        // 2. Pause
+        const point = PausedResumePoint(
+          text: 'The Old Fort is the oldest building in Stone Town.',
+          charOffset: 10,
+        );
+        tts.pauseResumePoint = point;
+        cubit.pauseAudio();
+        async.flushMicrotasks();
+
+        // 3. Resume
+        cubit.resumeAudio();
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isTrue);
+
+        final initialSpeakCalls = tts.speakCalls;
+
+        // 4. Natural completion fires on resumed playback -> should automatically loop
+        tts.onCompletionCallback!(const Duration(seconds: 40));
+        async.flushMicrotasks();
+
+        expect(tts.speakCalls, greaterThan(initialSpeakCalls));
+        expect(cubit.state.audioState.isPlaying, isTrue);
+      });
+    });
+
+    test('Play -> Pause -> Replay restarts from beginning at 0:00', () {
+      fakeAsync((async) {
+        final tts = _TestTtsService();
+        final site = _createSite();
+        final cubit = SiteDetailCubit(
+          siteRepository: _TestSiteRepository(site),
+          ttsService: tts,
+        );
+
+        cubit.loadSite('site-1');
+        async.flushMicrotasks();
+
+        cubit.playAudio('en');
+        async.flushMicrotasks();
+
+        cubit.pauseAudio();
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPaused, isTrue);
+
+        // Replay: stops previous and plays fresh
+        cubit.stopAudio();
+        cubit.playAudio('en');
+        async.flushMicrotasks();
+
+        expect(cubit.state.audioState.isPlaying, isTrue);
+        expect(cubit.state.audioState.isPaused, isFalse);
+        expect(cubit.state.audioState.position, Duration.zero);
+      });
+    });
+
+    test('Play -> Pause -> Stop -> Play works with full clean state', () {
+      fakeAsync((async) {
+        final tts = _TestTtsService();
+        final site = _createSite();
+        final cubit = SiteDetailCubit(
+          siteRepository: _TestSiteRepository(site),
+          ttsService: tts,
+        );
+
+        cubit.loadSite('site-1');
+        async.flushMicrotasks();
+
+        cubit.playAudio('en');
+        cubit.pauseAudio();
+        async.flushMicrotasks();
+
+        expect(cubit.state.audioState.isPaused, isTrue);
+
+        cubit.stopAudio();
+        async.flushMicrotasks();
+
+        expect(cubit.state.audioState.isPaused, isFalse);
+        expect(cubit.state.audioState.isPlaying, isFalse);
+        expect(cubit.state.audioState.pausedResumePoint, isNull);
+
+        cubit.playAudio('en');
+        async.flushMicrotasks();
+
+        expect(cubit.state.audioState.isPlaying, isTrue);
+        expect(cubit.state.audioState.position, Duration.zero);
+      });
+    });
+
     test('Play -> Pause -> navigate away -> return -> Play works without requiring Start Guide', () {
       fakeAsync((async) {
         final tts = _TestTtsService();
@@ -629,6 +736,135 @@ void main() {
 
         expect(cubit.state.audioState.isPlaying, isTrue);
         expect(cubit.state.audioState.siteId, 'site-1');
+      });
+    });
+
+    test('Multi-site chaining: Site A -> Site B -> Site C -> Site A stops previous audio at each step', () {
+      fakeAsync((async) {
+        final tts = _TestTtsService();
+        final siteA = _createSite();
+        const siteB = SiteModel(
+          id: 'site-2',
+          nameEn: 'Site B',
+          nameSw: 'Eneo B',
+          descriptionEn: 'Site B description.',
+          descriptionSw: 'Maelezo B.',
+          descriptionFr: 'Description B.',
+          descriptionDe: 'Beschreibung B.',
+          descriptionAr: 'وصف B.',
+          descriptionIt: 'Descrizione B.',
+          descriptionEs: 'Descripción B.',
+          cloudinaryImageUrl: 'https://example.com/b.jpg',
+          latitude: -6.1600,
+          longitude: 39.1900,
+          category: 'historic',
+        );
+        const siteC = SiteModel(
+          id: 'site-3',
+          nameEn: 'Site C',
+          nameSw: 'Eneo C',
+          descriptionEn: 'Site C description.',
+          descriptionSw: 'Maelezo C.',
+          descriptionFr: 'Description C.',
+          descriptionDe: 'Beschreibung C.',
+          descriptionAr: 'وصف C.',
+          descriptionIt: 'Descrizione C.',
+          descriptionEs: 'Descripción C.',
+          cloudinaryImageUrl: 'https://example.com/c.jpg',
+          latitude: -6.1620,
+          longitude: 39.1920,
+          category: 'cultural',
+        );
+
+        final repo = _MultiSiteRepository({'site-1': siteA, 'site-2': siteB, 'site-3': siteC});
+        final cubit = SiteDetailCubit(siteRepository: repo, ttsService: tts);
+
+        // Site A play
+        cubit.loadSite('site-1');
+        async.flushMicrotasks();
+        cubit.playAudio('en');
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isTrue);
+        expect(cubit.state.audioState.siteId, 'site-1');
+
+        // Site B load -> stops A
+        cubit.loadSite('site-2');
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isFalse);
+        cubit.playAudio('en');
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isTrue);
+        expect(cubit.state.audioState.siteId, 'site-2');
+
+        // Site C load -> stops B
+        cubit.loadSite('site-3');
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isFalse);
+        cubit.playAudio('en');
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isTrue);
+        expect(cubit.state.audioState.siteId, 'site-3');
+
+        // Return to Site A -> stops C
+        cubit.loadSite('site-1');
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isFalse);
+        cubit.playAudio('en');
+        async.flushMicrotasks();
+        expect(cubit.state.audioState.isPlaying, isTrue);
+        expect(cubit.state.audioState.siteId, 'site-1');
+      });
+    });
+
+    test('Mismatched siteId on resume safely restarts for current site', () {
+      fakeAsync((async) {
+        final tts = _TestTtsService();
+        final siteA = _createSite();
+        const siteB = SiteModel(
+          id: 'site-2',
+          nameEn: 'Site B',
+          nameSw: 'Eneo B',
+          descriptionEn: 'Site B description text for verification.',
+          descriptionSw: 'Maelezo B.',
+          descriptionFr: 'Description B.',
+          descriptionDe: 'Beschreibung B.',
+          descriptionAr: 'وصف B.',
+          descriptionIt: 'Descrizione B.',
+          descriptionEs: 'Descripción B.',
+          cloudinaryImageUrl: 'https://example.com/b.jpg',
+          latitude: -6.1600,
+          longitude: 39.1900,
+          category: 'historic',
+        );
+
+        final repo = _MultiSiteRepository({'site-1': siteA, 'site-2': siteB});
+        final cubit = SiteDetailCubit(siteRepository: repo, ttsService: tts);
+
+        // Load Site B
+        cubit.loadSite('site-2');
+        async.flushMicrotasks();
+
+        // Artificially inject a stale AudioState belonging to site-1
+        cubit.emit(
+          cubit.state.copyWith(
+            audioState: const AudioState(
+              siteId: 'site-1',
+              isPaused: true,
+              pausedResumePoint: PausedResumePoint(
+                text: 'Old Fort text from site-1',
+                charOffset: 10,
+              ),
+            ),
+          ),
+        );
+
+        // Call resumeAudio on Site B -> should safely recognize mismatch and play Site B from start
+        cubit.resumeAudio();
+        async.flushMicrotasks();
+
+        expect(cubit.state.audioState.isPlaying, isTrue);
+        expect(cubit.state.audioState.siteId, 'site-2');
+        expect(tts.lastSpokenText, contains('Site B description text'));
       });
     });
   });
