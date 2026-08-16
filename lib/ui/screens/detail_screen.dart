@@ -54,6 +54,11 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    try {
+      context.read<SiteDetailCubit>().stopAudio();
+    } catch (_) {
+      // Best-effort cleanup on screen pop
+    }
     super.dispose();
   }
 

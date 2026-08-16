@@ -5,6 +5,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/constants/app_constants.dart';
 import '../models/audio_state.dart';
 import 'runtime_config_service.dart';
+import 'shared_prefs_service.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -140,7 +141,11 @@ class TtsService {
     _updateMaxDuration();
 
     await _flutterTts.setSharedInstance(true);
-    await _flutterTts.setSpeechRate(AppConstants.defaultSpeechRate);
+    // Apply the user's persisted playback-speed preference at startup so
+    // their choice survives app restarts. Falls back to 1.0x multiplier
+    // when SharedPrefsService hasn't been initialised yet (e.g. in tests).
+    _currentSpeedMultiplier = _safeReadPlaybackSpeedMultiplier();
+    await _flutterTts.setSpeechRate(_engineRateForMultiplier(_currentSpeedMultiplier));
     await _flutterTts.setPitch(AppConstants.defaultPitch);
     await _flutterTts.setVolume(AppConstants.defaultVolume);
 
@@ -199,9 +204,40 @@ class TtsService {
     }
   }
 
+  double _currentSpeedMultiplier = 1.0;
+
+  /// Current playback rate multiplier (e.g. 0.75, 1.0, 1.25, 1.5).
+  double get currentSpeedMultiplier => _currentSpeedMultiplier;
+
+  /// Translate a user-facing playback speed multiplier (0.75, 1.0, 1.25, 1.5)
+  /// into the native engine speech rate [0.0, 1.0].
+  double _engineRateForMultiplier(double multiplier) {
+    return (AppConstants.defaultSpeechRate * multiplier).clamp(0.0, 1.0);
+  }
+
   void setPremium(bool isPremium) {
     _isPremium = isPremium;
     _updateMaxDuration();
+  }
+
+  /// Apply a new speech rate multiplier (e.g. 0.75, 1.0, 1.25, 1.5) to the
+  /// engine immediately. Called by the settings screen when the user changes
+  /// the playback-speed selector so subsequent speak() calls pick up the new
+  /// rate without restarting the app.
+  Future<void> applyPlaybackSpeed(double speedMultiplier) async {
+    _currentSpeedMultiplier = speedMultiplier;
+    await _flutterTts.setSpeechRate(_engineRateForMultiplier(speedMultiplier));
+  }
+
+  /// Read the persisted playback speed multiplier from SharedPreferences.
+  /// Defaults to 1.0 (1x normal playback) if not set or service is not ready.
+  static double _safeReadPlaybackSpeedMultiplier() {
+    try {
+      final raw = SharedPrefsService.instance.playbackSpeed;
+      return raw.clamp(0.25, 3.0);
+    } catch (_) {
+      return 1.0;
+    }
   }
 
   /// Update the free-tier narration cap at runtime. Mirrors [setPremium] —
@@ -341,6 +377,9 @@ class TtsService {
     final ttsLang = languageMap[languageCode] ?? _currentLanguage;
     await _flutterTts.setLanguage(ttsLang);
     _currentLanguage = ttsLang;
+    // Re-apply speech rate because changing language/voice on native engines
+    // (especially Android TextToSpeech) resets the rate back to default.
+    await _flutterTts.setSpeechRate(_engineRateForMultiplier(_currentSpeedMultiplier));
   }
 
   /// Compute the chunk the engine will speak for [text] under the

@@ -270,5 +270,6 @@
   "arrive_at_destination": "Arrive at destination",
   "continue_on": "Continue on",
   "onto": "onto",
-  "routing_offline": "Routing offline — direct line."
+  "routing_offline": "Routing offline — direct line.",
+  "coming_soon": "Coming soon"
 }

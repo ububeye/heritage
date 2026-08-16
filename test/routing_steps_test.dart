@@ -15,6 +15,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:stone_town_heritage_vt_guide/data/services/routing_service.dart';
 
 /// Stub translation map mirroring the English localization file for the
@@ -178,8 +179,8 @@ void main() {
       expect(ManeuverIcon.forManeuver('roundabout'), Icons.roundabout_left);
     });
 
-    test('depart → Icons.play_arrow', () {
-      expect(ManeuverIcon.forManeuver('depart'), Icons.play_arrow);
+    test('depart → PhosphorIconsRegular.play', () {
+      expect(ManeuverIcon.forManeuver('depart'), PhosphorIconsRegular.play);
     });
 
     test('arrive → Icons.flag', () {

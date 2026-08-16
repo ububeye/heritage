@@ -52,18 +52,39 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
 
   Future<void> loadSite(String siteId) async {
     final myId = ++_loadSequenceId;
-    emit(state.copyWith(status: SiteDetailStatus.loading));
+
+    // Immediately stop and invalidate any previous audio session so that
+    // audio from site A never leaks or continues playing when moving to site B.
+    _ttsService.stopReportingPosition();
+    _stopPositionTicker();
+    _ttsService.setOnCompletion(null);
+    _ttsService.stop();
+    ++_audioOpSeq;
+
+    emit(
+      state.copyWith(
+        status: SiteDetailStatus.loading,
+        audioState: const AudioState(),
+      ),
+    );
 
     try {
       final site = await _siteRepository.getSiteById(siteId);
       if (myId != _loadSequenceId || isClosed) return;
       if (site != null) {
-        emit(state.copyWith(status: SiteDetailStatus.loaded, site: site));
+        emit(
+          state.copyWith(
+            status: SiteDetailStatus.loaded,
+            site: site,
+            audioState: const AudioState(),
+          ),
+        );
       } else {
         emit(
           state.copyWith(
             status: SiteDetailStatus.error,
             errorMessage: 'Site not found',
+            audioState: const AudioState(),
           ),
         );
       }
@@ -73,6 +94,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         state.copyWith(
           status: SiteDetailStatus.error,
           errorMessage: e.toString(),
+          audioState: const AudioState(),
         ),
       );
     }
@@ -191,9 +213,17 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     _positionTicker = null;
   }
 
+  /// Monotonic generation counter for audio operations (play/pause/resume/stop).
+  /// Bumped on every new audio operation so stale async completions from an
+  /// earlier request cannot overwrite a newer state (e.g. rapid play->stop taps).
+  int _audioOpSeq = 0;
+
   Future<void> playAudio(String languageCode, {bool isPremium = false}) async {
     if (state.site == null) return;
     if (isClosed) return;
+
+    final activeSiteId = state.site!.id;
+    final opId = ++_audioOpSeq;
 
     _ttsService.stopReportingPosition();
     // Detach any previous completion callback before we re-register it
@@ -207,6 +237,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     emit(
       state.copyWith(
         audioState: AudioState(
+          siteId: activeSiteId,
           isLoading: true,
           languageCode: languageCode,
           duration: estimatedDuration,
@@ -214,7 +245,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         ),
       ),
     );
-    if (isClosed) return;
+    if (isClosed || opId != _audioOpSeq) return;
 
     try {
       _ttsService.setPremium(isPremium);
@@ -225,7 +256,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // a different language — otherwise the SnackBar would say e.g.
       // "English voice not installed — playing in English".
       final outcome = await _ttsService.setLanguage(languageCode);
-      if (isClosed) return;
+      if (isClosed || opId != _audioOpSeq) return;
       if (outcome == SetLanguageOutcome.voiceUnavailable) {
         final activeCode = _ttsService.currentLanguage.split('-').first;
         if (activeCode != languageCode) {
@@ -249,10 +280,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         precomputedChunk: chunk,
       );
 
-      if (isClosed) return;
+      if (isClosed || opId != _audioOpSeq) return;
       emit(
         state.copyWith(
           audioState: state.audioState.copyWith(
+            siteId: activeSiteId,
             isLoading: false,
             isPlaying: true,
             position: Duration.zero,
@@ -269,7 +301,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           ),
         ),
       );
-      if (isClosed) return;
+      if (isClosed || opId != _audioOpSeq) return;
 
       // Forward real engine progress into AudioState.position. The TTS
       // service self-calibrates chars/sec from observed progress events;
@@ -287,12 +319,13 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // replay; free-tier users get the existing preview-ended SnackBar
       // (which is already fired by the progress reporter / ticker above).
       _ttsService.setOnCompletion((realDuration) {
-        if (isClosed) return;
+        if (isClosed || opId != _audioOpSeq) return;
         final current = state.audioState;
         if (isPremium) {
           // Update the stored duration with the real measured value so
           // the bar is accurate from the very next loop start.
           final accurate = state.audioState.copyWith(
+            siteId: activeSiteId,
             duration: realDuration,
             position: Duration.zero,
             isPlaying: false,
@@ -308,6 +341,7 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           emit(
             state.copyWith(
               audioState: current.copyWith(
+                siteId: activeSiteId,
                 duration: realDuration,
                 position: realDuration,
                 isPlaying: false,
@@ -317,14 +351,16 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         }
       });
     } catch (e) {
+      if (isClosed || opId != _audioOpSeq) return;
       _ttsService.stopReportingPosition();
       _stopPositionTicker();
       _ttsService.setOnCompletion(null);
-      if (isClosed) return;
       emit(
         state.copyWith(
           audioState: state.audioState.copyWith(
+            siteId: activeSiteId,
             isLoading: false,
+            isPlaying: false,
             errorMessage: 'Failed to play audio',
           ),
         ),
@@ -333,6 +369,8 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   }
 
   Future<void> pauseAudio() async {
+    final opId = ++_audioOpSeq;
+    final activeSiteId = state.site?.id;
     _ttsService.stopReportingPosition();
     _stopPositionTicker();
     if (isClosed) return;
@@ -342,10 +380,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     // approach: the engine is stopped here and re-started from the
     // captured offset in resumeAudio() via resumeFrom().
     final resumePoint = await _ttsService.pauseForRestart();
-    if (isClosed) return;
+    if (isClosed || opId != _audioOpSeq) return;
     emit(
       state.copyWith(
         audioState: state.audioState.copyWith(
+          siteId: activeSiteId,
           isPlaying: false,
           isPaused: true,
           pausedResumePoint: resumePoint,
@@ -355,50 +394,38 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   }
 
   Future<void> resumeAudio() async {
-    final point = state.audioState.pausedResumePoint;
-    if (point == null) {
-      // pauseForRestart() always returns a PausedResumePoint now
-      // (flutter_tts has no resume(); both platforms stop-and-respeak).
-      // This branch is a safety net in case pauseForRestart() returned
-      // null because capture failed (charOffset <= 0 or no active text).
-      // In that case, restart from the beginning of the full text.
+    final audio = state.audioState;
+    final point = audio.pausedResumePoint;
+    final currentSite = state.site;
+
+    // If there is no active site, or no captured resume point, or if the audio state
+    // was captured for a different site, fall back deterministically to playAudio() from
+    // the start of the current site's description.
+    if (currentSite == null ||
+        point == null ||
+        (audio.siteId != null && audio.siteId != currentSite.id)) {
+      final langCode = audio.languageCode;
+      final isPremium = audio.maxDurationSeconds == null;
+      await playAudio(langCode, isPremium: isPremium);
       return;
     }
 
-    // Re-speak the suffix and shift the visible position forward by the
-    // captured offset so the bar picks up where it left off instead of
-    // snapping to zero. Works identically on iOS and Android.
-    await _ttsService.resumeFrom(point);
-    if (isClosed) return;
-    final resumedAtMs =
-        (point.charOffset * _ttsService.currentMsPerChar).round();
-    emit(
-      state.copyWith(
-        audioState: state.audioState.copyWith(
-          isPlaying: true,
-          isPaused: false,
-          position: Duration(milliseconds: resumedAtMs),
-          // The resume point has been consumed.
-          clearPausedResumePoint: true,
-        ),
-      ),
-    );
-    if (isClosed) return;
-    // The engine is now speaking the suffix of the original chunk
-    // (text from [point.charOffset] onwards). The progress callback
-    // hands us the suffix's text, so the reporter's fingerprint must
-    // match the suffix — otherwise the next callback mismatches and
-    // the bar freezes. The baseline keeps [_offsetToDuration]
-    // monotonic so the visible position doesn't snap back to zero.
+    final activeSiteId = currentSite.id;
+    final opId = ++_audioOpSeq;
     final suffix = point.text.substring(point.charOffset);
-    // Reset the end-of-chunk latch so the resume is allowed to signal
-    // completion exactly once (see _reinstallProgressReporter).
+    final langCode = audio.languageCode;
+    final isPremium = audio.maxDurationSeconds == null;
+
+    // Reset the end-of-chunk latch so the resume is allowed to signal completion once.
     _endOfChunkSignaled = false;
+
+    // 1. Install progress reporter with the suffix fingerprint and baseline
+    // BEFORE starting speech so early callbacks from the engine are not dropped.
     _ttsService.restartReportingWithSuffix(
       suffix: suffix,
       baseline: point.charOffset,
       onPosition: (pos) {
-        if (isClosed) return;
+        if (isClosed || opId != _audioOpSeq) return;
         final current = state.audioState;
         if (!current.isPlaying) return;
         final clamped = pos > current.duration ? current.duration : pos;
@@ -407,9 +434,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         if (clamped >= current.duration && !_endOfChunkSignaled) {
           _endOfChunkSignaled = true;
           _ttsService.stopReportingPosition();
+          _stopPositionTicker();
           emit(
             state.copyWith(
               audioState: current.copyWith(
+                siteId: activeSiteId,
                 position: current.duration,
                 isPlaying: false,
               ),
@@ -422,12 +451,66 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
           }
         }
       },
-      budget: state.audioState.duration,
+      budget: audio.duration,
     );
+
+    // 2. Re-register completion callback for resumed audio so infinite replay / completion cleanly works.
+    _ttsService.setOnCompletion((realDuration) {
+      if (isClosed || opId != _audioOpSeq) return;
+      final current = state.audioState;
+      if (isPremium) {
+        final accurate = state.audioState.copyWith(
+          siteId: activeSiteId,
+          duration: realDuration,
+          position: Duration.zero,
+          isPlaying: false,
+        );
+        emit(state.copyWith(audioState: accurate));
+        playAudio(langCode, isPremium: isPremium);
+      } else {
+        emit(
+          state.copyWith(
+            audioState: current.copyWith(
+              siteId: activeSiteId,
+              duration: realDuration,
+              position: realDuration,
+              isPlaying: false,
+            ),
+          ),
+        );
+      }
+    });
+
+    final resumedAtMs =
+        (point.charOffset * _ttsService.currentMsPerChar).round();
+    emit(
+      state.copyWith(
+        audioState: audio.copyWith(
+          siteId: activeSiteId,
+          isPlaying: true,
+          isPaused: false,
+          position: Duration(milliseconds: resumedAtMs),
+          clearPausedResumePoint: true,
+        ),
+      ),
+    );
+
     _startPositionTicker();
+
+    // 3. Re-speak suffix via TTS engine
+    await _ttsService.resumeFrom(point);
+    if (isClosed || opId != _audioOpSeq) return;
+  }
+
+  /// Forward a new speech-rate multiplier to the TTS engine immediately.
+  /// Called by the Settings playback-speed tile after saving to SharedPrefs
+  /// so the current session hears the change without restarting the app.
+  Future<void> applyPlaybackSpeed(double speed) async {
+    await _ttsService.applyPlaybackSpeed(speed);
   }
 
   Future<void> stopAudio() async {
+    final opId = ++_audioOpSeq;
     _ttsService.stopReportingPosition();
     _stopPositionTicker();
     _endOfChunkSignaled = false;
@@ -436,12 +519,13 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     // stop) cannot trigger an unwanted replay.
     _ttsService.setOnCompletion(null);
     await _ttsService.stop();
-    if (isClosed) return;
+    if (isClosed || opId != _audioOpSeq) return;
     emit(state.copyWith(audioState: const AudioState()));
   }
 
   @override
   Future<void> close() {
+    ++_audioOpSeq;
     _ttsService.stopReportingPosition();
     _stopPositionTicker();
     _ttsService.setOnCompletion(null);

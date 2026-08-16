@@ -119,6 +119,14 @@ class _FakeTtsService implements TtsService {
   int? getMaxDuration() => maxDurationOverride ?? 30;
 
   @override
+  Duration estimateDuration(String text) {
+    if (maxDurationOverride != null) {
+      return Duration(seconds: maxDurationOverride!);
+    }
+    return const Duration(seconds: 30);
+  }
+
+  @override
   TtsChunk previewChunkFor(String text) =>
       TtsChunk(text: text, wasCut: false);
 
@@ -175,6 +183,19 @@ class _FakeTtsService implements TtsService {
 
   @override
   Future<void> setSpeechRate(double rate) async {}
+
+  @override
+  Future<void> applyPlaybackSpeed(double speedMultiplier) async {}
+
+  @override
+  double get currentSpeedMultiplier => 1.0;
+
+  ValueChanged<Duration>? onCompletionCallback;
+
+  @override
+  void setOnCompletion(ValueChanged<Duration>? onCompletion) {
+    onCompletionCallback = onCompletion;
+  }
 
   @override
   Future<void> setPitch(double pitch) async {}

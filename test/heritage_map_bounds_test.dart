@@ -25,7 +25,7 @@ void main() {
       // HeritageMap.picker → Stone Town. The exact numeric corner
       // doesn't matter for the policy — assert it matches the same
       // corners the StoneTownBounds utility exposes.
-      final stoneTown = StoneTownBounds.cameraBounds;
+      final stoneTown = StoneTownBounds.pickerCameraBounds;
       expect(bounds.north, stoneTown.north);
       expect(bounds.south, stoneTown.south);
       expect(bounds.east, stoneTown.east);

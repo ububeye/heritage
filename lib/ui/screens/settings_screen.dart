@@ -13,6 +13,7 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/theme/theme_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import '../../data/services/tile_cache_service.dart';
@@ -584,6 +585,11 @@ class _PlaybackSpeedTileState extends State<_PlaybackSpeedTile> {
   Future<void> _onChange(double v) async {
     setState(() => _speed = v);
     await SharedPrefsService.instance.setPlaybackSpeed(v);
+    // Apply immediately so the next TTS utterance in this session uses
+    // the new rate without requiring an app restart. flutter_tts accepts
+    // values in [0.0, 1.0]; the saved value is already in that range.
+    if (!mounted) return;
+    await context.read<SiteDetailCubit>().applyPlaybackSpeed(v);
   }
 
   String _labelFor(BuildContext context, double v) {
@@ -1034,8 +1040,8 @@ class _VersionTile extends StatelessWidget {
         final loc = context.watch<LocalizationCubit>().state;
         final value = (loc.translations['app_version_build'] ??
                 'Version %s (build %s)')
-            .replaceAll('%s', version)
-            .replaceAll('%s', build);
+            .replaceFirst('%s', version)
+            .replaceFirst('%s', build);
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
