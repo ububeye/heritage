@@ -196,10 +196,8 @@ class AuthService {
   }
 
   /// Build a [UserModel] from a Firebase Auth [User], resolving the
-  /// canonical role from `roles/{uid}`. New signups default to `free`.
-  ///
-  /// TODO(phase-3+): drop the `users/{uid}.role` fallback once a Cloud
-  /// Function has backfilled `roles/{uid}` for every legacy user.
+  /// canonical role from `roles/{uid}` with fallback to `users/{uid}.role`.
+  /// New signups default to `free`.
   Future<UserModel> _createUserModel(User user) async {
     UserRole role = UserRole.free;
     try {

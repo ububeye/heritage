@@ -37,10 +37,8 @@ class AuthCubit extends Cubit<AuthState> {
       final userModel = await _authService.getCurrentUserModel();
       if (userModel != null) {
         // Authoritative role source: roles/{uid}.
-        // Legacy fallback: users/{uid}.role for users created before the
-        // roles collection existed.
-        // TODO(phase-3+): remove the users/{uid}.role fallback once a Cloud
-        // Function has backfilled roles/{uid} for every legacy user.
+        // Backward-compatible fallback: users/{uid}.role for documents
+        // where role is stored on the user profile.
         UserModel resolved = userModel;
         final roleFromRoles = await _firestoreService.getUserRole(userModel.id);
         if (roleFromRoles != null) {
