@@ -36,6 +36,15 @@ import '../../data/services/tile_cache_service.dart';
 import '../widgets/arrival_overlay.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+/// Camera tracking modes for navigation.
+enum NavigationCameraMode {
+  /// Map automatically centers on user and tracks heading/position.
+  following,
+
+  /// User has panned or pinched to explore the map; GPS updates do not move camera.
+  free,
+}
+
 /// Stone Town live-navigation screen.
 ///
 /// Polished Google-Maps-style navigation on top of `flutter_map` + OpenStreetMap.
@@ -46,6 +55,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 ///   - Speed-adaptive zoom (zooms in when close to destination).
 ///   - Remaining route distance computed from polyline.
 ///   - Turn-by-turn steps with road name.
+///   - Explicit camera ownership (following vs free exploration).
+///   - Automatic off-route detection and debounced rerouting.
 class NavigationScreenOpen extends StatefulWidget {
   const NavigationScreenOpen({super.key, required this.site});
   final SiteModel site;
@@ -61,6 +72,9 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     routeCache: FirestoreRouteCache(),
   );
   bool _showArrivalOverlay = false;
+
+  /// Current camera ownership mode.
+  NavigationCameraMode _cameraMode = NavigationCameraMode.following;
 
   /// Cached at [didChangeDependencies] time. We must not call
   /// `context.read<NavigationCubit>()` from [dispose] because by then the
@@ -89,6 +103,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   bool _routeLoading = true;
   bool _routeIsFallback = false;
   String? _routeError;
+  bool _isRerouting = false;
+  Timer? _rerouteDebounce;
 
   /// Total route distance in metres (OSRM-reported). Used for progress bar.
   double _totalRouteDistanceM = 0;
@@ -148,9 +164,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     );
   }
 
-  Future<void> _fetchRoute(LatLng origin) async {
+  Future<void> _fetchRoute(LatLng origin, {bool isReroute = false}) async {
     final destination = LatLng(widget.site.latitude, widget.site.longitude);
     final myId = ++_routeRequestId;
+
+    if (isReroute) {
+      setState(() => _isRerouting = true);
+    }
 
     final result = await _routingService.getRoute(
       from: origin,
@@ -178,6 +198,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       _activeStepIndex = 0;
       _snappedDestination = snapped;
       _routeLoading = false;
+      _isRerouting = false;
       _routeIsFallback = result.isFallback;
       _routeError = result.errorMessage;
       _totalRouteDistanceM = totalDist;
@@ -200,42 +221,12 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     return total;
   }
 
-  /// Computes the remaining polyline length from [userPos] to the end of
-  /// [_routePoints]. Finds the nearest vertex to the user, then sums
-  /// distances from that vertex to the destination.
-  double _computeRemainingDistance(LatLng userPos) {
-    if (_routePoints.length < 2) return 0;
-    // Find the closest point index on the polyline.
-    int nearest = 0;
-    double minDist = double.infinity;
-    for (int i = 0; i < _routePoints.length; i++) {
-      final d = dc.DistanceCalculator.calculateDistance(
-        userPos.latitude,
-        userPos.longitude,
-        _routePoints[i].latitude,
-        _routePoints[i].longitude,
-      );
-      if (d < minDist) {
-        minDist = d;
-        nearest = i;
-      }
-    }
-    // Sum the polyline from nearest to end.
-    double remaining = minDist; // user to the nearest vertex
-    for (int i = nearest; i < _routePoints.length - 1; i++) {
-      remaining += dc.DistanceCalculator.calculateDistance(
-        _routePoints[i].latitude,
-        _routePoints[i].longitude,
-        _routePoints[i + 1].latitude,
-        _routePoints[i + 1].longitude,
-      );
-    }
-    return remaining;
-  }
-
   /// Animate the camera from its current centre to [target] preserving
   /// zoom and applying heading rotation when [_headingLocked] is true.
+  /// Skipped when [_cameraMode == NavigationCameraMode.free] so user exploration is respected.
   void _animateCameraTo(LatLng target, {double? distanceM}) {
+    if (_cameraMode == NavigationCameraMode.free) return;
+
     final clamped =
         UngujaBounds.contains(target) ? target : UngujaBounds.centre;
     if (_lastUserPosition != null &&
@@ -258,6 +249,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     _cameraTickerStart = start;
     _cameraTickerEnd = clamped;
     _cameraTicker = createTicker((elapsed) {
+      if (_cameraMode == NavigationCameraMode.free) {
+        _cameraTicker?.stop();
+        _cameraTicker?.dispose();
+        _cameraTicker = null;
+        return;
+      }
+
       final t = (elapsed.inMicroseconds /
               1000.0 /
               AppDurations.navigation.inMilliseconds)
@@ -315,8 +313,18 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     );
   }
 
+  void _resumeFollow() {
+    setState(() {
+      _cameraMode = NavigationCameraMode.following;
+      _headingLocked = true;
+      _lastUserPosition = null;
+    });
+    _recenter();
+  }
+
   @override
   void dispose() {
+    _rerouteDebounce?.cancel();
     _cameraTicker?.dispose();
     _navigationCubit?.stopNavigation();
     _routingService.dispose();
@@ -354,8 +362,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           );
         }
 
-        // 2. Camera follow on each subsequent update — animated with adaptive zoom.
-        if (posLatLng != null && !_routeLoading) {
+        // 2. Camera follow on each subsequent update — animated with adaptive zoom (only when following).
+        if (posLatLng != null && !_routeLoading && _cameraMode == NavigationCameraMode.following) {
           _animateCameraTo(
             posLatLng,
             distanceM: navState.distanceToSite,
@@ -369,11 +377,21 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           }
         }
 
-        // 2c. Update remaining polyline distance.
-        if (posLatLng != null && _routePoints.length >= 2) {
-          final remaining = _computeRemainingDistance(posLatLng);
-          if ((remaining - _remainingRouteDistanceM).abs() > 2) {
-            setState(() => _remainingRouteDistanceM = remaining);
+        // 2c. Update remaining polyline distance and check off-route deviation.
+        if (posLatLng != null && _routePoints.length >= 2 && !_routeLoading) {
+          final proj = PolylineSnap.projectPoint(posLatLng, _routePoints);
+          if ((proj.remainingDistanceMeters - _remainingRouteDistanceM).abs() > 2) {
+            setState(() => _remainingRouteDistanceM = proj.remainingDistanceMeters);
+          }
+
+          // Off-route detection: if tourist deviates > 35m from route, trigger debounced rerouting
+          if (proj.isOffRoute && !_isRerouting && !_routeIsFallback) {
+            _rerouteDebounce?.cancel();
+            _rerouteDebounce = Timer(const Duration(milliseconds: 2500), () {
+              if (mounted) {
+                _fetchRoute(posLatLng, isReroute: true);
+              }
+            });
           }
         }
 
@@ -455,6 +473,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               // Google-Maps-style top maneuver card (replaces slim row)
               _buildTopManeuverCard(context, navState),
               _buildBanner(context, navState),
+              if (_cameraMode == NavigationCameraMode.free)
+                _buildRecenterFab(context),
               _buildBottomCard(context, navState, uiLanguage),
               if (_showArrivalOverlay)
                 ArrivalOverlay(
@@ -479,6 +499,43 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     );
   }
 
+  Widget _buildRecenterFab(BuildContext context) {
+    return Positioned(
+      bottom: 175,
+      right: 16,
+      child: Material(
+        elevation: 6,
+        borderRadius: AppRadius.mdBorder,
+        color: Theme.of(context).colorScheme.primary,
+        child: InkWell(
+          onTap: _resumeFollow,
+          borderRadius: AppRadius.mdBorder,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  PhosphorIconsFill.navigationArrow,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Re-center',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMap(BuildContext context, LatLng? userLatLng) {
     return FlutterMap(
       mapController: _mapController,
@@ -487,12 +544,22 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         initialZoom: AppConstants.defaultZoom,
         minZoom: AppConstants.stoneTownMinZoom,
         maxZoom: AppConstants.stoneTownMaxZoom,
+        onPositionChanged: (camera, hasGesture) {
+          if (hasGesture && _cameraMode == NavigationCameraMode.following) {
+            setState(() {
+              _cameraMode = NavigationCameraMode.free;
+              _cameraTicker?.stop();
+              _cameraTicker?.dispose();
+              _cameraTicker = null;
+            });
+          }
+        },
         interactionOptions: const InteractionOptions(
           // Allow rotate when heading-locked so the compass can drive it;
           // manual finger rotation is still blocked.
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
         ),
-        cameraConstraint: CameraConstraint.contain(
+        cameraConstraint: CameraConstraint.containCenter(
           bounds: UngujaBounds.cameraBounds,
         ),
       ),

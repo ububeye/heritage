@@ -492,19 +492,48 @@ class RoutingService {
   Future<RouteResult> _routeFromOSRM(LatLng from, LatLng to) async {
     final straightLineMeters = _haversineMeters(from, to);
 
-    final uri = Uri.parse(
+    // 1. Try with initial 25m radius constraint.
+    var res = await _fetchOsrmUrl(
       '${AppConstants.osrmBaseUrl}/route/v1/foot/'
       '${from.longitude},${from.latitude};'
       '${to.longitude},${to.latitude}'
       '?overview=full&geometries=geojson'
       '&steps=true&annotations=false'
       '&radiuses=25;25',
+      from,
+      to,
+      straightLineMeters,
     );
 
-    // OSRM's public demo enforces a User-Agent on all requests; clients
-    // without one get a 429/403 and fall through to the straight-line
-    // banner. Mirror the header we send on OSM tile fetches so the routing
-    // and basemap layers are identified the same way.
+    // 2. If 25m radius fails because a doorway/courtyard is slightly off-road,
+    // retry with adaptive 60m radius before failing to a straight line.
+    if (res.isFallback && res.errorMessage != null && res.errorMessage!.contains('NoSegment')) {
+      final retryRes = await _fetchOsrmUrl(
+        '${AppConstants.osrmBaseUrl}/route/v1/foot/'
+        '${from.longitude},${from.latitude};'
+        '${to.longitude},${to.latitude}'
+        '?overview=full&geometries=geojson'
+        '&steps=true&annotations=false'
+        '&radiuses=60;60',
+        from,
+        to,
+        straightLineMeters,
+      );
+      if (!retryRes.isFallback) {
+        return retryRes;
+      }
+    }
+
+    return res;
+  }
+
+  Future<RouteResult> _fetchOsrmUrl(
+    String url,
+    LatLng from,
+    LatLng to,
+    double straightLineMeters,
+  ) async {
+    final uri = Uri.parse(url);
     final resp = await _client
         .get(
           uri,

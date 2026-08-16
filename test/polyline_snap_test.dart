@@ -1,14 +1,10 @@
-// Unit tests for the polyline snapping helper.
-//
-// The helper is pure Dart with no I/O — every test runs in milliseconds
-// and is safe in CI.
-
+// Unit tests for the polyline snapping and projection helper.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:stone_town_heritage_vt_guide/core/utils/polyline_snap.dart';
 
 void main() {
-  group('PolylineSnap.snapToPolyline', () {
+  group('PolylineSnap.snapToPolyline & projectPoint', () {
     test('returns the input point unchanged on empty polyline', () {
       const point = LatLng(-6.1620, 39.1936);
       expect(PolylineSnap.snapToPolyline(point, const []), point);
@@ -20,27 +16,56 @@ void main() {
       expect(PolylineSnap.snapToPolyline(point, [vertex]), vertex);
     });
 
-    test('returns the nearest vertex of a multi-vertex polyline', () {
-      const target = LatLng(-6.1620, 39.1936);
+    test('projects orthogonally onto a line segment between vertices', () {
+      // East-west road along latitude -6.1600 from lng 39.1900 to 39.1950
       const polyline = [
-        LatLng(-6.1630, 39.1940), // far
-        LatLng(-6.1621, 39.1937), // very close (≈15 m away)
-        LatLng(-6.1615, 39.1930), // far
+        LatLng(-6.1600, 39.1900),
+        LatLng(-6.1600, 39.1950),
       ];
-      final snapped = PolylineSnap.snapToPolyline(target, polyline);
-      expect(snapped, const LatLng(-6.1621, 39.1937));
+      // User is slightly north of the midpoint of the street
+      const user = LatLng(-6.1598, 39.1925);
+      final res = PolylineSnap.projectPoint(user, polyline);
+
+      // Snapped latitude should be exactly on the road (-6.1600)
+      expect((res.snappedPoint.latitude - (-6.1600)).abs() < 1e-5, isTrue);
+      // Snapped longitude should be orthogonal at 39.1925
+      expect((res.snappedPoint.longitude - 39.1925).abs() < 1e-5, isTrue);
+      // Distance should be approximately 22 meters
+      expect(res.distanceToPolylineMeters > 15 && res.distanceToPolylineMeters < 30, isTrue);
+      // Not off-route (within 30m default)
+      expect(res.isOffRoute, isFalse);
     });
 
-    test('returns the first vertex when it is the closest', () {
-      const target = LatLng(-6.1630, 39.1940);
+    test('detects off-route when cross-track error exceeds threshold', () {
       const polyline = [
-        LatLng(-6.1630, 39.1940), // exact match
-        LatLng(-6.1619, 39.1936), // far
+        LatLng(-6.1600, 39.1900),
+        LatLng(-6.1600, 39.1950),
       ];
-      expect(PolylineSnap.snapToPolyline(target, polyline), target);
+      // User is 100 meters north of the road
+      const farUser = LatLng(-6.1590, 39.1925);
+      final res = PolylineSnap.projectPoint(farUser, polyline);
+
+      expect(res.distanceToPolylineMeters > 50, isTrue);
+      expect(res.isOffRoute, isTrue);
+      expect(PolylineSnap.isOffRoute(farUser, polyline), isTrue);
     });
 
-    test('snaps to a polyline vertex matching the door\'s longitude', () {
+    test('computes along-track remaining distance correctly', () {
+      const polyline = [
+        LatLng(-6.1600, 39.1900),
+        LatLng(-6.1600, 39.1920),
+        LatLng(-6.1600, 39.1940),
+      ];
+      // User is near segment 0 at 39.1910
+      const user = LatLng(-6.1600, 39.1910);
+      final res = PolylineSnap.projectPoint(user, polyline);
+
+      expect(res.segmentIndex, 0);
+      // Remaining distance from 39.1910 to 39.1940 (approx 330m)
+      expect(res.remainingDistanceMeters > 300 && res.remainingDistanceMeters < 360, isTrue);
+    });
+
+    test('snaps to a polyline segment matching the door\'s longitude', () {
       // Roughly a north-south drag through the heritage peninsula.
       const polyline = [
         LatLng(-6.1575, 39.1936),
@@ -48,23 +73,10 @@ void main() {
         LatLng(-6.1625, 39.1936),
         LatLng(-6.1650, 39.1936),
       ];
-      // A doorway offset 50 m east of the road. The snap should move
-      // the longitude onto the polyline (39.1936), not the doorway's
-      // longitude (39.1944). Exact latitude selection depends on the
-      // tie-breaker — we just need *a* vertex on this polyline.
       const doorway = LatLng(-6.1612, 39.1944);
       final snapped = PolylineSnap.snapToPolyline(doorway, polyline);
-      // Longitude snaps to the road.
-      expect(snapped.longitude, 39.1936);
-      // Latitude is one of the polyline vertices (not the doorway).
-      final lats = polyline.map((p) => p.latitude).toSet();
-      expect(
-        lats.contains(snapped.latitude),
-        isTrue,
-        reason:
-            'snapped latitude ${snapped.latitude} must be a polyline vertex',
-      );
-      expect(snapped.latitude, isNot(equals(doorway.latitude)));
+      // Longitude snaps orthogonally onto the road (39.1936)
+      expect((snapped.longitude - 39.1936).abs() < 1e-4, isTrue);
     });
   });
 }
