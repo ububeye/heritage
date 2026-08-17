@@ -13,6 +13,7 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../blocs/runtime_config/map_provider_cubit.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/theme/theme_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
@@ -676,54 +677,48 @@ class _ThemeTile extends StatelessWidget {
   }
 }
 
-class _MapProviderTile extends StatefulWidget {
+class _MapProviderTile extends StatelessWidget {
   const _MapProviderTile();
 
   @override
-  State<_MapProviderTile> createState() => _MapProviderTileState();
+  Widget build(BuildContext context) {
+    // The tile owns a private [MapProviderCubit] instance so that toggling
+    // the selection rebuilds only the segmented control below, rather
+    // than the whole settings list. The cubit reads from / writes to the
+    // shared-prefs singleton, matching the behaviour before this work.
+    return BlocProvider<MapProviderCubit>(
+      create: (_) => MapProviderCubit(),
+      child: _MapProviderTileBody(),
+    );
+  }
 }
 
-class _MapProviderTileState extends State<_MapProviderTile> {
-  late String _active;
-
-  @override
-  void initState() {
-    super.initState();
-    _active = SharedPrefsService.instance.mapProvider;
-  }
-
-  void _select(String provider) {
-    if (provider == _active) return;
-    setState(() => _active = provider);
-    SharedPrefsService.instance.setMapProvider(provider);
-  }
+class _MapProviderTileBody extends StatelessWidget {
+  const _MapProviderTileBody();
 
   @override
   Widget build(BuildContext context) {
-    final apiKey = AppConstants.googleMapsApiKey;
-    final googleEnabled = apiKey != null && apiKey.isNotEmpty;
+    final cubit = context.watch<MapProviderCubit>();
+    final available = cubit.available;
+    final googleEnabled = available.length > 1;
     final loc = context.watch<LocalizationCubit>().state;
-    final options = googleEnabled ? const ['OSM', 'Google'] : const ['OSM'];
-    final values =
-        googleEnabled
-            ? const <String>[
-              AppConstants.mapProviderOpen,
-              AppConstants.mapProviderGoogle,
-            ]
-            : const <String>[AppConstants.mapProviderOpen];
+    final values = available;
+    final options = googleEnabled
+        ? const ['OSM', 'Google']
+        : const ['OSM'];
     return SettingsSegmentedTile<String>(
       icon: Icons.public,
       iconColor: Theme.of(context).colorScheme.primary,
       options: options,
       values: values,
-      value: _active,
+      value: cubit.state,
       // When the Google API key isn't configured we still render the OSM
       // segment but show a hint if the user tries to tap Google. Tapping
       // a disabled option used to be silently swallowed, which made the
       // segmented control look broken.
       onChanged:
           googleEnabled
-              ? _select
+              ? cubit.select
               : (v) {
                 ScaffoldMessenger.maybeOf(context)?.showSnackBar(
                   SnackBar(
