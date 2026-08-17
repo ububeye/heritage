@@ -30,6 +30,9 @@ import '../../core/utils/gps_filter.dart';
 import '../../core/utils/heading_source.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../core/utils/unguja_bounds.dart';
+import '../widgets/map/off_route_banner.dart';
+import '../widgets/map/compass_overlay.dart';
+import '../widgets/map/route_polyline_layer.dart';
 import '../../state/map/map_camera_controller.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
 import '../../data/models/site_model.dart';
@@ -75,6 +78,10 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     routeCache: FirestoreRouteCache(),
   );
   bool _showArrivalOverlay = false;
+
+  /// Sustained off-route state (after hysteresis). Drives the polyline
+  /// amber tint and the off-route banner.
+  bool _isOffRoute = false;
 
   /// Optional app-scoped camera controller. When present, the navigation
   /// screen defers all camera moves to it. When absent (legacy callers),
@@ -448,13 +455,46 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           // from being hammered.
           if (!_routeIsFallback) {
             final sustainedOff = _offRouteHysteresis.onSample(proj);
+            if (sustainedOff != _isOffRoute) {
+              setState(() => _isOffRoute = sustainedOff);
+            }
             if (sustainedOff && !_isRerouting) {
-              _rerouteDebounce?.cancel();
-              _rerouteDebounce = Timer(AppConstants.rerouteDebounce, () {
-                if (mounted) {
-                  _fetchRoute(posLatLng, isReroute: true);
-                }
-              });
+              // P1-4: suppress reroute within arrival radius * 1.5 — GPS
+              // wobble near the destination shouldn't churn the routing
+              // engine.
+              final siteLatLng = LatLng(
+                widget.site.latitude,
+                widget.site.longitude,
+              );
+              final distanceToSiteM = dc.DistanceCalculator.calculateDistance(
+                posLatLng.latitude,
+                posLatLng.longitude,
+                siteLatLng.latitude,
+                siteLatLng.longitude,
+              );
+              final suppressRadius =
+                  SharedPrefsService.instance.arrivalAlertsRadiusM * 1.5;
+              if (distanceToSiteM < suppressRadius) {
+                // Don't fire telemetry either — this is a known no-op.
+              } else {
+                _rerouteDebounce?.cancel();
+                _rerouteDebounce = Timer(
+                  AppConstants.rerouteDebounce,
+                  () {
+                    if (mounted) {
+                      // P1-3: emit telemetry on reroute kicks.
+                      _routingService.telemetry?.call('routing_reroute', {
+                        'site_id': widget.site.id,
+                        'deviation_m':
+                            proj.distanceToPolylineMeters.round(),
+                        'reason': 'off_route',
+                        'distance_to_site_m': distanceToSiteM.round(),
+                      });
+                      _fetchRoute(posLatLng, isReroute: true);
+                    }
+                  },
+                );
+              }
             } else if (!sustainedOff && !proj.isOffRoute) {
               _offRouteHysteresis.reset();
             }
@@ -538,6 +578,23 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               _buildMap(context, userLatLng),
               // Google-Maps-style top maneuver card (replaces slim row)
               _buildTopManeuverCard(context, navState),
+              // True compass overlay (red needle + heading readout), shown
+              // only when the heading-lock toggle is on.
+              if (_headingLocked)
+                Positioned(
+                  top:
+                      MediaQuery.of(context).padding.top +
+                      (_routeSteps.isEmpty ? 100 : 144),
+                  right: 16,
+                  child: CompassOverlay(headingDeg: _headingDeg),
+                ),
+              if (_isOffRoute)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 8,
+                  left: 0,
+                  right: 0,
+                  child: OffRouteBanner(isVisible: true),
+                ),
               _buildBanner(context, navState),
               if (_cameraMode == NavigationCameraMode.free)
                 _buildRecenterFab(context),
@@ -643,21 +700,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           maxNativeZoom: 19,
           tileProvider: TileCacheService.instance.tileProvider(),
         ),
-        // Route polyline — white border underlay for a crisp look.
+        // Route polyline — white underlay + on-route tint, amber when off-route.
         if (_routePoints.length >= 2)
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: _routePoints,
-                color: context.semanticColors.onImage,
-                strokeWidth: AppConstants.routePolylineWidth + 4,
-              ),
-              Polyline(
-                points: _routePoints,
-                color: context.semanticColors.mapRoute,
-                strokeWidth: AppConstants.routePolylineWidth,
-              ),
-            ],
+          RoutePolylineLayer(
+            points: _routePoints,
+            isOffRoute: _isOffRoute,
           ),
         // Arrival-zone translucent circle.
         CircleLayer(

@@ -19,6 +19,8 @@ import '../../data/services/tile_cache_service.dart';
 import '../../state/map/map_camera_controller.dart';
 import '../screens/detail_screen.dart';
 import 'map_scale_bar.dart';
+import 'map/site_marker.dart';
+import 'map/selected_site_marker.dart';
 
 /// Production-grade Heritage Map for Stone Town exploration and site picking.
 ///
@@ -477,9 +479,11 @@ class _HeritageMapState extends State<HeritageMap> {
               setState(() => _pickedPoint = clamped);
               widget.onLocationPicked?.call(clamped.latitude, clamped.longitude);
             },
-            child: const _HeritagePin(
-              category: 'admin',
-              isSelected: true,
+            child: const SelectedSiteMarker(
+              label: 'Pin',
+              color: Color(0xFF1D4ED8),
+              icon: PhosphorIconsFill.mapPin,
+              selected: true,
               isPicker: true,
             ),
           ),
@@ -489,6 +493,14 @@ class _HeritageMapState extends State<HeritageMap> {
 
     return widget.sites.map((site) {
       final isSelected = _selectedSite?.id == site.id;
+      // Selected pins render via [SelectedSiteMarker] for the gentle
+      // pulse + halo animation; the rest use the calmer [SiteMarker].
+      final pinLabel = site.nameEn;
+      final pinColor = _getCategoryColorFor(
+        site.category ?? 'historic',
+        context,
+      );
+      final pinIcon = _getCategoryIconFor(site.category ?? 'historic');
       return Marker(
         point: LatLng(site.latitude, site.longitude),
         width: isSelected ? 120 : 90,
@@ -496,146 +508,62 @@ class _HeritageMapState extends State<HeritageMap> {
         alignment: Alignment.bottomCenter,
         child: GestureDetector(
           onTap: () => _selectSite(site),
-          child: _HeritagePin(
-            label: site.nameEn,
-            category: site.category ?? 'historic',
-            isSelected: isSelected,
-          ),
+          child: isSelected
+              ? SelectedSiteMarker(
+                  label: pinLabel,
+                  color: pinColor,
+                  icon: pinIcon,
+                )
+              : SiteMarker(label: pinLabel, color: pinColor, icon: pinIcon),
         ),
       );
     }).toList();
   }
 }
 
-/// Category-accented heritage pin marker.
-class _HeritagePin extends StatelessWidget {
-  const _HeritagePin({
-    this.label,
-    required this.category,
-    this.isSelected = false,
-    this.isPicker = false,
-  });
-
-  final String? label;
-  final String category;
-  final bool isSelected;
-  final bool isPicker;
-
-  IconData _getCategoryIcon() {
-    switch (category.toLowerCase()) {
-      case 'historic':
-        return PhosphorIconsRegular.bank;
-      case 'cultural':
-        return PhosphorIconsRegular.maskHappy;
-      case 'religious':
-        return PhosphorIconsRegular.mosque;
-      case 'architecture':
-        return PhosphorIconsRegular.buildings;
-      case 'museum':
-        return PhosphorIconsRegular.building;
-      case 'market':
-        return PhosphorIconsRegular.shoppingBag;
-      case 'admin':
-        return PhosphorIconsFill.mapPin;
-      default:
-        return PhosphorIconsRegular.mapPin;
-    }
+/// Top-level helpers for category icon + colour. Used both by
+/// [_HeritageMapState] when rendering the new [SiteMarker] /
+/// [SelectedSiteMarker] widgets.
+IconData _getCategoryIconFor(String category) {
+  switch (category.toLowerCase()) {
+    case 'historic':
+      return PhosphorIconsRegular.bank;
+    case 'cultural':
+      return PhosphorIconsRegular.maskHappy;
+    case 'religious':
+      return PhosphorIconsRegular.mosque;
+    case 'architecture':
+      return PhosphorIconsRegular.buildings;
+    case 'museum':
+      return PhosphorIconsRegular.building;
+    case 'market':
+      return PhosphorIconsRegular.shoppingBag;
+    case 'admin':
+      return PhosphorIconsFill.mapPin;
+    default:
+      return PhosphorIconsRegular.mapPin;
   }
+}
 
-  Color _getCategoryColor(BuildContext context) {
-    if (isPicker) return Theme.of(context).colorScheme.primary;
-    switch (category.toLowerCase()) {
-      case 'historic':
-        return const Color(0xFFD97706); // Amber / ochre
-      case 'cultural':
-        return const Color(0xFFE11D48); // Rose / coral
-      case 'religious':
-        return const Color(0xFF0D9488); // Teal
-      case 'architecture':
-        return const Color(0xFF2563EB); // Royal blue
-      case 'museum':
-        return const Color(0xFF7C3AED); // Purple
-      case 'market':
-        return const Color(0xFF059669); // Emerald
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
+Color _getCategoryColorFor(String category, BuildContext context) {
+  if (category.toLowerCase() == 'admin') {
+    return Theme.of(context).colorScheme.primary;
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final pinColor = _getCategoryColor(context);
-    final shadowColor = context.semanticColors.shadow;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (label != null && label!.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            margin: const EdgeInsets.only(bottom: 2),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.surface
-                  : Theme.of(context).colorScheme.surface.withValues(alpha: 0.92),
-              borderRadius: AppRadius.xsBorder,
-              border: Border.all(
-                color: isSelected ? pinColor : Theme.of(context).colorScheme.outlineVariant,
-                width: isSelected ? 1.5 : 0.8,
-              ),
-              boxShadow: AppShadows.mapPinFor(shadowColor),
-            ),
-            constraints: BoxConstraints(maxWidth: isSelected ? 110 : 85),
-            child: Text(
-              label!,
-              style: TextStyle(
-                fontSize: isSelected ? 11 : 9.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-                height: 1.1,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          width: isPicker
-              ? 38
-              : (isSelected ? 36 : 28),
-          height: isPicker
-              ? 38
-              : (isSelected ? 36 : 28),
-          decoration: BoxDecoration(
-            color: pinColor,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white,
-              width: isSelected ? 3 : 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: pinColor.withValues(alpha: isSelected ? 0.45 : 0.25),
-                blurRadius: isSelected ? 10 : 6,
-                spreadRadius: isSelected ? 2 : 0,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Icon(
-              _getCategoryIcon(),
-              size: isPicker
-                  ? 20
-                  : (isSelected ? 18 : 14),
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
+  switch (category.toLowerCase()) {
+    case 'historic':
+      return const Color(0xFFD97706); // Amber / ochre
+    case 'cultural':
+      return const Color(0xFFE11D48); // Rose / coral
+    case 'religious':
+      return const Color(0xFF0D9488); // Teal
+    case 'architecture':
+      return const Color(0xFF1D4ED8); // Indigo
+    case 'museum':
+      return const Color(0xFF7C3AED); // Violet
+    case 'market':
+      return const Color(0xFFCA8A04); // Mustard
+    default:
+      return Theme.of(context).colorScheme.primary;
   }
 }
 
