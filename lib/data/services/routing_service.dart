@@ -262,11 +262,25 @@ class RoutingService {
     http.Client? client,
     RouteCacheService? routeCache,
     this.timeout = const Duration(seconds: 6),
+    this.telemetry,
+    this.retryDelay = const Duration(milliseconds: 250),
   }) : _client = client ?? http.Client(),
        _routeCache = routeCache;
   final http.Client _client;
   final RouteCacheService? _routeCache;
   final Duration timeout;
+
+  /// Optional telemetry sink. Used by callers (e.g. NavigationScreenOpen)
+  /// to record routing events without forcing RoutingService to depend on
+  /// any specific analytics package. Today we only emit `'routing_reroute'`
+  /// and `'routing_5xx_retry'`; the map is intentionally a small schema so
+  /// a future analytics adapter can serialize it as-is.
+  final void Function(String event, Map<String, Object?> payload)? telemetry;
+
+  /// Backoff delay between 5xx retries. Defaults to 250 ms — small enough
+  /// to stay sub-second on a flaky connection, large enough to let the
+  /// server's own retry logic clear out.
+  final Duration retryDelay;
 
   /// 30-minute TTL on successful routes. Re-asking for the same
   /// `(from, to)` tuple reuses the cached [RouteResult] without
@@ -534,7 +548,7 @@ class RoutingService {
     double straightLineMeters,
   ) async {
     final uri = Uri.parse(url);
-    final resp = await _client
+    var resp = await _client
         .get(
           uri,
           headers: const {
@@ -543,6 +557,28 @@ class RoutingService {
           },
         )
         .timeout(timeout);
+
+    // 5xx — transient server error. Retry once with a short backoff before
+    // reporting the failure to the caller. Demoted from the previous
+    // immediate-fallback behaviour after we observed occasional 502s from
+    // the public OSRM demo under load.
+    if (resp.statusCode >= 500 && resp.statusCode < 600) {
+      telemetry?.call('routing_5xx_retry', {
+        'url_host': uri.host,
+        'status': resp.statusCode,
+        'retry_delay_ms': retryDelay.inMilliseconds,
+      });
+      await Future<void>.delayed(retryDelay);
+      resp = await _client
+          .get(
+            uri,
+            headers: const {
+              'User-Agent':
+                  'com.example.stone_town_heritage_vt_guide/1.0 (Flutter)',
+            },
+          )
+          .timeout(timeout);
+    }
     if (resp.statusCode != 200) {
       return RouteResult.fallback(
         from: from,
