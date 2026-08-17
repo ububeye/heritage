@@ -43,7 +43,8 @@ class PolylineSnap {
   PolylineSnap._();
 
   /// Default off-route tolerance threshold in meters.
-  /// Accounts for GPS noise in dense Stone Town stone-wall corridors.
+  /// Kept as a constant for backward compatibility; the canonical
+  /// value lives in `AppConstants.offRouteThresholdMeters`.
   static const double defaultOffRouteThresholdMeters = 30.0;
 
   /// Snaps [point] to the closest point along the segments of [polyline].
@@ -67,7 +68,7 @@ class PolylineSnap {
         point: point,
         snappedPoint: point,
         distanceToPolylineMeters: 0,
-        segmentIndex: 0,
+        segmentIndex: -1,
         remainingDistanceMeters: 0,
         isOffRoute: false,
       );
@@ -85,7 +86,7 @@ class PolylineSnap {
         point: point,
         snappedPoint: single,
         distanceToPolylineMeters: dist,
-        segmentIndex: 0,
+        segmentIndex: -1,
         remainingDistanceMeters: 0,
         isOffRoute: dist > offRouteThresholdMeters,
       );
@@ -187,5 +188,46 @@ class PolylineSnap {
     final projLng = a.longitude + t * (b.longitude - a.longitude);
 
     return LatLng(projLat, projLng);
+  }
+}
+
+/// Tracks an off-route condition across multiple consecutive GPS fixes so
+/// the navigation screen can ignore single-fix "spikes" but still react
+/// to a sustained deviation.
+///
+/// Without this, GPS noise in Stone Town's narrow alleys can flip the
+/// off-route flag on and off rapidly, causing the routing engine to be
+/// hammered with redundant requests.
+class OffRouteHysteresis {
+  OffRouteHysteresis({
+    this.thresholdMeters = 30.0,
+    this.requiredSustained = const Duration(milliseconds: 1500),
+  });
+
+  /// Cross-track distance that must be exceeded to even consider an
+  /// off-route event.
+  final double thresholdMeters;
+
+  /// How long the cross-track must be sustained above the threshold
+  /// before the flag flips to `true`.
+  final Duration requiredSustained;
+
+  DateTime? _offRouteSince;
+
+  /// Feed a new GPS fix. Returns `true` if the user is, in a sustained
+  /// sense, off the route.
+  bool onSample(PolylineProjectionResult projection) {
+    final off = projection.distanceToPolylineMeters > thresholdMeters;
+    if (!off) {
+      _offRouteSince = null;
+      return false;
+    }
+    _offRouteSince ??= DateTime.now();
+    return DateTime.now().difference(_offRouteSince!) >= requiredSustained;
+  }
+
+  /// Reset the hysteresis state (e.g. after a successful reroute).
+  void reset() {
+    _offRouteSince = null;
   }
 }

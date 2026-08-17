@@ -33,8 +33,10 @@ dependencies:
 
   # Location & Maps
   geolocator: ^13.0.2
-  google_maps_flutter: ^2.10.0
-  flutter_polyline_points: ^2.1.0
+  # NOTE: navigation uses flutter_map + OpenStreetMap + OSRM. The
+  # original Google Maps dependency and the legacy polyline decoder
+  # were removed in PR 7 ("map cleanup") — the routing engine parses
+  # OSRM GeoJSON directly, so no decoder package is required.
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
 

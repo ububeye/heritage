@@ -125,6 +125,24 @@ All unit, widget, and bounds tests pass cleanly:
 
 ---
 
+## 9. Post-Audit Hardening (2026-08-17)
+
+After the audit, the map subsystem was hardened further:
+
+- **GpsFilter, HeadingSource, OffRouteHysteresis, PolylineSnap** lifted into `lib/core/utils/` and each now has its own unit test file. **43 new tests** were added (10 + 12 + 6 + 15).
+- **`NavigationCubit`** gained a `_sessionId` reentrancy guard so stale GPS fixes from a previous navigation can't update a new session.
+- **Bug found by tests & fixed:** the "Arrived" banner was flickering off on every GPS update because `_updatePosition` always emitted `hasArrived: false` outside the `shouldArrive` branch. Now `_hasArrived` is sticky — once fired, every subsequent fix re-emits `NavigationStatus.arrived` with `hasArrived: true`.
+- **`MapCameraController` + `MapCameraScope`** — a single `MapController` is now shared across `HeritageMap` and `NavigationScreenOpen` instead of two widgets fighting each other.
+- **`MapScaleBar`** — a live scale bar is now rendered in the bottom-left of the map, listening to the same `MapController` for camera updates.
+- **CARTO Voyager** replaced the raw OpenStreetMap tile URL (faster, better styled, still free).
+- **`flutter analyze`**: **No issues found!**
+- **`flutter test`**: **147 / 147 passing**
+- **`flutter build apk --debug`**: succeeded (`build/app/outputs/flutter-apk/app-debug.apk`, 246 MB).
+
+See [MAP_REENGINEERING_FINAL_REPORT.md](MAP_REENGINEERING_FINAL_REPORT.md) for the full 55-row verification matrix.
+
+---
+
 ## 8. Remaining Limitations
 
 1. **Hardware Compass Calibration**: Device compass precision depends on the device's internal magnetometer calibration; a fallback heading calculation from consecutive GPS fixes is used when static magnetometer readings are noisy.

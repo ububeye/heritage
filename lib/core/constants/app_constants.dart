@@ -101,6 +101,33 @@ class AppConstants {
   static const double stoneTownMinZoom = 10.0;
   static const double stoneTownMaxZoom = 19.0;
 
+  // ── Navigation behavior tunables ───────────────────────────────────────
+  /// Cross-track distance (metres) beyond which the user is considered to
+  /// have left the route. Centralised here so the navigation screen, the
+  /// cubit, and the snap helper all agree on a single value.
+  static const double offRouteThresholdMeters = 30.0;
+
+  /// Number of consecutive GPS fixes required inside the arrival radius
+  /// before the cubit fires the "arrived" transition. Acts as a debounce
+  /// against noisy GPS that briefly leaves the radius and comes back.
+  static const int defaultArrivalConfirmCount = 2;
+
+  /// Exponential moving average weight for the GPS smoothing filter.
+  /// Lower = more smoothing, slower reaction. 0.0 ≤ alpha ≤ 1.0.
+  static const double gpsSmoothingAlpha = 0.35;
+
+  /// Maximum back-off between OSRM retries on transient 5xx responses.
+  static const Duration routingRetryDelay = Duration(milliseconds: 250);
+
+  /// Minimum interval between two off-route reroutes. Acts as a debounce
+  /// to prevent GPS jitter from spamming the routing engine.
+  static const Duration rerouteDebounce = Duration(milliseconds: 2500);
+
+  /// Hysteresis for off-route: cross-track must be sustained for this
+  /// long before a reroute is fired, even if the magnitude exceeds the
+  /// static threshold.
+  static const Duration offRouteSustained = Duration(milliseconds: 1500);
+
   // Navigation camera animation duration moved to app_durations.dart
   // Routing providers. Defaults can be overridden at build time via
   // --dart-define so secrets (API keys) never have to live in source

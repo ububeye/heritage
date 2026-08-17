@@ -26,8 +26,11 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_durations.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/polyline_snap.dart';
+import '../../core/utils/gps_filter.dart';
+import '../../core/utils/heading_source.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../core/utils/unguja_bounds.dart';
+import '../../state/map/map_camera_controller.dart';
 import '../../data/models/navigation_state.dart' as nav_model;
 import '../../data/models/site_model.dart';
 import '../../data/services/route_cache_service.dart';
@@ -67,14 +70,44 @@ class NavigationScreenOpen extends StatefulWidget {
 
 class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     with TickerProviderStateMixin {
-  final MapController _mapController = MapController();
+  final MapController _localMapController = MapController();
   late final RoutingService _routingService = RoutingService(
     routeCache: FirestoreRouteCache(),
   );
   bool _showArrivalOverlay = false;
 
-  /// Current camera ownership mode.
-  NavigationCameraMode _cameraMode = NavigationCameraMode.following;
+  /// Optional app-scoped camera controller. When present, the navigation
+  /// screen defers all camera moves to it. When absent (legacy callers),
+  /// falls back to [_localMapController].
+  MapCameraController? _cameraController;
+
+  /// Filter that smooths noisy GPS fixes and rejects outliers.
+  final GpsFilter _gpsFilter = GpsFilter();
+
+  /// Heading detector with EMA + GPS-derived fallback.
+  final HeadingSource _headingSource = HeadingSource();
+
+  /// Tracks sustained off-route to debounce a noisy GPS spike.
+  final OffRouteHysteresis _offRouteHysteresis = OffRouteHysteresis();
+
+  MapController get _mapController =>
+      _cameraController?.mapController ?? _localMapController;
+
+  /// Legacy camera mode accessor. Backed by the controller when present,
+  /// otherwise tracks the local [NavigationCameraMode] for legacy callers.
+  NavigationCameraMode get _cameraMode {
+    final c = _cameraController;
+    if (c == null) return _localCameraMode;
+    switch (c.mode) {
+      case CameraMode.userInteracting:
+        return NavigationCameraMode.free;
+      default:
+        return NavigationCameraMode.following;
+    }
+  }
+
+  /// Local fallback when no [MapCameraController] is in scope.
+  NavigationCameraMode _localCameraMode = NavigationCameraMode.following;
 
   /// Cached at [didChangeDependencies] time. We must not call
   /// `context.read<NavigationCubit>()` from [dispose] because by then the
@@ -149,6 +182,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _navigationCubit ??= context.read<NavigationCubit>();
+    _cameraController ??= MapCameraController.maybeOf(context);
     if (!_started) {
       _started = true;
       _startNavigation();
@@ -315,10 +349,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
 
   void _resumeFollow() {
     setState(() {
-      _cameraMode = NavigationCameraMode.following;
+      _localCameraMode = NavigationCameraMode.following;
       _headingLocked = true;
       _lastUserPosition = null;
     });
+    _cameraController?.recenter();
     _recenter();
   }
 
@@ -328,6 +363,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     _cameraTicker?.dispose();
     _navigationCubit?.stopNavigation();
     _routingService.dispose();
+    // Only dispose the local MapController if we own it. If a shared
+    // controller is in scope, the provider owns it.
+    if (_cameraController == null) {
+      _localMapController.dispose();
+    }
     super.dispose();
   }
 
@@ -362,19 +402,35 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           );
         }
 
-        // 2. Camera follow on each subsequent update — animated with adaptive zoom (only when following).
-        if (posLatLng != null && !_routeLoading && _cameraMode == NavigationCameraMode.following) {
-          _animateCameraTo(
-            posLatLng,
-            distanceM: navState.distanceToSite,
-          );
+        // 1b. Smooth the position via the GPS filter. Outliers (single bad
+        // fixes more than 3 σ from the running mean) are dropped.
+        LatLng? effectivePosition = posLatLng;
+        if (pos != null) {
+          final filtered = _gpsFilter.filter(pos);
+          if (filtered != null) effectivePosition = filtered;
         }
 
-        // 2b. Update heading from the GPS position.
-        if (pos != null && pos.heading != 0.0) {
-          if (_headingDeg != pos.heading) {
-            setState(() => _headingDeg = pos.heading);
+        // 1c. Update heading from the GPS position. Uses the dedicated
+        // HeadingSource so `pos.heading == 0` is treated as a valid
+        // North, not as "no fix".
+        if (pos != null) {
+          _headingSource.onPosition(pos);
+          final h = _headingSource.currentDeg;
+          if (h != null && h != _headingDeg) {
+            setState(() => _headingDeg = h);
           }
+        }
+
+        // 2. Camera follow on each subsequent update — animated with
+        //    adaptive zoom (only when following). We use the filtered
+        //    position so the camera doesn't jitter on noisy fixes.
+        if (effectivePosition != null &&
+            !_routeLoading &&
+            _cameraMode == NavigationCameraMode.following) {
+          _animateCameraTo(
+            effectivePosition,
+            distanceM: navState.distanceToSite,
+          );
         }
 
         // 2c. Update remaining polyline distance and check off-route deviation.
@@ -384,14 +440,24 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
             setState(() => _remainingRouteDistanceM = proj.remainingDistanceMeters);
           }
 
-          // Off-route detection: if tourist deviates > 35m from route, trigger debounced rerouting
-          if (proj.isOffRoute && !_isRerouting && !_routeIsFallback) {
-            _rerouteDebounce?.cancel();
-            _rerouteDebounce = Timer(const Duration(milliseconds: 2500), () {
-              if (mounted) {
-                _fetchRoute(posLatLng, isReroute: true);
-              }
-            });
+          // Off-route detection with hysteresis: a single GPS spike
+          // above the threshold must not trigger a reroute. The
+          // [OffRouteHysteresis] helper requires the deviation to be
+          // sustained for [AppConstants.offRouteSustained] before it
+          // fires. The 2.5 s reroute debounce keeps the routing engine
+          // from being hammered.
+          if (!_routeIsFallback) {
+            final sustainedOff = _offRouteHysteresis.onSample(proj);
+            if (sustainedOff && !_isRerouting) {
+              _rerouteDebounce?.cancel();
+              _rerouteDebounce = Timer(AppConstants.rerouteDebounce, () {
+                if (mounted) {
+                  _fetchRoute(posLatLng, isReroute: true);
+                }
+              });
+            } else if (!sustainedOff && !proj.isOffRoute) {
+              _offRouteHysteresis.reset();
+            }
           }
         }
 
@@ -545,13 +611,20 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         minZoom: AppConstants.stoneTownMinZoom,
         maxZoom: AppConstants.stoneTownMaxZoom,
         onPositionChanged: (camera, hasGesture) {
-          if (hasGesture && _cameraMode == NavigationCameraMode.following) {
-            setState(() {
-              _cameraMode = NavigationCameraMode.free;
-              _cameraTicker?.stop();
-              _cameraTicker?.dispose();
-              _cameraTicker = null;
-            });
+          if (hasGesture) {
+            // Defer to the controller if we have one; otherwise fall back
+            // to the local mode tracker.
+            if (_cameraController != null) {
+              if (_cameraController!.isSuppressingGesture) return;
+              _cameraController!.markUserGesture();
+            } else if (_localCameraMode == NavigationCameraMode.following) {
+              setState(() {
+                _localCameraMode = NavigationCameraMode.free;
+                _cameraTicker?.stop();
+                _cameraTicker?.dispose();
+                _cameraTicker = null;
+              });
+            }
           }
         },
         interactionOptions: const InteractionOptions(

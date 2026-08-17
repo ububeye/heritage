@@ -8,6 +8,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/utils/nav_guard.dart';
 import '../../core/utils/stone_town_bounds.dart';
@@ -15,7 +16,9 @@ import '../../core/utils/unguja_bounds.dart';
 import '../../data/models/site_model.dart';
 import '../../data/services/location_service.dart';
 import '../../data/services/tile_cache_service.dart';
+import '../../state/map/map_camera_controller.dart';
 import '../screens/detail_screen.dart';
+import 'map_scale_bar.dart';
 
 /// Production-grade Heritage Map for Stone Town exploration and site picking.
 ///
@@ -95,14 +98,22 @@ class HeritageMap extends StatefulWidget {
 }
 
 class _HeritageMapState extends State<HeritageMap> {
-  final MapController _mapController = MapController();
+  /// The MapController is owned by [MapCameraController] when one is
+  /// provided via [BlocProvider]. Otherwise (legacy callers) we fall
+  /// back to a private instance.
+  final MapController _localMapController = MapController();
   final LocationService _locationService = LocationService();
   LatLng? _pickedPoint;
   SiteModel? _selectedSite;
   bool _firstFitDone = false;
 
+  MapCameraController? _cameraController;
+
   CameraConstraint get _activeConstraint =>
       HeritageMap.constraintFor(isPicker: widget.draggableMarker);
+
+  MapController get _mapController =>
+      _cameraController?.mapController ?? _localMapController;
 
   @override
   void initState() {
@@ -114,6 +125,27 @@ class _HeritageMapState extends State<HeritageMap> {
     if (widget.sites.length == 1) {
       _selectedSite = widget.sites.first;
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Adopt an externally-provided camera controller if one is in scope.
+    // This allows the navigation screen to share the same MapController
+    // state across screens.
+    _cameraController =
+        MapCameraController.maybeOf(context);
+  }
+
+  @override
+  void dispose() {
+    // Only dispose the local controller if we own it. If a shared one
+    // is in scope, the provider owns it.
+    if (_cameraController == null) {
+      _localMapController.dispose();
+    }
+    _locationService.dispose();
+    super.dispose();
   }
 
   @override
@@ -254,8 +286,18 @@ class _HeritageMapState extends State<HeritageMap> {
 
   void _selectSite(SiteModel site) {
     setState(() => _selectedSite = site);
-    _safeMove(LatLng(site.latitude, site.longitude), 16.5);
-    widget.onSiteTap?.call(site);
+    final target = LatLng(site.latitude, site.longitude);
+    final camera = _cameraController;
+    if (camera != null) {
+      camera.requestSelectSite(target, zoom: 16.5);
+    } else {
+      _safeMove(target, 16.5);
+    }
+    // Defer the callback so the controller can apply the visual
+    // transition before the parent rebuilds.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onSiteTap?.call(site);
+    });
   }
 
   @override
@@ -275,6 +317,12 @@ class _HeritageMapState extends State<HeritageMap> {
             maxZoom: AppConstants.stoneTownMaxZoom,
             onTap: _onMapTap,
             onMapReady: _onMapReady,
+            onPositionChanged: (camera, hasGesture) {
+              if (!hasGesture) return;
+              if (_cameraController == null) return;
+              if (_cameraController!.isSuppressingGesture) return;
+              _cameraController!.markUserGesture();
+            },
             interactionOptions: const InteractionOptions(
               flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
             ),
@@ -294,6 +342,14 @@ class _HeritageMapState extends State<HeritageMap> {
               attributions: const [
                 TextSourceAttribution('© OpenStreetMap contributors, © CARTO'),
               ],
+            ),
+            // Live scale bar — listens to the MapController and rebuilds
+            // whenever the camera zooms or pans. Positioned above the
+            // attribution row so both remain readable.
+            Positioned(
+              left: 12,
+              bottom: 28,
+              child: MapScaleBar(mapController: _mapController),
             ),
           ],
         ),
@@ -509,6 +565,7 @@ class _HeritagePin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pinColor = _getCategoryColor(context);
+    final shadowColor = context.semanticColors.shadow;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -527,13 +584,7 @@ class _HeritagePin extends StatelessWidget {
                 color: isSelected ? pinColor : Theme.of(context).colorScheme.outlineVariant,
                 width: isSelected ? 1.5 : 0.8,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: AppShadows.mapPinFor(shadowColor),
             ),
             constraints: BoxConstraints(maxWidth: isSelected ? 110 : 85),
             child: Text(
