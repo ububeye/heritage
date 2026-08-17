@@ -59,6 +59,71 @@ class TtsService {
   bool get isPlaying => _state == TtsState.playing;
   bool get isPremium => _isPremium;
 
+  // --- Session (generation) token --------------------------------------
+  //
+  // Customer-facing bug: pause / site-change could leave the previous
+  // session's callbacks (progress, completion, error) wired into the
+  // cubit *after* a new session had already started. The OLD callback
+  // would then fire for the NEW utterance and overwrite the new state
+  // — the bar would jump back to the old text's position, or the
+  // completion handler would recursively call playAudio on the old
+  // (now-gone) site, freezing the new bar.
+  //
+  // A monotonic session token fixes this without scattered boolean
+  // flags. Every "I have a new listener" call (startReportingPosition,
+  // setOnCompletion) captures the *current* token at registration
+  // time. When the callback fires it compares its captured token to
+  // the live token — if they differ, the session has been invalidated
+  // (stop, pause, new speak, dispose) and the callback bails.
+  //
+  // The token is also bumped by `invalidateSession()`, which is the
+  // single entry point the cubit uses to say "previous session is dead,
+  // forget everything you know about it." Bumping the token here is
+  // what guarantees that a stale callback cannot race past the
+  // stop+reporter-clear sequence.
+  int _sessionToken = 0;
+
+  /// Current session token. Bumped on every state transition that
+  /// invalidates in-flight callbacks (stop, pause, new speak, dispose).
+  /// Callers that want to detect a callback that has been superseded
+  /// call [beginSession] at registration time and compare the returned
+  /// value to this getter when the callback fires.
+  int get currentSessionToken => _sessionToken;
+
+  /// Start a new session and return the token that callbacks should
+  /// capture. Call this once at the top of every play / resume / pause
+  /// branch — the returned token is the one the captured callbacks
+  /// will compare against.
+  int beginSession() {
+    _sessionToken++;
+    return _sessionToken;
+  }
+
+  /// Invalidate the current session. Bumps the token, clears the
+  /// active reporter, the completion callback, the error callback, the
+  /// resume point, and the start-time stamp. The engine itself is
+  /// stopped asynchronously. After this call, no previous callback
+  /// can modify shared state.
+  ///
+  /// This is the single entry point the cubit should use to say
+  /// "the previous audio session is dead." Do not call
+  /// [stopReportingPosition] + [setOnCompletion] + [stop] piecemeal —
+  /// that leaves room for a stale callback to slip between the
+  /// teardown steps.
+  void invalidateSession() {
+    _sessionToken++;
+    _activeFingerprint = null;
+    _activeSpokenText = null;
+    _activeOnPosition = null;
+    _activeResumeBaseline = 0;
+    _lastObservedOffset = 0;
+    _lastObservationMs = 0;
+    _firstObservationSinceStart = true;
+    _onCompletion = null;
+    _onError = null;
+    _speakStartMs = null;
+  }
+
   // --- Progress reporting (replaces the cubit's local Timer) ----------
   //
   // flutter_tts's setProgressHandler fires (text, start, end, word) as
@@ -88,8 +153,22 @@ class TtsService {
 
   /// Install a callback to receive native-engine error messages. Replaces
   /// any previously-installed callback; pass null to detach.
+  ///
+  /// The callback is wrapped so its invocation is dropped if the session
+  /// has been invalidated since this call (e.g. the user navigated
+  /// between sites, paused, or stopped). This is the single mechanism
+  /// that prevents a stale error event from leaking into the new
+  /// site's UI.
   void setOnError(ValueChanged<String>? onError) {
-    _onError = onError;
+    if (onError == null) {
+      _onError = null;
+      return;
+    }
+    final myToken = _sessionToken;
+    _onError = (msg) {
+      if (myToken != _sessionToken) return;
+      onError(msg);
+    };
   }
 
   // --- Real-duration measurement (Fix 1) ------------------------------
@@ -115,8 +194,22 @@ class TtsService {
   ValueChanged<Duration>? _onCompletion;
 
   /// Install a completion callback. Pass null to detach.
+  ///
+  /// The callback is wrapped so its invocation is dropped if the session
+  /// has moved on since this call — without this, a stale completion
+  /// from a previous utterance could fire *after* a new `playAudio` has
+  /// registered its own callback, recursively call `playAudio` for the
+  /// old site, and freeze the new bar.
   void setOnCompletion(ValueChanged<Duration>? onCompletion) {
-    _onCompletion = onCompletion;
+    if (onCompletion == null) {
+      _onCompletion = null;
+      return;
+    }
+    final myToken = _sessionToken;
+    _onCompletion = (realDuration) {
+      if (myToken != _sessionToken) return;
+      onCompletion(realDuration);
+    };
   }
 
   // --------------------------------------------------------------------
@@ -154,7 +247,10 @@ class TtsService {
       // Measure how long the utterance actually took and report it.
       // We only fire _onCompletion when the engine reached the natural
       // end of text — not on stop() or cancel() — so the cubit can
-      // safely trigger replay without a double-fire race.
+      // safely trigger replay without a double-fire race. The
+      // session-token gate inside setOnCompletion is the second line
+      // of defense against a stop()/new-play() race that could let
+      // a stale completion fire into a new session.
       final startMs = _speakStartMs;
       _speakStartMs = null;
       if (startMs != null) {
@@ -169,7 +265,11 @@ class TtsService {
       _state = TtsState.stopped;
       // Cancel is triggered by stop() or a new speak() — do NOT fire
       // the completion callback here; we don't want a replay triggered
-      // by a user-initiated stop.
+      // by a user-initiated stop. We do NOT invalidate the session
+      // here — the cubit owns that decision (see stop()/pause()/
+      // playAudio() in SiteDetailCubit). InvalidateSession() would
+      // observe in-progress teardown and could double-bump the token,
+      // which is harmless but useless.
       _speakStartMs = null;
     });
 
@@ -181,6 +281,8 @@ class TtsService {
       // Empty messages (some platforms fire a blank error on cancel)
       // are suppressed so the cubit doesn't show an empty SnackBar.
       // The plugin types this parameter as dynamic; coerce defensively.
+      // The session-token gate inside setOnError stops a stale error
+      // from a previous utterance leaking into the new site's UI.
       final raw = msg is String ? msg : '';
       final trimmed = raw.trim();
       if (trimmed.isNotEmpty) {
@@ -464,6 +566,12 @@ class TtsService {
     // (which flutter_tts fires on stop()) does not accidentally compute
     // a bogus duration and trigger replay.
     _speakStartMs = null;
+    // Invalidate the session BEFORE the engine call so any
+    // completion callbacks that race the await are dropped by the
+    // token guard. The cancel handler installs session teardown
+    // steps (state -> stopped), but the session token is the
+    // single source of truth for "is this callback still alive".
+    invalidateSession();
     await _flutterTts.stop();
     _state = TtsState.stopped;
   }
@@ -563,7 +671,6 @@ class TtsService {
   }) {
     _activeFingerprint = _fingerprint(spokenText);
     _activeSpokenText = spokenText;
-    _activeOnPosition = onPosition;
     _activeResumeBaseline = resumeBaseline;
     // Reset the first-observation latch so the next progress callback
     // is treated as the first sample (no calibration update).
@@ -586,6 +693,18 @@ class TtsService {
       _lastObservationMs = 0;
       _msPerChar = 80; // 12.5 chars/sec seed until first callback refines it
     }
+    // Capture the session token at registration time. The wrapper
+    // closure gates the call on token equality — a stale progress
+    // callback from a previous session is dropped before it can
+    // overwrite the new bar's position. The fingerprint guard
+    // (above) is the first line of defense; the token guard is
+    // the second, in case the engine accidentally emits a callback
+    // whose text still fingerprints-matches the new chunk.
+    final myToken = _sessionToken;
+    _activeOnPosition = (pos) {
+      if (myToken != _sessionToken) return;
+      onPosition(pos);
+    };
   }
 
   /// Stop forwarding; safe to call multiple times or without a prior
@@ -736,6 +855,12 @@ class TtsService {
     // Clear _speakStartMs before stop() so the cancel handler doesn't
     // try to compute a duration from a now-stale start time.
     _speakStartMs = null;
+    // Invalidate the session BEFORE the engine call so any late
+    // completion callbacks from the cancelled utterance are dropped by
+    // the token guard. The cubit will start a fresh session in
+    // resumeAudio() by calling beginSession() via either startReporting
+    // or a new speak().
+    invalidateSession();
     await _flutterTts.stop();
     _state = TtsState.paused;
     if (fp == null || text == null || captured <= 0) return null;
@@ -775,6 +900,10 @@ class TtsService {
   }
 
   void dispose() {
+    // Invalidate the session so any in-flight callback (e.g. a
+    // completion from a torn-down parent) is dropped on the floor
+    // before the engine is disposed.
+    invalidateSession();
     _flutterTts.stop();
   }
 }

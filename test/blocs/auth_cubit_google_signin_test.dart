@@ -168,6 +168,22 @@ class _StubTtsService implements TtsService {
   @override
   void setOnError(ValueChanged<String>? onError) {}
 
+  // Session token stubs — the auth flow never exercises the audio
+  // lifecycle, so these are pure no-ops.
+  int _sessionToken = 0;
+
+  @override
+  int get currentSessionToken => _sessionToken;
+
+  @override
+  int beginSession() {
+    _sessionToken++;
+    return _sessionToken;
+  }
+
+  @override
+  void invalidateSession() {}
+
   @override
   dynamic noSuchMethod(Invocation invocation) {
     throw UnimplementedError(

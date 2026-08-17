@@ -39,6 +39,25 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
+    // CRITICAL: Stop any in-flight audio SYNCHRONOUSLY before the new
+    // screen's first frame. Without this, the customer's old site's
+    // audio keeps speaking for the full duration of the new screen's
+    // route transition + first-frame paint — sometimes several seconds
+    // — because the async `loadSite` (scheduled via addPostFrameCallback
+    // below) is the only other code path that would stop the engine.
+    //
+    // The cubit is provided at the root, so `context.read` is safe
+    // here. We fire-and-forget the future; `stopAudio` is idempotent
+    // and emits a fresh AudioState so the bottom-sheet bar pins to
+    // "stopped" before the first frame paints.
+    try {
+      context.read<SiteDetailCubit>().stopAudio();
+    } catch (_) {
+      // Best-effort — if the provider isn't in scope yet (cold
+      // launch, very first detail screen ever), the post-frame
+      // loadSite below will still tear down audio via its own
+      // invalidateSession() call.
+    }
     // Defer the load until after the first frame so the InheritedWidget
     // tree (and SiteDetailCubit itself) is settled. initState runs before
     // descendants finish mounting; reading providers here has historically

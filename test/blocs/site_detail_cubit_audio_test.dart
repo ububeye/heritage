@@ -91,6 +91,28 @@ class _FakeTtsService implements TtsService {
   @override
   void setOnError(ValueChanged<String>? onError) {}
 
+  // --- Session token support (Bug 1 + Bug 2 architecture fix) ---
+  int _sessionToken = 0;
+  int beginSessionCalls = 0;
+  int invalidateSessionCalls = 0;
+
+  @override
+  int get currentSessionToken => _sessionToken;
+
+  @override
+  int beginSession() {
+    _sessionToken++;
+    beginSessionCalls++;
+    return _sessionToken;
+  }
+
+  @override
+  void invalidateSession() {
+    _sessionToken++;
+    invalidateSessionCalls++;
+    onCompletionCallback = null;
+  }
+
   @override
   void setPremium(bool isPremium) {
     setPremiumCalls++;
@@ -248,6 +270,22 @@ class _FakeLocalizationCubit extends LocalizationCubit {
 class _NoopTtsService implements TtsService {
   @override
   void setOnError(ValueChanged<String>? onError) {}
+
+  // Session token stubs — these are no-ops because the auth flow
+  // never actually exercises the audio lifecycle.
+  int _sessionToken = 0;
+
+  @override
+  int get currentSessionToken => _sessionToken;
+
+  @override
+  int beginSession() {
+    _sessionToken++;
+    return _sessionToken;
+  }
+
+  @override
+  void invalidateSession() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) {

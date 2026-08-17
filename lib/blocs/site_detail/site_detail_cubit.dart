@@ -54,11 +54,18 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     final myId = ++_loadSequenceId;
 
     // Immediately stop and invalidate any previous audio session so that
-    // audio from site A never leaks or continues playing when moving to site B.
-    _ttsService.stopReportingPosition();
+    // audio from site A never leaks or continues playing when moving to
+    // site B. `invalidateSession` is the single source of truth here:
+    // it bumps the engine's session token (so any in-flight progress /
+    // completion / error callbacks for the previous utterance are
+    // dropped on the floor), clears the active reporter, and detaches
+    // the completion callback. The engine `stop()` call that follows
+    // fires the cancel handler — by that point the token has already
+    // been bumped, so the cancel handler cannot accidentally re-trigger
+    // a replay.
+    _ttsService.invalidateSession();
     _stopPositionTicker();
-    _ttsService.setOnCompletion(null);
-    _ttsService.stop();
+    await _ttsService.stop();
     ++_audioOpSeq;
 
     emit(
@@ -225,10 +232,20 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     final activeSiteId = state.site!.id;
     final opId = ++_audioOpSeq;
 
+    // Begin a fresh TTS session BEFORE doing any work. This bumps the
+    // service's session token so any in-flight progress / completion /
+    // error callbacks from the previous utterance (or from a previous
+    // site) are dropped by the token guard wrapped around each
+    // listener. The token is captured by the wrappers inside
+    // startReportingPosition / setOnCompletion below — those wrappers
+    // compare the captured token to the live token and bail when they
+    // differ.
+    _ttsService.beginSession();
+    // Drop the previous reporter + completion callback eagerly. The
+    // beginSession() bump already guards the wrapped closures, but
+    // clearing the fields prevents the reporter from emitting one
+    // last position update before the new session installs.
     _ttsService.stopReportingPosition();
-    // Detach any previous completion callback before we re-register it
-    // below. This prevents a completion from a previous (now-cancelled)
-    // utterance from triggering a stale replay on a different site.
     _ttsService.setOnCompletion(null);
     _ttsService.setPremium(isPremium);
     final text = state.site!.getDescription(languageCode);
@@ -317,6 +334,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       // MM:SS on every subsequent loop. Premium users get an automatic
       // replay; free-tier users get the existing preview-ended SnackBar
       // (which is already fired by the progress reporter / ticker above).
+      //
+      // The closure is wrapped by setOnCompletion() with a session
+      // token check — if a previous session's completion handler races
+      // through here (e.g. site A → site B before A's completion fired),
+      // the wrapper drops it on the floor.
       _ttsService.setOnCompletion((realDuration) {
         if (isClosed || opId != _audioOpSeq) return;
         final current = state.audioState;
@@ -351,9 +373,8 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
       });
     } catch (e) {
       if (isClosed || opId != _audioOpSeq) return;
-      _ttsService.stopReportingPosition();
+      _ttsService.invalidateSession();
       _stopPositionTicker();
-      _ttsService.setOnCompletion(null);
       emit(
         state.copyWith(
           audioState: state.audioState.copyWith(
@@ -378,6 +399,12 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     // resume() method, so both platforms use the stop-and-respeak
     // approach: the engine is stopped here and re-started from the
     // captured offset in resumeAudio() via resumeFrom().
+    //
+    // pauseForRestart() bumps the session token internally. The
+    // resumeAudio() path will begin a fresh session before installing
+    // its reporter — the token gate prevents the PRE-pause completion
+    // callback (if it races past our await) from firing into the new
+    // session.
     final resumePoint = await _ttsService.pauseForRestart();
     if (isClosed || opId != _audioOpSeq) return;
     emit(
@@ -414,6 +441,14 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     final suffix = point.text.substring(point.charOffset);
     final langCode = audio.languageCode;
     final isPremium = audio.maxDurationSeconds == null;
+
+    // Begin a fresh TTS session so the new reporter and completion
+    // callback capture the post-pause token. pauseForRestart() bumped
+    // the token at pause time; the beginSession() here produces a new
+    // value that the wrapped closures will compare against. A
+    // late-arriving completion from the pre-pause session is dropped
+    // by the wrapper's token mismatch.
+    _ttsService.beginSession();
 
     // Reset the end-of-chunk latch so the resume is allowed to signal completion once.
     _endOfChunkSignaled = false;
@@ -513,10 +548,12 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     _ttsService.stopReportingPosition();
     _stopPositionTicker();
     _endOfChunkSignaled = false;
-    // Detach the completion callback BEFORE stop() so the engine's
-    // cancel/completion event (which flutter_tts fires immediately on
-    // stop) cannot trigger an unwanted replay.
-    _ttsService.setOnCompletion(null);
+    // Invalidate the session BEFORE the engine stop so any in-flight
+    // completion callback for the previous utterance is dropped by the
+    // token guard. The cancel handler then fires on the engine stop,
+    // but by that point _onCompletion is already null and the token
+    // has already been bumped — there's no path for a replay to fire.
+    _ttsService.invalidateSession();
     await _ttsService.stop();
     if (isClosed || opId != _audioOpSeq) return;
     emit(state.copyWith(audioState: const AudioState()));
@@ -525,9 +562,8 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   @override
   Future<void> close() {
     ++_audioOpSeq;
-    _ttsService.stopReportingPosition();
+    _ttsService.invalidateSession();
     _stopPositionTicker();
-    _ttsService.setOnCompletion(null);
     _ttsService.stop();
     return super.close();
   }
