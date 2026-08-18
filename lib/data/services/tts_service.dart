@@ -122,6 +122,13 @@ class TtsService {
     _onCompletion = null;
     _onError = null;
     _speakStartMs = null;
+    // NB: we deliberately do NOT clear `_lastOffsetForPause` /
+    // `_lastSpokenTextForPause` / `_lastFingerprintForPause` here.
+    // `pauseForRestart` invokes `invalidateSession` BEFORE reading the
+    // snapshot, so the snapshot must survive this call. The snapshot
+    // is cleared by `pauseForRestart` itself after capture, and by the
+    // next `startReportingPosition` (which re-seeds it for the new
+    // chunk).
   }
 
   // --- Progress reporting (replaces the cubit's local Timer) ----------
@@ -672,6 +679,19 @@ class TtsService {
     _activeFingerprint = _fingerprint(spokenText);
     _activeSpokenText = spokenText;
     _activeResumeBaseline = resumeBaseline;
+    // Stamp the time at which the reporter was installed. The
+    // wall-clock fallback in [pauseForRestart] uses this so a
+    // very-early pause (before any progress callback) still gets a
+    // plausible offset rather than reporting 0 / starting over.
+    _reportingStartedMs = DateTime.now().millisecondsSinceEpoch;
+    // Seed the pause snapshot with the chunk that the engine is about
+    // to speak, so [pauseForRestart] can return a valid resume point
+    // even if no progress callback has fired yet (e.g. user pauses
+    // within ~50ms of starting). The snapshot is updated by every
+    // subsequent [_onProgress] call.
+    _lastFingerprintForPause = _activeFingerprint;
+    _lastSpokenTextForPause = spokenText;
+    _lastOffsetForPause = 0;
     // Reset the first-observation latch so the next progress callback
     // is treated as the first sample (no calibration update).
     _firstObservationSinceStart = true;
@@ -715,6 +735,12 @@ class TtsService {
     _activeSpokenText = null;
     _activeOnPosition = null;
     _activeResumeBaseline = 0;
+    // We do NOT clear `_lastOffsetForPause` etc. here — the pause
+    // snapshot needs to survive `stopReportingPosition` so that
+    // `pauseForRestart` (called immediately after by the cubit) can
+    // read a valid resume point. The snapshot is cleared by the
+    // next `startReportingPosition` (which re-seeds it) or by a
+    // successful `pauseForRestart` capture.
   }
 
   /// Re-install the progress reporter after an Android resume. The
@@ -763,7 +789,12 @@ class TtsService {
       return; // stale callback from a previous speak()
     }
     if (end <= 0) return;
-
+    // Record the latest observed offset/text/fingerprint so a later
+    // [pauseForRestart] (which may run AFTER [stopReportingPosition]
+    // has cleared the live fields) can still recover the resume point.
+    _lastOffsetForPause = end;
+    _lastSpokenTextForPause = text;
+    _lastFingerprintForPause = fp;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final isFirst = _firstObservationSinceStart;
     final deltaOffset = end - _lastObservedOffset;
@@ -823,6 +854,16 @@ class TtsService {
   /// update on the first sample and emit the position only.
   bool _firstObservationSinceStart = true;
 
+  /// Wall-clock timestamp at which the most recent
+  /// `startReportingPosition` was called. Used by [pauseForRestart]'s
+  /// wall-clock fallback when no progress callback has fired yet so
+  /// the very-early pause case still produces a non-zero offset
+  /// rather than restarting from the absolute beginning. Mirrors
+  /// `_speakStartMs` but is independent of `_flutterTts.speak`
+  /// having run — startReportingPosition is the contract point that
+  /// the cubit actually waits for.
+  int? _reportingStartedMs;
+
   /// Current self-calibrated ms/char rate. Exposed so the cubit can
   /// compute a baseline-adjusted position synchronously on Android
   /// resume (before the first progress callback fires). Falls back to
@@ -849,9 +890,42 @@ class TtsService {
     // engine would stay paused forever. Using stop() here on both
     // platforms is safe and ensures resumeFrom() can re-speak the
     // suffix correctly.
-    final captured = _lastObservedOffset;
-    final fp = _activeFingerprint;
-    final text = _activeSpokenText;
+    //
+    // We snapshot the active fields BEFORE clearing them. This call is
+    // safe even if the caller already invoked `stopReportingPosition`
+    // (which clears those fields to null) — we always read from the
+    // snapshot, which is updated by [snapshotForPause] and persists
+    // across `stopReportingPosition` / `invalidateSession` until the
+    // next pause captures it.
+    final captured = _lastOffsetForPause > 0 ? _lastOffsetForPause : _lastObservedOffset;
+    final text = _lastSpokenTextForPause ?? _activeSpokenText;
+    final fp = _lastFingerprintForPause ?? _activeFingerprint;
+    // If the user paused before the engine reported a single progress
+    // callback, the snapshot offset is 0 and we'd otherwise return
+    // null (falling back to play-from-the-start in the cubit). The
+    // engine IS speaking — synthesize an offset from wall-clock so a
+    // very-early pause still resumes near the start instead of from
+    // the absolute beginning.
+    int offsetToReturn = captured;
+    if (offsetToReturn <= 0 &&
+        text != null &&
+        fp != null &&
+        _msPerChar > 0) {
+      // Use whichever of the speak-start / reporter-start timestamps
+      // is more recent so the wall-clock estimate reflects actual
+      // elapsed playback time. The reporter-start stamp is set even
+      // if `_flutterTts.speak` hasn't been called yet (the cubit
+      // installs the reporter before speaking), giving us a usable
+      // baseline in the very-early pause case.
+      final startMs = _speakStartMs ?? _reportingStartedMs;
+      if (startMs != null) {
+        final elapsedMs = DateTime.now().millisecondsSinceEpoch - startMs;
+        if (elapsedMs > 0) {
+          final estimated = (elapsedMs / _msPerChar).round();
+          offsetToReturn = estimated.clamp(1, text.length - 1);
+        }
+      }
+    }
     // Clear _speakStartMs before stop() so the cancel handler doesn't
     // try to compute a duration from a now-stale start time.
     _speakStartMs = null;
@@ -863,9 +937,27 @@ class TtsService {
     invalidateSession();
     await _flutterTts.stop();
     _state = TtsState.paused;
-    if (fp == null || text == null || captured <= 0) return null;
-    return PausedResumePoint(text: text, charOffset: captured);
+    // Clear the snapshot AFTER capturing so a subsequent pause on a
+    // fresh play starts clean. We capture *before* invalidateSession()
+    // wipes the regular fields, but the snapshot stays live through
+    // the wipe so the capture is order-independent.
+    _lastOffsetForPause = 0;
+    _lastSpokenTextForPause = null;
+    _lastFingerprintForPause = null;
+    if (fp == null || text == null || offsetToReturn <= 0) return null;
+    return PausedResumePoint(text: text, charOffset: offsetToReturn);
   }
+
+  /// Snapshot of the most recent observed char offset, taken for use by
+  /// [pauseForRestart]. We keep this in addition to the live
+  /// [_lastObservedOffset] because [stopReportingPosition] (called by
+  /// the cubit before pausing) clears the live fields to null — without
+  /// the snapshot, the pause would always return null. Updated every
+  /// time the engine reports progress. Reset on every successful
+  /// [pauseForRestart] capture and on every new [startReportingPosition].
+  int _lastOffsetForPause = 0;
+  String? _lastSpokenTextForPause;
+  String? _lastFingerprintForPause;
 
   /// Re-speak the suffix of [point.text] starting at [point.charOffset]
   /// and re-install the progress reporter with the matching baseline so

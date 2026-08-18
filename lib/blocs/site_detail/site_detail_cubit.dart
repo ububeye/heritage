@@ -391,8 +391,6 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   Future<void> pauseAudio() async {
     final opId = ++_audioOpSeq;
     final activeSiteId = state.site?.id;
-    _ttsService.stopReportingPosition();
-    _stopPositionTicker();
     if (isClosed) return;
     // pauseForRestart() stops the engine and snapshots the current
     // char offset on both iOS and Android. flutter_tts v4.x has no
@@ -405,8 +403,19 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     // its reporter — the token gate prevents the PRE-pause completion
     // callback (if it races past our await) from firing into the new
     // session.
+    //
+    // We run pauseForRestart BEFORE tearing down the reporter. The
+    // earlier ordering (stopReporter → pauseForRestart) cleared the
+    // active fields to null before the snapshot could be captured,
+    // which made every pause return null and caused every resume to
+    // fall back to playAudio — i.e. the customer-visible
+    // "starts from beginning" bug. pauseForRestart now reads from a
+    // dedicated snapshot that survives stopReportingPosition, but we
+    // also reorder for belt-and-braces.
     final resumePoint = await _ttsService.pauseForRestart();
     if (isClosed || opId != _audioOpSeq) return;
+    _ttsService.stopReportingPosition();
+    _stopPositionTicker();
     emit(
       state.copyWith(
         audioState: state.audioState.copyWith(
