@@ -7,6 +7,7 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/premium/premium_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../data/services/shared_prefs_service.dart';
 import 'register_screen.dart';
 import 'premium_offer_screen.dart';
 import 'home_screen.dart';
@@ -81,7 +82,13 @@ class _LoginScreenState extends State<LoginScreen>
 
           // Non-admin users - check premium offer
           final premiumCubit = context.read<PremiumCubit>();
-          if (premiumCubit.state.showPremiumOffer) {
+          // The post-login value-prop screen only appears for users who
+          // have not yet heard any audio preview. Once they have, the
+          // gated flag persists across sign-out by design.
+          final showOffer =
+              premiumCubit.state.showPremiumOffer &&
+              !SharedPrefsService.instance.audioPreviewedAtLeastOnce;
+          if (showOffer) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
             );

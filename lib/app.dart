@@ -29,6 +29,7 @@ import 'ui/screens/welcome_screen.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/favorites_screen.dart';
 import 'ui/screens/admin/admin_shell.dart';
+import 'ui/screens/upgrade_screen.dart';
 
 // Top-level so StoneTownApp can stay const. The key is stable for the
 // lifetime of the process — there's only one MaterialApp at the root.
@@ -179,7 +180,22 @@ class _StoneTownAppState extends State<StoneTownApp> {
                   content: Text(
                     '${locState.ttsPreviewEndedAt}-second preview ended — upgrade for the full tour.',
                   ),
-                  duration: const Duration(seconds: 5),
+                  // The Upgrade action turns the preview-ended notice
+                  // from a passive message into the highest-converting
+                  // surface for the paywall. Before this, the user had
+                  // to find the persistent UpgradeBanner on the detail
+                  // screen by eye — which most didn't.
+                  action: SnackBarAction(
+                    label: 'Upgrade',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const UpgradeScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  duration: const Duration(seconds: 6),
                 ),
               );
             locCubit.clearTtsPreviewEnded();

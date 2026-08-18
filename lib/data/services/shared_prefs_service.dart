@@ -96,6 +96,20 @@ class SharedPrefsService {
     await _preferences.setBool(AppConstants.keyIsPremiumDemo, value);
   }
 
+  // First-audio-played flag. Login / Register gates read this to
+  // suppress the post-login value-prop screen for users who already
+  // know the audio exists. Persists across sign-out by design — this
+  // is a per-device flag, not a per-account flag.
+  bool get audioPreviewedAtLeastOnce =>
+      _preferences.getBool(AppConstants.keyAudioPreviewedAtLeastOnce) ?? false;
+
+  Future<void> setAudioPreviewedAtLeastOnce(bool value) async {
+    await _preferences.setBool(
+      AppConstants.keyAudioPreviewedAtLeastOnce,
+      value,
+    );
+  }
+
   // User ID
   String? get userId => _preferences.getString(AppConstants.keyUserId);
 

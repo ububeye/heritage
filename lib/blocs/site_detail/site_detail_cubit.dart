@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/audio_state.dart';
 import '../../data/repositories/site_repository.dart';
+import '../../data/services/shared_prefs_service.dart';
 import '../../data/services/tts_service.dart';
 import '../localization/localization_cubit.dart';
 import 'site_detail_state.dart';
@@ -12,9 +13,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
     SiteRepository? siteRepository,
     TtsService? ttsService,
     LocalizationCubit? localizationCubit,
+    SharedPrefsService? prefs,
   }) : _siteRepository = siteRepository ?? SiteRepository(),
        _ttsService = ttsService ?? TtsService(),
        _localizationCubit = localizationCubit,
+       _prefs = prefs ?? SharedPrefsService.instance,
        super(const SiteDetailState());
   final SiteRepository _siteRepository;
   final TtsService _ttsService;
@@ -23,6 +26,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
   /// fallbacks discovered during playback through the same SnackBar
   /// channel as UI-language changes. May be null in unit tests.
   final LocalizationCubit? _localizationCubit;
+
+  /// Tracks whether the user has heard at least one audio preview.
+  /// Written the first time `playAudio` succeeds so the post-login
+  /// value-prop screen is skipped on subsequent sign-ins.
+  final SharedPrefsService _prefs;
 
   /// Monotonic request counter for site loads. Bumped before every
   /// `loadSite` await so a slow first load doesn't overwrite the result
@@ -295,6 +303,15 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
         languageCode: languageCode,
         precomputedChunk: chunk,
       );
+
+      // Mark that the user has now heard at least one audio preview.
+      // The post-login value-prop screen reads this on the next sign-in
+      // to skip the paywall. Fire-and-forget — we don't want to delay
+      // the first-speak emission waiting for SharedPreferences.
+      // `unawaited` is from `dart:async` (already imported above).
+      if (!_prefs.audioPreviewedAtLeastOnce) {
+        unawaited(_prefs.setAudioPreviewedAtLeastOnce(true));
+      }
 
       if (isClosed || opId != _audioOpSeq) return;
       emit(

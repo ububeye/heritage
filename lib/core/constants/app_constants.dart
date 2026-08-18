@@ -188,6 +188,11 @@ class AppConstants {
   static const String keyItinerary = 'itinerary';
   static const String keyShowPremiumOffer = 'show_premium_offer';
   static const String keyIsPremiumDemo = 'is_premium_demo';
+  /// Set to true once the user has heard at least one audio preview.
+  /// Used by login_screen / register_screen to skip the post-login
+  /// value-prop screen for users who already know the audio exists.
+  static const String keyAudioPreviewedAtLeastOnce =
+      'audio_previewed_at_least_once';
   static const String keyUserId = 'user_id';
   static const String keyFavorites = 'favorites';
   static const String keyMapProvider = 'map_provider'; // 'open' | 'google'
