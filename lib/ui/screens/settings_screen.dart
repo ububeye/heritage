@@ -13,7 +13,6 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
-import '../../blocs/runtime_config/map_provider_cubit.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/theme/theme_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
@@ -29,6 +28,14 @@ import 'upgrade_screen.dart';
 import 'user_profile_screen.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+/// Recipient for "Report a problem" mailto links. Configured at build time via
+/// `--dart-define=SUPPORT_EMAIL=help@example.com`. When empty the tile
+/// surfaces an in-app dialog instead of attempting a silent mailto.
+const String kSupportEmail = String.fromEnvironment(
+  'SUPPORT_EMAIL',
+  defaultValue: '',
+);
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -37,13 +44,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  /// Maps a "minutes-from-midnight" int to "HH:mm" for display.
-  static String _formatMinutes(int minutes) {
-    final h = (minutes ~/ 60).toString().padLeft(2, '0');
-    final m = (minutes % 60).toString().padLeft(2, '0');
-    return '$h:$m';
-  }
-
   String _tr(LocalizationState state, String key) =>
       state.translations[key] ?? key;
 
@@ -59,7 +59,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 authState: authState,
                 locState: locState,
                 tr: _tr,
-                formatMinutes: _formatMinutes,
               );
             },
           );
@@ -74,12 +73,10 @@ class _SettingsBody extends StatelessWidget {
     required this.authState,
     required this.locState,
     required this.tr,
-    required this.formatMinutes,
   });
   final AuthState authState;
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
-  final String Function(int) formatMinutes;
 
   @override
   Widget build(BuildContext context) {
@@ -113,8 +110,6 @@ class _SettingsBody extends StatelessWidget {
               SettingsCard(
                 children: const [
                   _ThemeTile(),
-                  SettingsDivider(),
-                  _MapProviderTile(),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -128,6 +123,8 @@ class _SettingsBody extends StatelessWidget {
                     iconColor: context.semanticColors.info,
                     code: locState.currentLanguage,
                     items: AppConstants.uiLanguages,
+                    titleKey: 'app_language',
+                    subtitleKey: 'app_language_subtitle',
                     onChanged: (value) {
                       if (value != null) {
                         context.read<LocalizationCubit>().setLanguage(value);
@@ -144,6 +141,8 @@ class _SettingsBody extends StatelessWidget {
                             ? AppConstants.ttsLanguages
                             : AppConstants.freeTtsLanguages,
                     enabled: authState.isPremium,
+                    titleKey: 'audio_language',
+                    subtitleKey: 'audio_language_subtitle',
                     onChanged: (value) {
                       if (value == null) return;
                       if (!authState.isPremium) {
@@ -167,8 +166,6 @@ class _SettingsBody extends StatelessWidget {
               SettingsCard(
                 children: const [
                   _ClearMapCacheTile(),
-                  SettingsDivider(),
-                  _OfflineDataTile(),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -185,8 +182,6 @@ class _SettingsBody extends StatelessWidget {
                   _VersionTile(),
                   SettingsDivider(),
                   _OpenSourceLicensesTile(),
-                  SettingsDivider(),
-                  _PrivacyAndDataTile(),
                   SettingsDivider(),
                   _ReportAProblemTile(),
                 ],
@@ -354,22 +349,26 @@ class _ProfileHeroAppBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              OutlinedButton.icon(
-                onPressed:
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const UserProfileScreen(),
+              // Only show the Edit button for authed users — for guests
+              // the row below ("Sign in") is the entry point, and the
+              // Edit button would silently push an empty profile.
+              if (authState.isAuthenticated)
+                OutlinedButton.icon(
+                  onPressed:
+                      () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const UserProfileScreen(),
+                        ),
                       ),
+                  icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 16),
+                  label: Text(tr(locState, 'edit_profile')),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
                     ),
-                icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 16),
-                label: Text(tr(locState, 'edit_profile')),
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -420,37 +419,44 @@ class _AccountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isAuthed = authState.isAuthenticated;
     final email = authState.user?.email;
+    final loc = context.watch<LocalizationCubit>().state;
+    if (!isAuthed) {
+      // Guest row — no empty email, no premium/free subtitle. Push the
+      // user to the login screen rather than into an empty profile.
+      return SettingsTile(
+        icon: PhosphorIconsRegular.signIn,
+        iconColor: Theme.of(context).colorScheme.primary,
+        title: loc.translations['sign_in'] ?? 'Sign in',
+        subtitle: loc.translations['sign_in_subtitle'] ?? 'Sync your itinerary and favorites',
+        trailing: Icon(
+          PhosphorIconsRegular.caretRight,
+          size: 16,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+        onTap: () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+        },
+      );
+    }
     return SettingsTile(
-      icon: isAuthed ? PhosphorIconsRegular.user : PhosphorIconsRegular.user,
+      icon: PhosphorIconsRegular.userCircle,
       iconColor: Theme.of(context).colorScheme.primary,
-      title: email ?? '',
+      title: email ?? loc.translations['account'] ?? 'Account',
       subtitle:
           authState.isPremium
-              ? (context
-                      .watch<LocalizationCubit>()
-                      .state
-                      .translations['premium_badge'] ??
-                  'Premium')
-              : (context
-                      .watch<LocalizationCubit>()
-                      .state
-                      .translations['free_badge'] ??
-                  'Free'),
+              ? (loc.translations['premium_badge'] ?? 'Premium')
+              : (loc.translations['free_badge'] ?? 'Free'),
       trailing: Icon(
         PhosphorIconsRegular.caretRight,
         size: 16,
         color: Theme.of(context).colorScheme.outline,
       ),
       onTap: () {
-        if (!isAuthed) {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
-        } else {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const UserProfileScreen()));
-        }
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const UserProfileScreen()));
       },
     );
   }
@@ -588,7 +594,8 @@ class _PlaybackSpeedTileState extends State<_PlaybackSpeedTile> {
     await SharedPrefsService.instance.setPlaybackSpeed(v);
     // Apply immediately so the next TTS utterance in this session uses
     // the new rate without requiring an app restart. flutter_tts accepts
-    // values in [0.0, 1.0]; the saved value is already in that range.
+    // platform-defined ranges (Android typically [0.5, 2.0]); the value
+    // we pass was picked from _options, so it's already in range.
     if (!mounted) return;
     await context.read<SiteDetailCubit>().applyPlaybackSpeed(v);
   }
@@ -612,8 +619,16 @@ class _PlaybackSpeedTileState extends State<_PlaybackSpeedTile> {
   Widget build(BuildContext context) {
     final loc = context.watch<LocalizationCubit>().state;
     // Snap persisted value into the option list so the dropdown never
-    // shows a stale / unmapped selection on next launch.
-    final safeValue = _options.contains(_speed) ? _speed : 1.0;
+    // shows a stale / unmapped selection on next launch. Use a tolerance
+    // instead of `contains` because SharedPreferences round-tripping
+    // a double can land on 0.75 ± ε from the literal in _options.
+    double safeValue = 1.0;
+    for (final opt in _options) {
+      if ((_speed - opt).abs() < 1e-6) {
+        safeValue = opt;
+        break;
+      }
+    }
     return SettingsDropdownTile<double>(
       icon: Icons.speed,
       iconColor: context.semanticColors.warning,
@@ -677,63 +692,6 @@ class _ThemeTile extends StatelessWidget {
   }
 }
 
-class _MapProviderTile extends StatelessWidget {
-  const _MapProviderTile();
-
-  @override
-  Widget build(BuildContext context) {
-    // The tile owns a private [MapProviderCubit] instance so that toggling
-    // the selection rebuilds only the segmented control below, rather
-    // than the whole settings list. The cubit reads from / writes to the
-    // shared-prefs singleton, matching the behaviour before this work.
-    return BlocProvider<MapProviderCubit>(
-      create: (_) => MapProviderCubit(),
-      child: _MapProviderTileBody(),
-    );
-  }
-}
-
-class _MapProviderTileBody extends StatelessWidget {
-  const _MapProviderTileBody();
-
-  @override
-  Widget build(BuildContext context) {
-    final cubit = context.watch<MapProviderCubit>();
-    final available = cubit.available;
-    final googleEnabled = available.length > 1;
-    final loc = context.watch<LocalizationCubit>().state;
-    final values = available;
-    final options = googleEnabled
-        ? const ['OSM', 'Google']
-        : const ['OSM'];
-    return SettingsSegmentedTile<String>(
-      icon: Icons.public,
-      iconColor: Theme.of(context).colorScheme.primary,
-      options: options,
-      values: values,
-      value: cubit.state,
-      // When the Google API key isn't configured we still render the OSM
-      // segment but show a hint if the user tries to tap Google. Tapping
-      // a disabled option used to be silently swallowed, which made the
-      // segmented control look broken.
-      onChanged:
-          googleEnabled
-              ? cubit.select
-              : (v) {
-                ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      loc.translations['map_provider_google_disabled'] ??
-                          'Add a Google Maps API key in AppConstants to enable Google tiles',
-                    ),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-              },
-    );
-  }
-}
-
 // ── Languages dropdown tile (generic) ───────────────────────────────────
 
 class _LanguageDropdownTile extends StatelessWidget {
@@ -742,6 +700,8 @@ class _LanguageDropdownTile extends StatelessWidget {
     required this.iconColor,
     required this.code,
     required this.items,
+    required this.titleKey,
+    required this.subtitleKey,
     this.enabled = true,
     required this.onChanged,
   });
@@ -749,6 +709,11 @@ class _LanguageDropdownTile extends StatelessWidget {
   final Color iconColor;
   final String code;
   final List<String> items;
+  // Explicit translation keys so the title/subtitle can't get crossed
+  // when the items list happens to match AppConstants.uiLanguages by
+  // reference — the previous list-identity heuristic was fragile.
+  final String titleKey;
+  final String subtitleKey;
   final bool enabled;
   final ValueChanged<String?> onChanged;
 
@@ -758,14 +723,8 @@ class _LanguageDropdownTile extends StatelessWidget {
     return SettingsDropdownTile<String>(
       icon: icon,
       iconColor: iconColor,
-      title:
-          items == AppConstants.uiLanguages
-              ? (loc.translations['app_language'] ?? 'App language')
-              : (loc.translations['audio_language'] ?? 'Audio language'),
-      subtitle:
-          items == AppConstants.ttsLanguages
-              ? (loc.translations['benefit_audio_tours'] ?? 'Narration voice')
-              : (loc.translations['choose_language'] ?? ''),
+      title: loc.translations[titleKey] ?? titleKey,
+      subtitle: loc.translations[subtitleKey] ?? '',
       value: code,
       items: items,
       labels:
@@ -994,32 +953,6 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
   }
 }
 
-class _OfflineDataTile extends StatelessWidget {
-  const _OfflineDataTile();
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    return SettingsTile(
-      icon: Icons.cloud_off_outlined,
-      iconColor: Theme.of(context).colorScheme.primary,
-      title: loc.translations['offline_data'] ?? 'Offline data',
-      subtitle: loc.translations['offline_data_subtitle'] ?? '',
-      onTap: () {
-        final messenger = ScaffoldMessenger.maybeOf(context);
-        messenger?.showSnackBar(
-          SnackBar(
-            content: Text(
-              loc.translations['offline_data_subtitle'] ?? 'Coming soon',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      },
-    );
-  }
-}
-
 // ── About tiles ─────────────────────────────────────────────────────────
 
 class _VersionTile extends StatelessWidget {
@@ -1072,35 +1005,15 @@ class _OpenSourceLicensesTile extends StatelessWidget {
       icon: Icons.balance_outlined,
       iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['open_source_licenses'] ?? 'Open-source licenses',
-      onTap:
-          () => showLicensePage(
-            context: context,
-            applicationName: 'Stone Town Guide',
-            applicationVersion: '1.0.0',
-          ),
-    );
-  }
-}
-
-class _PrivacyAndDataTile extends StatelessWidget {
-  const _PrivacyAndDataTile();
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    return SettingsTile(
-      icon: Icons.privacy_tip_outlined,
-      iconColor: Theme.of(context).colorScheme.primary,
-      title: loc.translations['privacy_and_data'] ?? 'Privacy & data',
-      onTap: () {
-        // Stub — no privacy policy in this build. Surface a "coming
-        // soon" message rather than re-printing the title.
-        final messenger = ScaffoldMessenger.maybeOf(context);
-        messenger?.showSnackBar(
-          SnackBar(
-            content: Text(loc.translations['coming_soon'] ?? 'Coming soon'),
-            duration: const Duration(seconds: 2),
-          ),
+      onTap: () async {
+        // Pull the real version from PackageInfo instead of hard-coding
+        // '1.0.0' — the licenses page lists the app version + build.
+        final info = await PackageInfo.fromPlatform();
+        if (!context.mounted) return;
+        showLicensePage(
+          context: context,
+          applicationName: 'Stone Town Guide',
+          applicationVersion: '${info.version}+${info.buildNumber}',
         );
       },
     );
@@ -1112,6 +1025,31 @@ class _ReportAProblemTile extends StatelessWidget {
 
   Future<void> _launch(BuildContext context) async {
     final loc = context.read<LocalizationCubit>();
+    // Block mailto entirely when no support email is configured at
+    // build time. Shipping a dead 'support@example.com' address is
+    // worse than nothing — the user types a report and gets a bounce.
+    if (kSupportEmail.isEmpty) {
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(loc.state.translations['report_a_problem'] ?? 'Report a problem'),
+          content: Text(
+            loc.state.translations['support_email_not_configured'] ??
+                'Email support is not configured in this build. '
+                    'Please contact the developer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(loc.state.translations['ok'] ?? 'OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final info = await PackageInfo.fromPlatform();
     final subject =
         'Stone Town Guide ${info.version}+${info.buildNumber} — bug';
@@ -1119,7 +1057,7 @@ class _ReportAProblemTile extends StatelessWidget {
         'Locale: ${loc.state.currentLanguage}\nVersion: ${info.version}+${info.buildNumber}\n\n';
     final uri = Uri(
       scheme: 'mailto',
-      path: 'support@example.com',
+      path: kSupportEmail,
       queryParameters: {'subject': subject, 'body': body},
     );
 
@@ -1127,8 +1065,11 @@ class _ReportAProblemTile extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(
-          content: Text(loc.translate('error_generic')),
-          duration: const Duration(seconds: 2),
+          content: Text(
+            loc.state.translations['report_email_failed'] ??
+                'Could not open your email app — please email support directly.',
+          ),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -1176,10 +1117,10 @@ class _SignOutFooter extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             title: Text(
-              tr(locState, 'logout'),
+              tr(locState, 'sign_out'),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            content: Text('${tr(locState, 'logout')}?'),
+            content: Text(tr(locState, 'sign_out_confirm')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1194,7 +1135,7 @@ class _SignOutFooter extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.button),
                   ),
                 ),
-                child: Text(tr(locState, 'logout')),
+                child: Text(tr(locState, 'sign_out')),
               ),
             ],
           ),
@@ -1207,10 +1148,16 @@ class _SignOutFooter extends StatelessWidget {
     // a stale `authenticated` state when LoginScreen reads AuthState
     // during its first build.
     await authCubit.signOut();
-    navigator.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    // The async signOut may have torn down the widget tree; if the
+    // Settings screen is no longer mounted, Navigator state is gone
+    // and the AuthCubit listener will route us instead.
+    if (!context.mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    });
   }
 
   @override

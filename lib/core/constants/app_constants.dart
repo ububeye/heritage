@@ -195,7 +195,6 @@ class AppConstants {
       'audio_previewed_at_least_once';
   static const String keyUserId = 'user_id';
   static const String keyFavorites = 'favorites';
-  static const String keyMapProvider = 'map_provider'; // 'open' | 'google'
   static const String keyThemeMode =
       'theme_mode'; // 'light' | 'dark' | 'system'
   static const String keyArrivalAlertsEnabled = 'arrival_alerts_enabled';
@@ -215,10 +214,9 @@ class AppConstants {
   static const String keyOrsApiKey = 'ors_api_key';
   static const String keyMaintenanceMode = 'maintenance_mode';
 
-  // Map providers
-  /// Map provider identifiers. 'open' is the default key-free path.
-  static const String mapProviderOpen = 'open';
-  static const String mapProviderGoogle = 'google';
+  // Map providers (removed: the OSM-only build uses a hardcoded CARTO
+  // URL in the two TileLayer call-sites. Re-introduce here when a
+  // Google Maps API key is set up at build time.)
 
   // Firestore Collections
   static const String sitesCollection = 'sites';
