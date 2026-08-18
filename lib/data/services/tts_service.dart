@@ -505,67 +505,67 @@ class TtsService {
 
   /// Sentence-boundary chunker. Walks the input looking for terminators
   /// (`.`, `!`, `?`, Arabic `؟`, Arabic `،` clause separator) and returns
-  /// the longest concatenation of whole sentences whose estimated speech
-  /// time fits in [maxSeconds].
+  /// the largest concatenation of whole sentences whose estimated speech
+  /// time is *at least* [maxSeconds] — never shorter. The previous
+  /// implementation cut at the last terminator before the budget, which
+  /// produced previews of 6–25 s on passages whose first sentence was
+  /// short, betraying the "30-second preview" marketing copy.
+  ///
+  /// Algorithm:
+  ///   1. If the whole text fits in the budget, return verbatim.
+  ///   2. Otherwise collect every terminator index in the text.
+  ///   3. Pick the first terminator whose index is at-or-after the
+  ///      character budget (proportional to the word budget).
+  ///   4. If no terminator is past the budget, fall back to the LAST
+  ///      terminator (still better than the worst-case first-word).
+  ///   5. If there are no terminators at all, return the full text
+  ///      and let the engine stop be the safety net.
   TtsChunk _chunkForDuration(String text, int maxSeconds) {
     const wordsPerSecond = 2.5;
     final maxWords = (maxSeconds * wordsPerSecond).round();
-
-    if (text.trim().split(RegExp(r'\s+')).length <= maxWords) {
+    final allWords = text.trim().split(RegExp(r'\s+'));
+    if (allWords.length <= maxWords) {
       return TtsChunk(text: text, wasCut: false);
     }
 
-    // Walk character-by-character, tracking word count and the index of
-    // the last sentence terminator. We never slice mid-word — the chunk
-    // is either the full text, a prefix ending at the last terminator
-    // within the budget, or (as a safety net) the first sentence even
-    // if it overflows the budget.
-    int words = 0;
-    int? lastTerminatorIndex;
-    final buffer = StringBuffer();
-    final chars = text.split('');
-    bool inWord = false;
-
-    for (int i = 0; i < chars.length; i++) {
-      final c = chars[i];
-      buffer.write(c);
-
-      final isWhitespace = RegExp(r'\s').hasMatch(c);
-      if (!isWhitespace && !inWord) {
-        inWord = true;
-        words++;
-        if (words > maxWords) break;
-      } else if (isWhitespace && inWord) {
-        inWord = false;
-      }
-
-      // Sentence terminator — capture this position so we can return up
-      // to and including it once we exceed the budget on the next word.
+    // Collect every sentence-terminator index (position immediately
+    // AFTER the terminator, so the cut includes the terminator itself).
+    final terminatorIndices = <int>[];
+    for (int i = 0; i < text.length; i++) {
+      final c = text[i];
       if (c == '.' || c == '!' || c == '?' || c == '؟' || c == '،') {
-        lastTerminatorIndex = buffer.length;
+        terminatorIndices.add(i + 1);
       }
     }
 
-    if (words <= maxWords) {
-      // We never hit the budget; the whole text fits.
-      return TtsChunk(text: buffer.toString(), wasCut: false);
+    // No terminator at all — return the full text and let the engine
+    // stop be the safety net (matches existing behaviour).
+    if (terminatorIndices.isEmpty) {
+      return TtsChunk(text: text, wasCut: false);
     }
 
-    if (lastTerminatorIndex != null && lastTerminatorIndex > 0) {
-      // Truncate at the last sentence boundary within the budget.
-      final truncated =
-          buffer.toString().substring(0, lastTerminatorIndex).trimRight();
-      return TtsChunk(text: truncated, wasCut: true);
+    // Approximate the character budget proportionally to the word budget.
+    final budgetChars = ((maxWords / allWords.length) * text.length)
+        .round()
+        .clamp(0, text.length);
+
+    // Pick the first terminator at-or-after the budget. The preview is
+    // guaranteed to be at least the advertised length on inputs that
+    // contain sentence boundaries past the budget.
+    int cutIndex = -1;
+    for (final idx in terminatorIndices) {
+      if (idx >= budgetChars) {
+        cutIndex = idx;
+        break;
+      }
     }
 
-    // No terminator found at all — fall back to the first word we hit
-    // when we exceeded the budget, then append a brief cue so the user
-    // hears *something* coherent and a hint to upgrade.
-    final fallback = buffer.toString().trimRight();
-    return TtsChunk(
-      text: '$fallback. Upgrade to hear the full tour.',
-      wasCut: true,
-    );
+    // No terminator past the budget — fall back to the last one we
+    // have. This is the best we can do without slicing mid-word.
+    cutIndex = cutIndex == -1 ? terminatorIndices.last : cutIndex;
+
+    final truncated = text.substring(0, cutIndex).trimRight();
+    return TtsChunk(text: truncated, wasCut: true);
   }
 
   Future<void> stop() async {

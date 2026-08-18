@@ -285,6 +285,19 @@ class UpgradeContent extends StatelessWidget {
   Future<void> _showSuccessDialog(BuildContext context) async {
     final navigator = Navigator.of(context);
     final customDismiss = onSuccessDismiss;
+    // Branch copy on the purchased plan. Lifetime is a one-time
+    // purchase — no trial — so the dialog must not say "3-day trial
+    // active" to a buyer who paid outright. The cubit already stores
+    // the selected plan in `selectedPlanId` by the time this fires.
+    final isLifetime = context.read<PremiumCubit>().state.selectedPlanId ==
+        PlanId.lifetime;
+    final successTitle =
+        isLifetime ? 'Lifetime unlocked' : 'Welcome to Premium!';
+    final successBody = isLifetime
+        ? 'You own it — no trial. All 7 audio languages, GPS navigation, '
+            'and offline guides are now active.'
+        : 'Your 3-day trial is active. All 7 audio languages are now '
+            'unlocked. GPS navigation and offline guides are active.';
 
     final result = await showDialog<bool>(
       context: context,
@@ -315,7 +328,7 @@ class UpgradeContent extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'Welcome to Premium!',
+                successTitle,
                 style: Theme.of(dialogContext).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w900,
                   fontSize: 22,
@@ -324,7 +337,7 @@ class UpgradeContent extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'All 7 audio languages are now unlocked.\nGPS navigation and offline guides are active.',
+                successBody,
                 textAlign: TextAlign.center,
                 style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
                   height: 1.5,

@@ -71,7 +71,12 @@ class FakeBillingProvider implements BillingProvider {
     }
 
     final receipt = 'fake-${DateTime.now().millisecondsSinceEpoch}';
-    final trialEnd = DateTime.now().add(const Duration(days: 3));
+    // Lifetime is a one-time purchase — no trial. Other plans
+    // (monthly, yearly, proMonthly, proYearly) start with a 3-day
+    // trial to mirror the real RevenueCat/Play Store semantics.
+    final isLifetime = planId == PlanId.lifetime;
+    final trialEnd =
+        isLifetime ? null : DateTime.now().add(const Duration(days: 3));
     return BillingSuccess(
       planId: planId,
       receiptId: receipt,
