@@ -219,7 +219,18 @@ class AuthService {
       photoUrl: user.photoURL,
       role: role,
       createdAt: user.metadata.creationTime,
+      signInProvider: _resolveProvider(user),
     );
+  }
+
+  /// Map Firebase Auth's provider list to a single [SignInProvider].
+  /// Google users have `google.com` in their providerData; password
+  /// users have `password`; everything else falls back to password.
+  SignInProvider _resolveProvider(User user) {
+    for (final info in user.providerData) {
+      if (info.providerId == 'google.com') return SignInProvider.google;
+    }
+    return SignInProvider.password;
   }
 
   String _handleAuthError(FirebaseAuthException e) {

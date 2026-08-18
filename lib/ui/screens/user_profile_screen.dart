@@ -70,16 +70,14 @@ class UserProfileScreen extends StatelessWidget {
                   _ProfileMenuItem(
                     icon: PhosphorIconsRegular.lock,
                     title: 'Change Password',
-                    subtitle: 'Update your password',
-                    onTap: () => _showChangePasswordDialog(context),
+                    subtitle:
+                        authState.user?.signInProvider == SignInProvider.google
+                            ? 'Reset via email (Google sign-in)'
+                            : 'Update your password',
+                    onTap: () => _showChangePasswordDialog(context, authState),
                   ),
-                  const Divider(height: 1),
-                  _ProfileMenuItem(
-                    icon: PhosphorIconsRegular.globe,
-                    title: 'Language',
-                    subtitle: 'App and audio language',
-                    onTap: () => _showLanguageDialog(context),
-                  ),
+                  // Language row removed — language settings live on the
+                  // Settings screen, which is the single source of truth.
                 ],
               ),
               const SizedBox(height: 24),
@@ -184,17 +182,28 @@ class UserProfileScreen extends StatelessWidget {
                 Container(
                   padding: AppInsets.pillTight,
                   decoration: BoxDecoration(
+                    // Use `secondary` as the tint to mirror the
+                    // settings-screen _PlanBadge. The previous version
+                    // used `onPrimary.withValues(alpha:0.2)` which
+                    // renders as a near-transparent patch on the card
+                    // surface in both light and dark themes.
                     color: Theme.of(
                       context,
-                    ).colorScheme.onPrimary.withValues(alpha: 0.2),
+                    ).colorScheme.secondary.withValues(alpha: 0.15),
                     borderRadius: AppRadius.mdBorder,
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.secondary.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Text(
                     user?.role.name.toUpperCase() ?? 'FREE',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      color: Theme.of(context).colorScheme.secondary,
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
                     ),
                   ),
                 ),
@@ -265,7 +274,60 @@ class UserProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
+  void _showChangePasswordDialog(
+    BuildContext context,
+    AuthState authState,
+  ) {
+    final user = authState.user;
+    if (user?.signInProvider == SignInProvider.google) {
+      // Google users don't have a password on the Firebase side — send
+      // them through the reset-password flow instead of asking for
+      // credentials we can never verify.
+      showDialog(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              title: const Text('Reset Password'),
+              content: Text(
+                'You signed in with Google, so this account has no password '
+                'set on our side. We will send a reset link to '
+                '${user?.email ?? 'your email'}.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      await context.read<AuthCubit>().resetPassword(
+                        user?.email ?? '',
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Reset email sent — check your inbox'),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Send Reset Email'),
+                ),
+              ],
+            ),
+      );
+      return;
+    }
+
     final currentController = TextEditingController();
     final newController = TextEditingController();
     final confirmController = TextEditingController();
@@ -352,28 +414,11 @@ class UserProfileScreen extends StatelessWidget {
           ),
     );
   }
-
-  void _showLanguageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Language'),
-            content: const Text('Go to Settings to change language'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-    );
-  }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────
 // _ActiveSubscriptionCard — shown to Premium / Admin users
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────
 class _ActiveSubscriptionCard extends StatelessWidget {
   const _ActiveSubscriptionCard({
     required this.authState,
