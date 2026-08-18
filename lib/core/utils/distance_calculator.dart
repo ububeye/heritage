@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
+import '../../data/services/shared_prefs_service.dart';
 
 class DistanceCalculator {
   DistanceCalculator._();
@@ -30,6 +31,19 @@ class DistanceCalculator {
         return '${km.toStringAsFixed(1)} km';
       }
     }
+  }
+
+  /// Single entry-point for UI code that wants to render a distance
+  /// according to the user's stored unit preference. Reads
+  /// [SharedPrefsService.distanceUnits] on every call so a mid-session
+  /// toggle (Imperial ↔ Metric) takes effect without a rebuild.
+  ///
+  /// Callers should prefer this over the `isImperial:` form so the unit
+  /// lookup stays centralised.
+  static String formatDistanceForPrefs(double meters) {
+    final isImperial =
+        SharedPrefsService.instance.distanceUnits == 'imperial';
+    return formatDistance(meters, isImperial: isImperial);
   }
 
   static String formatDuration(Duration duration) {

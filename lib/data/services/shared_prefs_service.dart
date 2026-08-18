@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -5,6 +6,19 @@ class SharedPrefsService {
   SharedPrefsService._();
   static SharedPrefsService? _instance;
   static SharedPreferences? _prefs;
+
+  /// Fires after every successful `set*` write. Subscribers re-read the
+  /// pref they care about — this keeps the get/set surface intact and
+  /// avoids per-key streams. Cheap when nobody is listening.
+  final SharedPrefsChangeNotifier prefsChanged = SharedPrefsChangeNotifier();
+
+  /// Public listener surface so callers can `addListener` /
+  /// `removeListener` without exposing the notifier for dispose.
+  ChangeNotifier get onPrefsChanged => prefsChanged;
+
+  void _notify() {
+    prefsChanged.notifySubscribers();
+  }
 
   static Future<SharedPrefsService> getInstance() async {
     if (_instance == null) {
@@ -38,6 +52,7 @@ class SharedPrefsService {
 
   Future<void> setFirstLaunchComplete() async {
     await _preferences.setBool(AppConstants.keyFirstLaunch, false);
+    _notify();
   }
 
   // UI Language
@@ -46,6 +61,7 @@ class SharedPrefsService {
 
   Future<void> setUiLanguage(String languageCode) async {
     await _preferences.setString(AppConstants.keyUiLanguage, languageCode);
+    _notify();
   }
 
   // Audio Language
@@ -54,6 +70,7 @@ class SharedPrefsService {
 
   Future<void> setAudioLanguage(String languageCode) async {
     await _preferences.setString(AppConstants.keyAudioLanguage, languageCode);
+    _notify();
   }
 
   // Itinerary
@@ -65,6 +82,7 @@ class SharedPrefsService {
     if (!current.contains(siteId)) {
       current.add(siteId);
       await _preferences.setStringList(AppConstants.keyItinerary, current);
+      _notify();
     }
   }
 
@@ -72,10 +90,12 @@ class SharedPrefsService {
     final current = itinerary;
     current.remove(siteId);
     await _preferences.setStringList(AppConstants.keyItinerary, current);
+    _notify();
   }
 
   Future<void> clearItinerary() async {
     await _preferences.setStringList(AppConstants.keyItinerary, []);
+    _notify();
   }
 
   bool isInItinerary(String siteId) => itinerary.contains(siteId);
@@ -86,6 +106,7 @@ class SharedPrefsService {
 
   Future<void> setShowPremiumOffer(bool show) async {
     await _preferences.setBool(AppConstants.keyShowPremiumOffer, show);
+    _notify();
   }
 
   // Premium status (demo only — no real billing integration).
@@ -94,6 +115,7 @@ class SharedPrefsService {
 
   Future<void> setPremiumDemo(bool value) async {
     await _preferences.setBool(AppConstants.keyIsPremiumDemo, value);
+    _notify();
   }
 
   // First-audio-played flag. Login / Register gates read this to
@@ -108,6 +130,7 @@ class SharedPrefsService {
       AppConstants.keyAudioPreviewedAtLeastOnce,
       value,
     );
+    _notify();
   }
 
   // User ID
@@ -119,6 +142,7 @@ class SharedPrefsService {
     } else {
       await _preferences.setString(AppConstants.keyUserId, id);
     }
+    _notify();
   }
 
   // Is User Logged In (for skipping welcome screen)
@@ -141,6 +165,7 @@ class SharedPrefsService {
       await _preferences.remove(AppConstants.keyUserId);
       await _preferences.remove('user_role');
     }
+    _notify();
   }
 
   String? get savedUserRole => _preferences.getString('user_role');
@@ -151,6 +176,7 @@ class SharedPrefsService {
 
   Future<void> setFavorites(List<String> favoriteIds) async {
     await _preferences.setStringList(AppConstants.keyFavorites, favoriteIds);
+    _notify();
   }
 
   Future<void> addFavorite(String siteId) async {
@@ -158,6 +184,7 @@ class SharedPrefsService {
     if (!current.contains(siteId)) {
       current.add(siteId);
       await _preferences.setStringList(AppConstants.keyFavorites, current);
+      _notify();
     }
   }
 
@@ -165,23 +192,15 @@ class SharedPrefsService {
     final current = favorites;
     current.remove(siteId);
     await _preferences.setStringList(AppConstants.keyFavorites, current);
+    _notify();
   }
 
   bool isFavorite(String siteId) => favorites.contains(siteId);
 
-  // Map provider ('open' | 'google'). Defaults to 'open' since the demo
-  // build has no Google Maps API key.
-  String get mapProvider =>
-      _preferences.getString(AppConstants.keyMapProvider) ??
-      AppConstants.mapProviderOpen;
-
-  Future<void> setMapProvider(String provider) async {
-    await _preferences.setString(AppConstants.keyMapProvider, provider);
-  }
-
   // Clear all
   Future<void> clearAll() async {
     await _preferences.clear();
+    _notify();
   }
 
   // Theme Mode ('light', 'dark', 'system'). Default to 'light'.
@@ -190,6 +209,7 @@ class SharedPrefsService {
 
   Future<void> setThemeMode(String mode) async {
     await _preferences.setString(AppConstants.keyThemeMode, mode);
+    _notify();
   }
 
   // Arrival alerts. When true (the default) the navigation screen
@@ -202,6 +222,7 @@ class SharedPrefsService {
 
   Future<void> setArrivalAlertsEnabled(bool enabled) async {
     await _preferences.setBool(AppConstants.keyArrivalAlertsEnabled, enabled);
+    _notify();
   }
 
   // --- PR-B Settings (read by Settings screen; consumers in detail/
@@ -216,6 +237,7 @@ class SharedPrefsService {
 
   Future<void> setArrivalAlertsRadiusM(int meters) async {
     await _preferences.setInt(AppConstants.keyArrivalAlertsRadiusM, meters);
+    _notify();
   }
 
 
@@ -227,6 +249,7 @@ class SharedPrefsService {
 
   Future<void> setDistanceUnits(String units) async {
     await _preferences.setString(AppConstants.keyDistanceUnits, units);
+    _notify();
   }
 
   /// Reduce-motion preference. v1 stores the flag; detail-screen
@@ -236,6 +259,7 @@ class SharedPrefsService {
 
   Future<void> setReduceMotion(bool enabled) async {
     await _preferences.setBool(AppConstants.keyReduceMotion, enabled);
+    _notify();
   }
 
   /// TTS playback-rate multiplier. Defaults to 1.0. Persisted as the
@@ -250,6 +274,7 @@ class SharedPrefsService {
       AppConstants.keyPlaybackSpeed,
       speed.toString(),
     );
+    _notify();
   }
 
   /// Auto-play narration as soon as the user enters a site's arrival radius.
@@ -260,5 +285,14 @@ class SharedPrefsService {
 
   Future<void> setAutoPlayOnArrival(bool enabled) async {
     await _preferences.setBool(AppConstants.keyAutoPlayOnArrival, enabled);
+    _notify();
   }
+}
+
+/// Thin `ChangeNotifier` subclass so [SharedPrefsService] can call
+/// `notifySubscribers()` from its own setters (the protected
+/// `notifyListeners` API can only be invoked from inside a
+/// `ChangeNotifier` subclass).
+class SharedPrefsChangeNotifier extends ChangeNotifier {
+  void notifySubscribers() => notifyListeners();
 }

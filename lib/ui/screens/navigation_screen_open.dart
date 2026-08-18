@@ -190,10 +190,24 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     super.didChangeDependencies();
     _navigationCubit ??= context.read<NavigationCubit>();
     _cameraController ??= MapCameraController.maybeOf(context);
+    // Subscribe to radius changes so a mid-navigation tweak of the
+    // arrival-radius pref propagates without restarting the session.
+    SharedPrefsService.instance.onPrefsChanged.addListener(_onPrefsChanged);
     if (!_started) {
       _started = true;
       _startNavigation();
     }
+  }
+
+  void _onPrefsChanged() {
+    if (!mounted) return;
+    // Push the latest arrival radius into the cubit so the per-tick
+    // arrival-decision uses the up-to-date threshold.
+    final radius = SharedPrefsService.instance.arrivalAlertsRadiusM.toDouble();
+    _navigationCubit?.updateEntryRadius(radius);
+    // Force a rebuild so the HUD distance label re-reads
+    // `SharedPrefsService.distanceUnits` via `formatDistanceForPrefs`.
+    setState(() {});
   }
 
   void _startNavigation() {
@@ -368,6 +382,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   void dispose() {
     _rerouteDebounce?.cancel();
     _cameraTicker?.dispose();
+    SharedPrefsService.instance.onPrefsChanged
+        .removeListener(_onPrefsChanged);
     _navigationCubit?.stopNavigation();
     _routingService.dispose();
     // Only dispose the local MapController if we own it. If a shared
@@ -1241,8 +1257,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   }
 
   String _formatDistance(double meters) {
-    final isImperial = SharedPrefsService.instance.distanceUnits == 'imperial';
-    return dc.DistanceCalculator.formatDistance(meters, isImperial: isImperial);
+    // Routes through the centralised formatter so a mid-session toggle
+    // (Imperial ↔ Metric) takes effect on the next rebuild without a
+    // restart. The SharedPrefsService broadcast notifier drives the
+    // setState that re-reads this value.
+    return dc.DistanceCalculator.formatDistanceForPrefs(meters);
   }
 
   String _formatDuration(Duration d) {

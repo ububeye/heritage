@@ -134,6 +134,19 @@ class NavigationCubit extends Cubit<NavigationCubitState> {
     );
   }
 
+  /// Update the entry radius mid-navigation. The arrival-decision
+  /// branch in [_updatePosition] reads `_entryRadiusM` directly, so
+  /// re-emitting isn't strictly necessary for arrival detection —
+  /// but keeping the radius in cubit state lets the UI surface it
+  /// (e.g. the circle marker layer) and re-runs the debounce cleanly.
+  void updateEntryRadius(double meters) {
+    if ((_entryRadiusM - meters).abs() < 0.5) return;
+    _entryRadiusM = meters;
+    // Reset the debounce counter so a stale "almost arrived" doesn't
+    // fire on the next GPS fix after the user widens the radius.
+    _consecutiveInsideRadius = 0;
+  }
+
   void _updatePosition(Position position) {
     if (_siteLat == null || _siteLng == null) return;
 

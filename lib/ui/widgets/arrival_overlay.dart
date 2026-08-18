@@ -4,6 +4,7 @@ import '../../core/theme/app_semantic_colors.dart';
 import '../../data/models/site_model.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_durations.dart';
+import '../../data/services/shared_prefs_service.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ArrivalOverlay extends StatefulWidget {
@@ -34,17 +35,34 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
     _pulseController = AnimationController(
       duration: AppDurations.pulse,
       vsync: this,
-    )..repeat(reverse: true);
-
+    );
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _applyReduceMotion();
+
+    // Honour mid-session toggles of the reduce-motion pref. The pulse
+    // animation lives inside the arrived state, so stopping/starting it
+    // here makes the toggle responsive without forcing a screen rebuild.
+    SharedPrefsService.instance.onPrefsChanged.addListener(_applyReduceMotion);
   }
 
   @override
   void dispose() {
+    SharedPrefsService.instance.onPrefsChanged
+        .removeListener(_applyReduceMotion);
     _pulseController.dispose();
     super.dispose();
+  }
+
+  void _applyReduceMotion() {
+    if (!mounted) return;
+    final reduce = SharedPrefsService.instance.reduceMotion;
+    if (reduce) {
+      if (_pulseController.isAnimating) _pulseController.stop();
+    } else {
+      if (!_pulseController.isAnimating) _pulseController.repeat(reverse: true);
+    }
   }
 
   @override
