@@ -270,10 +270,10 @@
   "continue_on": "Endelea kwenye",
   "onto": "kuelekea",
   "routing_offline": "Uelekeo umekatwa — mstari wa moja kwa moja.",
-  "route_fallback": "Tumetuma mstari wa moja kwa moja — huduma ya uelekeo haipatikani.",
+  "route_fallback": "Hakuna njia — huduma ya uelekeo imeshindwa. Tembea kwa macho.",
   "route_fallback_retrying": "Tunatafuta njia…",
-  "route_fallback_outside_unguja": "Uko nje ya Zanzibar — tunaonyesha mstari wa moja kwa moja. Sogeza karibu ili kujaribu tena.",
-  "route_origin_approximate": "GPS haipatikani — njia inaonyeshwa kutoka katikati ya kisiwa.",
+  "route_fallback_outside_unguja": "Uko nje ya Zanzibar — hakuna njia inayoonyeshwa. Sogeza karibu ili kujaribu tena.",
+  "route_origin_approximate": "GPS haipatikani — hakuna njia inayoonyeshwa. Tembea kwa macho hadi kwenye eneo.",
   "my_location": "Mahali pangu",
   "coming_soon": "Inakuja hivi karibuni"
 }

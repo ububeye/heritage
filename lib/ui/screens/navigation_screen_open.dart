@@ -714,12 +714,22 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           maxNativeZoom: 19,
           tileProvider: TileCacheService.instance.tileProvider(),
         ),
-        // Route polyline — white underlay + on-route tint, amber when off-route.
-        if (_routePoints.length >= 2)
+        // Route polyline — only drawn when we have a real OSRM road
+        // route. Fallbacks (engine failure, GPS wildly out, outside
+        // Zanzibar) leave [_routePoints] as a 2-point straight line
+        // between origin and destination; we deliberately do NOT draw
+        // that — a straight-line substitute is misleading on a real
+        // map. The destination marker stays, the user dot stays, and
+        // the banner surfaces why the route is missing so they can
+        // walk by sight. Off-route state is independent of fallback —
+        // the polyline stays visible while the user wanders off it.
+        if (_routePoints.length >= 2 &&
+            !_routeIsFallback &&
+            !_routeOriginApproximate)
           RoutePolylineLayer(
             points: _routePoints,
             isOffRoute: _isOffRoute,
-            isFallback: _routeIsFallback,
+            isFallback: false,
           ),
         // Arrival-zone translucent circle.
         CircleLayer(
