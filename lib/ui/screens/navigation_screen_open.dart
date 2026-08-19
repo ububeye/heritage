@@ -143,6 +143,13 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   bool _routeLoading = true;
   bool _routeIsFallback = false;
   String? _routeError;
+  /// True when the routing origin was substituted because the user's
+  /// GPS fix was wildly outside [UngujaBounds] (emulator default,
+  /// stale "last known position", etc.). The route is real — it came
+  /// back from OSRM — but it starts from [UngujaBounds.centre] instead
+  /// of the user's actual position. The banner surfaces this as a soft
+  /// "GPS unavailable" indicator instead of the orange fallback state.
+  bool _routeOriginApproximate = false;
   bool _isRerouting = false;
   Timer? _rerouteDebounce;
 
@@ -255,6 +262,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
       _isRerouting = false;
       _routeIsFallback = result.isFallback;
       _routeError = result.errorMessage;
+      _routeOriginApproximate = result.originIsApproximate;
       _totalRouteDistanceM = totalDist;
       _remainingRouteDistanceM = totalDist;
     });
@@ -1008,6 +1016,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     setState(() {
       _routeLoading = true;
       _routeIsFallback = false;
+      _routeOriginApproximate = false;
       _routeError = null;
     });
     _rerouteDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -1021,10 +1030,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   }
 
   /// Small banner shown below the top card while route is loading / error /
-  /// fallback. Hidden once a clean route is loaded.
+  /// fallback / origin was approximated. Hidden once a clean route is
+  /// loaded with the user's real GPS position.
   Widget _buildBanner(BuildContext context, nav_model.NavigationState nav) {
     final hasError = nav.status == nav_model.NavigationStatus.error;
-    if (!_routeLoading && !_routeIsFallback && !hasError) {
+    if (!_routeLoading &&
+        !_routeIsFallback &&
+        !hasError &&
+        !_routeOriginApproximate) {
       return const SizedBox.shrink();
     }
     final loc = context.read<LocalizationCubit>();
@@ -1033,7 +1046,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     final isOutsideUnguja =
         _routeError != null &&
         (_routeError!.startsWith('Origin is outside') ||
-            _routeError!.startsWith('Destination is outside'));
+            _routeError!.startsWith('Destination is outside') ||
+            _routeError!.startsWith('GPS position is outside'));
     final color = hasError
         ? Theme.of(context).colorScheme.error
         : _routeIsFallback
@@ -1047,9 +1061,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
                 : tr('loading'))
             : (isRoutingAuthFailure
                 ? tr('routing_api_key_invalid')
-                : isOutsideUnguja
-                    ? tr('route_fallback_outside_unguja')
-                    : tr('route_fallback'));
+                : _routeOriginApproximate
+                    ? tr('route_origin_approximate')
+                    : isOutsideUnguja
+                        ? tr('route_fallback_outside_unguja')
+                        : tr('route_fallback'));
 
     // Position below the top card (or top padding if no card yet).
     final topOffset =

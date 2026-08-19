@@ -273,6 +273,7 @@
   "route_fallback": "Using direct line — routing engine unavailable.",
   "route_fallback_retrying": "Looking for a route…",
   "route_fallback_outside_unguja": "Outside Zanzibar — showing direct line. Move closer to try again.",
+  "route_origin_approximate": "GPS unavailable — route shown from island centre.",
   "my_location": "My location",
   "coming_soon": "Coming soon"
 }

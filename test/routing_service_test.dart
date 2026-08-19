@@ -200,17 +200,21 @@ void main() {
     );
 
     test(
-      'rejects an origin outside Unguja without hitting the network',
+      'falls back to UngujaBounds.centre when origin is far outside',
       () async {
-        // Dar es Salaam — well south of the island box.
+        // Dar es Salaam — well south of the island box. The strict
+        // pre-PR behaviour rejected this and stranded the user with no
+        // route. The new behaviour falls back to the island centre so
+        // the user gets *something* usable on the map, tagged with
+        // [originIsApproximate] so the banner can say "GPS unavailable".
         const dar = LatLng(-6.80, 39.20);
         const stoneTown = LatLng(-6.1620, 39.1900);
 
-        // A handler that fails the test if it's ever called — the
-        // service must short-circuit before reaching the network.
+        Uri? captured;
         var networkCalled = false;
         Future<http.Response> handler(http.Request req) async {
           networkCalled = true;
+          captured = req.url;
           return _okRoute(req);
         }
 
@@ -219,21 +223,22 @@ void main() {
 
         expect(
           networkCalled,
-          isFalse,
-          reason: 'service must reject outside-Unguja up-front',
+          isTrue,
+          reason:
+              'service must dispatch to OSRM with the centre origin, '
+              'not strand the user',
         );
-        expect(result.isFallback, isTrue);
-        expect(result.provider, 'none');
-        expect(result.errorMessage, contains('Origin is outside Zanzibar'));
-        // Fallback polyline is just the two endpoints.
-        expect(result.points, hasLength(2));
-        expect(result.points.first, dar);
-        expect(result.points.last, stoneTown);
-        // Distance is a haversine, not a network-reported value.
+        expect(result.isFallback, isFalse);
+        expect(result.originIsApproximate, isTrue);
         expect(
-          result.distanceMeters - _haversineMetersForTest(dar, stoneTown),
-          lessThan(1.0),
+          result.errorMessage,
+          contains('GPS position is outside Zanzibar'),
         );
+        // The OSRM URL must embed the island centre, NOT Dar.
+        final coordPair = captured!.pathSegments.last;
+        final fromParts = coordPair.split(';').first.split(',');
+        expect(double.parse(fromParts[1]), greaterThanOrEqualTo(-6.50));
+        expect(double.parse(fromParts[1]), lessThanOrEqualTo(-6.10));
 
         service.dispose();
       },
@@ -323,29 +328,48 @@ void main() {
     );
 
     test(
-      'still rejects an origin far outside Unguja (beyond clamp buffer)',
+      'far-out origin falls back to UngujaBounds.centre (no rejection)',
       () async {
         // 5 km south of the box — well beyond routeOriginClampBufferMeters
-        // (500 m). This is the regression guard against accidentally
-        // letting Dar es Salaam slip into a Zanzibar route.
+        // (500 m). This is the common "user opened the app on the
+        // emulator with no location set" or "phone has a stale fix from
+        // a flight" case. The service must NOT strand them — they get a
+        // real route from the island centre, tagged so the banner can
+        // say "GPS unavailable".
         const farOut = LatLng(-6.55, 39.1900);
         const stoneTown = LatLng(-6.1650, 39.1950);
 
+        Uri? captured;
         var networkCalled = false;
         Future<http.Response> handler(http.Request req) async {
           networkCalled = true;
+          captured = req.url;
           return _okRoute(req);
         }
 
         final service = RoutingService(client: MockClient(handler));
         final result = await service.getRoute(from: farOut, to: stoneTown);
 
-        expect(networkCalled, isFalse);
-        expect(result.isFallback, isTrue);
+        expect(
+          networkCalled,
+          isTrue,
+          reason: 'service must dispatch to OSRM, not strand the user',
+        );
+        expect(result.isFallback, isFalse);
+        expect(result.originIsApproximate, isTrue);
         expect(
           result.errorMessage,
-          contains('Origin is outside Zanzibar'),
+          contains('GPS position is outside Zanzibar'),
         );
+        // The OSRM URL must embed the island centre as the origin, NOT
+        // the raw far-out point.
+        final coordPair = captured!.pathSegments.last;
+        final fromParts = coordPair.split(';').first.split(',');
+        // UngujaBounds.centre lives at the box centre. The actual
+        // constants vary; we just assert the request was clamped to
+        // something inside the box (lat between -6.50 and -6.10).
+        expect(double.parse(fromParts[1]), greaterThanOrEqualTo(-6.50));
+        expect(double.parse(fromParts[1]), lessThanOrEqualTo(-6.10));
 
         service.dispose();
       },

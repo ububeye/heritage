@@ -273,6 +273,7 @@
   "route_fallback": "Tumetuma mstari wa moja kwa moja — huduma ya uelekeo haipatikani.",
   "route_fallback_retrying": "Tunatafuta njia…",
   "route_fallback_outside_unguja": "Uko nje ya Zanzibar — tunaonyesha mstari wa moja kwa moja. Sogeza karibu ili kujaribu tena.",
+  "route_origin_approximate": "GPS haipatikani — njia inaonyeshwa kutoka katikati ya kisiwa.",
   "my_location": "Mahali pangu",
   "coming_soon": "Inakuja hivi karibuni"
 }

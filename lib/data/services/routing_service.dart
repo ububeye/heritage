@@ -187,6 +187,7 @@ class RouteResult {
     this.errorMessage,
     this.provider = 'none',
     this.steps = const [],
+    this.originIsApproximate = false,
   });
 
   /// Ordered list of coordinates forming the route polyline.
@@ -214,6 +215,14 @@ class RouteResult {
   /// Ordered turn-by-turn instructions parsed from OSRM. Empty when the
   /// result is a fallback (no engine data).
   final List<RouteStep> steps;
+
+  /// True when the routing origin was substituted (the user's GPS fix
+  /// was wildly outside UngujaBounds, so we routed from the island
+  /// centre instead). The route itself is real — the geometry came back
+  /// from the engine — but the starting point is the centre, not the
+  /// user's actual position. The UI surfaces this with a soft
+  /// "GPS unavailable" indicator rather than the orange fallback banner.
+  final bool originIsApproximate;
 
   static RouteResult fallback({
     required LatLng from,
@@ -307,29 +316,20 @@ class RoutingService {
     required LatLng to,
     SiteModel? site,
   }) async {
-    // 0. Unguja only — reject anything outside the island up-front. We
-    //    don't want to burn network requests or render a route to a
-    //    place we don't cover. Routing is open to the whole island so a
-    //    customer in Nungwi can plan a trip to Forodhani.
-    //
-    //    GPS jitter on the coast routinely lands a fix ~30 m outside
-    //    [UngujaBounds] (the bounding box hugs the island). The previous
-    //    strict-rejection produced a misleading "routing engine
-    //    unavailable" banner — the engine was never contacted. We now
-    //    clamp near-edge fixes to the box edge (within
-    //    [AppConstants.routeOriginClampBufferMeters]) and only reject
-    //    points that are clearly outside Zanzibar (Dar es Salaam, Pemba,
-    //    etc.). [clampForRoute] is the single source of truth for this.
-    final origin = clampForRoute(from);
-    if (origin == null) {
-      return RouteResult.fallback(
-        from: from,
-        to: to,
-        distanceMeters: _haversineMeters(from, to),
-        provider: 'none',
-        errorMessage: 'Origin is outside Zanzibar',
-      );
-    }
+    // 0. GPS origin policy. The bounding box hugs the island, so
+    //    coastal jitter routinely lands a fix ~30 m outside it; the
+    //    previous strict-rejection produced a misleading "routing
+    //    engine unavailable" banner — the engine was never contacted.
+    //    [clampForRoute] is the single source of truth:
+    //      • inside the box      → use as-is
+    //      • near-edge (≤500 m)  → snap to the edge
+    //      • wildly outside      → fall back to [UngujaBounds.centre]
+    //    The third case is the common "user opened the app on the
+    //    emulator with no location" or "phone cached a stale fix from
+    //    a flight". We don't strand them — they still get a route, just
+    //    not from their actual position. [gpsUnavailableReason]
+    //    surfaces this so the banner can be honest about it.
+    final (origin, gpsUnavailableReason) = clampForRoute(from);
     if (!UngujaBounds.contains(to)) {
       return RouteResult.fallback(
         from: origin,
@@ -412,8 +412,26 @@ class RoutingService {
 
           // 3b. Best-effort write to Firestore. Fire-and-forget — a
           //     failed write just means the next cold start re-fetches.
+          //     We don't persist the approximate-origin flag — a real
+          //     GPS fix later should re-fetch and overwrite with a
+          //     non-approximate route.
           if (site != null && _routeCache != null) {
             unawaited(_routeCache.save(site.id, result));
+          }
+          // Tag the success with originIsApproximate so the UI can
+          // surface "GPS unavailable — routing from island centre"
+          // instead of pretending the user is at the centre.
+          if (gpsUnavailableReason != null) {
+            return RouteResult(
+              points: result.points,
+              distanceMeters: result.distanceMeters,
+              durationSeconds: result.durationSeconds,
+              isFallback: false,
+              errorMessage: gpsUnavailableReason,
+              provider: result.provider,
+              steps: result.steps,
+              originIsApproximate: true,
+            );
           }
           return result;
         }
@@ -873,20 +891,35 @@ class RoutingService {
   ///   [AppConstants.routeOriginClampBufferMeters] of the nearest edge
   ///   → snapped to that edge. This is the GPS-jitter case (a coastal
   ///   fix landing ~30 m outside the box).
-  /// - Outside the box AND beyond the buffer → `null`. The caller should
-  ///   reject the request up-front without burning a network round-trip.
+  /// - Outside the box AND beyond the buffer (e.g. emulator default
+  ///   location, lost GPS in the Indian Ocean, mainland Tanzania) →
+  ///   falls back to [UngujaBounds.centre] so the user still gets a
+  ///   usable route. The caller's banner surfaces this honestly via
+  ///   [gpsUnavailableReason].
   ///
   /// The buffer is measured as a flat-earth distance approximation
   /// (1° lat ≈ 111 km, 1° lng ≈ 111 km × cos(lat)). That's good enough
   /// for a 500 m buffer at Zanzibar's latitude (~6° S) — the worst-case
   /// error is < 0.5 % and the buffer is wide enough to absorb it.
-  static LatLng? clampForRoute(LatLng point) {
-    if (UngujaBounds.contains(point)) return point;
+  static (LatLng origin, String? gpsUnavailableReason) clampForRoute(
+    LatLng point,
+  ) {
+    if (UngujaBounds.contains(point)) return (point, null);
     final clamped = UngujaBounds.clampPoint(point);
     final bufferMeters = AppConstants.routeOriginClampBufferMeters;
     final distanceMeters = _flatEarthMeters(point, clamped);
-    if (distanceMeters > bufferMeters) return null;
-    return clamped;
+    if (distanceMeters <= bufferMeters) {
+      // Coastal GPS jitter — clamp to edge and dispatch normally.
+      return (clamped, null);
+    }
+    // GPS is wildly out of bounds. This happens in three situations:
+    //   1. Emulator with no location set (default = Googleplex).
+    //   2. Phone with stale "last known position" cached from travel.
+    //   3. Genuine user outside Zanzibar (mainland, ferry, etc.).
+    // In all three the user needs *something* on the map. Falling back
+    // to the island centre produces a usable route from a known
+    // anchor; the banner tells the user their GPS isn't trustworthy.
+    return (UngujaBounds.centre, 'GPS position is outside Zanzibar');
   }
 
   /// Cheap, latitude-scaled distance in meters between two LatLngs.
