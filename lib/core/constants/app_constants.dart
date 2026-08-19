@@ -153,6 +153,20 @@ class AppConstants {
     'OSRM_BASE_URL',
     defaultValue: 'https://router.project-osrm.org',
   );
+  /// Public Valhalla demo endpoint. Used as a third routing provider
+  /// after ORS (key-gated) and OSRM (public demo). Valhalla is
+  /// open-source (MIT) and the demo is hosted by FOSSGIS at
+  /// `valhalla1.openstreetmap.de`. No API key required for the demo,
+  /// which is what makes it a meaningful fallback — every other open
+  /// routing source either has the same rate-limit cliff as OSRM or
+  /// requires a paid key.
+  ///
+  /// Override with `--dart-define=VALHALLA_BASE_URL=...` to point at a
+  /// self-hosted instance.
+  static const String valhallaBaseUrl = String.fromEnvironment(
+    'VALHALLA_BASE_URL',
+    defaultValue: 'https://valhalla1.openstreetmap.de',
+  );
 
   /// Max plausible walking distance (meters) for a *single* route inside
   /// Stone Town. Anything longer gets clipped to a straight line so we

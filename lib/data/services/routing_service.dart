@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/polyline_decoder.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../core/utils/unguja_bounds.dart';
 import '../models/site_model.dart';
@@ -247,15 +248,24 @@ class RouteResult {
 
 /// Which routing engine served the [RouteResult].
 ///
-/// The service tries OpenRouteService first (when an API key is supplied),
-/// then falls back to the public OSRM demo. Both are open source / free
-/// tier; no billing account required for the demo.
+/// The service tries OpenRouteService first (when an API key is
+/// supplied), then the public OSRM demo, then the public Valhalla
+/// demo. All three are open-source / free-tier — no billing account
+/// required for either demo. Valhalla is the last-resort fallback
+/// because the OSRM demo is famously flaky (rate limits, regional
+/// outages, captcha-style blocks) and a single-engine failure used to
+/// strand the user with no route.
 enum _RoutingProvider {
   /// POST to `ORS_BASE_URL` with a GeoJSON body. Requires an API key.
   openRouteService,
 
   /// GET `OSRM_BASE_URL` with `foot` profile. No auth required.
   osrmDemo,
+
+  /// POST to `VALHALLA_BASE_URL/route` with a JSON body. No auth
+  /// required. Returns an encoded polyline (not GeoJSON), decoded
+  /// inline by [_decodePolyline].
+  valhallaDemo,
 }
 
 /// Routing request lifecycle:
@@ -374,13 +384,24 @@ class RoutingService {
     // burn the timeout twice for nothing. The key is read fresh on each
     // call so admin-side runtime changes take effect on the next request
     // without recreating this service.
+    // 2. Provider chain. We try ORS first only when a key is configured —
+    // otherwise the public endpoint will reject every request and we'd
+    // burn the timeout twice for nothing. The key is read fresh on each
+    // call so admin-side runtime changes take effect on the next request
+    // without recreating this service. Valhalla is always last — it's
+    // the safety net when both ORS and OSRM fail (rate limits, regional
+    // blocks, transient outages). All three are open source / no-cost.
     final providers =
         RuntimeConfigService.instance.orsApiKey.isNotEmpty
             ? const [
               _RoutingProvider.openRouteService,
               _RoutingProvider.osrmDemo,
+              _RoutingProvider.valhallaDemo,
             ]
-            : const [_RoutingProvider.osrmDemo];
+            : const [
+              _RoutingProvider.osrmDemo,
+              _RoutingProvider.valhallaDemo,
+            ];
 
     Object? lastError;
     for (final provider in providers) {
@@ -469,6 +490,8 @@ class RoutingService {
         return _routeFromORS(from, to);
       case _RoutingProvider.osrmDemo:
         return _routeFromOSRM(from, to);
+      case _RoutingProvider.valhallaDemo:
+        return _routeFromValhalla(from, to);
     }
   }
 
@@ -689,6 +712,164 @@ class RoutingService {
       steps: steps,
     );
   }
+
+  /// Valhalla — `POST {baseUrl}/route` with a JSON body, response shape
+  /// is the Valhalla trip object (NOT GeoJSON). Geometry comes back as
+  /// an encoded polyline string under `trip.legs[*].shape` and is
+  /// decoded by [_decodePolyline].
+  ///
+  /// Response shape (relevant fields only):
+  ///
+  ///   {
+  ///     "trip": {
+  ///       "legs": [{ "shape": "<encoded polyline>", ... }],
+  ///       "summary": { "length": km, "time": seconds, ... },
+  ///       "status_message": "Found route between points",
+  ///       "status": 0
+  ///     }
+  ///   }
+  ///
+  /// Valhalla's `costing=pedestrian` is the equivalent of OSRM's
+  /// `foot` profile: sidewalks, walkways, and pedestrian paths. We use
+  /// `costing=pedestrian` (not `foot`) — that's Valhalla's documented
+  /// name for the pedestrian profile.
+  Future<RouteResult> _routeFromValhalla(LatLng from, LatLng to) async {
+    final straightLineMeters = _haversineMeters(from, to);
+    final body = jsonEncode({
+      'locations': [
+        {'lat': from.latitude, 'lon': from.longitude},
+        {'lat': to.latitude, 'lon': to.longitude},
+      ],
+      'costing': 'pedestrian',
+      'directions_options': {'units': 'kilometers'},
+      // The "shape" field on each leg is what we read. Valhalla also
+      // accepts `geometry=true` (returns shape per leg) and
+      // `format=geojson` but it ignores the format flag and always
+      // returns encoded polyline — we decode inline.
+    });
+
+    final resp = await _client
+        .post(
+          Uri.parse('${AppConstants.valhallaBaseUrl}/route'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: body,
+        )
+        .timeout(timeout);
+
+    if (resp.statusCode != 200) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'HTTP ${resp.statusCode}',
+      );
+    }
+
+    Map<String, dynamic> body_;
+    try {
+      body_ = jsonDecode(resp.body) as Map<String, dynamic>;
+    } catch (_) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'Parse error',
+      );
+    }
+
+    final trip = body_['trip'] as Map<String, dynamic>?;
+    if (trip == null) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'No trip',
+      );
+    }
+    final status = (trip['status'] as num?)?.toInt() ?? -1;
+    if (status != 0) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: trip['status_message']?.toString() ?? 'No route',
+      );
+    }
+
+    final legs = (trip['legs'] as List<dynamic>?) ?? const [];
+    if (legs.isEmpty) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'No legs',
+      );
+    }
+
+    // Valhalla returns `summary.length` in the configured units — we
+    // asked for kilometers, so multiply by 1000 for metres.
+    final summary = trip['summary'] as Map<String, dynamic>?;
+    final distanceKm = (summary?['length'] as num?)?.toDouble();
+    final distanceMeters = distanceKm != null ? distanceKm * 1000.0 : null;
+    final durationSeconds = (summary?['time'] as num?)?.toDouble();
+
+    // Stitch together the encoded polylines from each leg. Valhalla
+    // returns one shape per leg; the legs share endpoints, so we
+    // concatenate with the last point of leg N dropped to avoid
+    // duplicates.
+    final allPoints = <LatLng>[];
+    for (var i = 0; i < legs.length; i++) {
+      final leg = legs[i] as Map<String, dynamic>;
+      final shape = (leg['shape'] as String?) ?? '';
+      if (shape.isEmpty) continue;
+      final pts = decodePolyline(shape, precision: 6);
+      if (pts.isEmpty) continue;
+      if (allPoints.isNotEmpty) {
+        // Drop the first point of subsequent legs — it's a duplicate of
+        // the last point of the previous leg.
+        allPoints.addAll(pts.sublist(1));
+      } else {
+        allPoints.addAll(pts);
+      }
+    }
+
+    if (allPoints.length < 2) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'Empty geometry',
+      );
+    }
+
+    return RouteResult(
+      points: allPoints,
+      distanceMeters: distanceMeters ?? straightLineMeters,
+      durationSeconds: durationSeconds,
+      isFallback: false,
+      provider: 'valhallaDemo',
+      steps: const [], // Valhalla turn-steps aren't surfaced in the UI today
+    );
+  }
+
+  /// Decode a Google-style encoded polyline string into a list of
+  /// [LatLng]. Standard 5-bit ASCII encoding with sign-bit twos-
+  /// complement deltas. Lives in
+  /// [../../core/utils/polyline_decoder.dart] so tests can import it
+  /// without crossing the library boundary. [precision] is the
+  /// divisor for the integer values — Valhalla uses 6 (1e-6 degree
+  /// resolution), Google Maps uses 5.
+  ///
+  /// Spec: https://developers.google.com/maps/documentation/utilities/polylinealgorithm
 
   /// Parse `routes[0].legs[0].steps[]` into a list of [RouteStep]s.
   ///

@@ -111,7 +111,14 @@ void main() {
       to: const LatLng(-6.1650, 39.1950),
     );
 
-    expect(attempt, 1, reason: 'no retry on 4xx');
+    // The chain has two legs (OSRM + Valhalla). Both tried once. The
+    // "no retry on 4xx" contract means: within each provider, a 4xx
+    // doesn't trigger an internal retry — and that still holds (each
+    // leg ran exactly once, no second hit from the same provider).
+    // The test previously asserted `attempt == 1` because there was
+    // only one provider; the chain extension to two providers means
+    // each provider gets one chance, then the chain ends in fallback.
+    expect(attempt, 2, reason: 'no internal retry per provider on 4xx');
     expect(result.isFallback, isTrue);
 
     service.dispose();
