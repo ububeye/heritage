@@ -311,22 +311,32 @@ class RoutingService {
     //    don't want to burn network requests or render a route to a
     //    place we don't cover. Routing is open to the whole island so a
     //    customer in Nungwi can plan a trip to Forodhani.
-    if (!UngujaBounds.contains(to)) {
-      return RouteResult.fallback(
-        from: from,
-        to: to,
-        distanceMeters: _haversineMeters(from, to),
-        provider: 'none',
-        errorMessage: 'Destination is outside Zanzibar',
-      );
-    }
-    if (!UngujaBounds.contains(from)) {
+    //
+    //    GPS jitter on the coast routinely lands a fix ~30 m outside
+    //    [UngujaBounds] (the bounding box hugs the island). The previous
+    //    strict-rejection produced a misleading "routing engine
+    //    unavailable" banner — the engine was never contacted. We now
+    //    clamp near-edge fixes to the box edge (within
+    //    [AppConstants.routeOriginClampBufferMeters]) and only reject
+    //    points that are clearly outside Zanzibar (Dar es Salaam, Pemba,
+    //    etc.). [clampForRoute] is the single source of truth for this.
+    final origin = clampForRoute(from);
+    if (origin == null) {
       return RouteResult.fallback(
         from: from,
         to: to,
         distanceMeters: _haversineMeters(from, to),
         provider: 'none',
         errorMessage: 'Origin is outside Zanzibar',
+      );
+    }
+    if (!UngujaBounds.contains(to)) {
+      return RouteResult.fallback(
+        from: origin,
+        to: to,
+        distanceMeters: _haversineMeters(origin, to),
+        provider: 'none',
+        errorMessage: 'Destination is outside Zanzibar',
       );
     }
 
@@ -338,20 +348,22 @@ class RoutingService {
       final cached = await _routeCache.load(site);
       if (cached != null) {
         // Also warm the in-memory cache so the next refetch in the same
-        // session skips the Firestore round-trip too.
-        _cache[_cacheKey(from, to)] = _CacheEntry(cached, DateTime.now());
+        // session skips the Firestore round-trip too. Cache key uses the
+        // clamped origin so a noisy GPS fix near the coast hits the
+        // same cache slot as the previous fix.
+        _cache[_cacheKey(origin, to)] = _CacheEntry(cached, DateTime.now());
         return cached;
       }
     }
 
     // 1. Cached path.
-    final cacheKey = _cacheKey(from, to);
+    final cacheKey = _cacheKey(origin, to);
     final cached = _cache[cacheKey];
     if (cached != null && DateTime.now().difference(cached.at) < _cacheTtl) {
       return cached.result;
     }
 
-    final straightLineMeters = _haversineMeters(from, to);
+    final straightLineMeters = _haversineMeters(origin, to);
 
     // 2. Provider chain. We try ORS first only when a key is configured —
     // otherwise the public endpoint will reject every request and we'd
@@ -369,7 +381,7 @@ class RoutingService {
     Object? lastError;
     for (final provider in providers) {
       try {
-        final result = await _dispatch(provider, from, to);
+        final result = await _dispatch(provider, origin, to);
         if (!result.isFallback) {
           // 3a. Sanity-clip the polyline. Engines sometimes return
           // long-distance geometry on bad inputs; the navigation screen
@@ -378,18 +390,25 @@ class RoutingService {
           final distance = result.distanceMeters;
           if (distance > AppConstants.maxRouteDistanceMeters) {
             final clipped = RouteResult.fallback(
-              from: from,
+              from: origin,
               to: to,
               distanceMeters: straightLineMeters,
               provider: result.provider,
               errorMessage:
                   'Route too long (${distance.round()} m), clipped to direct line',
             );
-            _cache[cacheKey] = _CacheEntry(clipped, DateTime.now());
+            // Fallback results are intentionally NOT cached — a stale
+            // straight-line fallback would lock the user out of a real
+            // route for up to 30 minutes. The next _fetchRoute() call
+            // will retry the engine.
             return clipped;
           }
 
-          _cache[cacheKey] = _CacheEntry(result, DateTime.now());
+          // Success path — defensive isFallback guard documents that we
+          // never cache fallbacks even if a future caller constructs one.
+          if (!result.isFallback) {
+            _cache[cacheKey] = _CacheEntry(result, DateTime.now());
+          }
 
           // 3b. Best-effort write to Firestore. Fire-and-forget — a
           //     failed write just means the next cold start re-fetches.
@@ -408,7 +427,7 @@ class RoutingService {
 
     // 4. Every provider failed — straight line.
     return RouteResult.fallback(
-      from: from,
+      from: origin,
       to: to,
       distanceMeters: straightLineMeters,
       provider: 'none',
@@ -845,6 +864,44 @@ class RoutingService {
     final fromPart = '${q(from.latitude)},${q(from.longitude)}';
     final toPart = '${q(to.latitude)},${q(to.longitude)}';
     return '$fromPart|$toPart';
+  }
+
+  /// Decide whether [point] is a usable routing origin.
+  ///
+  /// - Inside [UngujaBounds] → returned unchanged.
+  /// - Outside the box but within
+  ///   [AppConstants.routeOriginClampBufferMeters] of the nearest edge
+  ///   → snapped to that edge. This is the GPS-jitter case (a coastal
+  ///   fix landing ~30 m outside the box).
+  /// - Outside the box AND beyond the buffer → `null`. The caller should
+  ///   reject the request up-front without burning a network round-trip.
+  ///
+  /// The buffer is measured as a flat-earth distance approximation
+  /// (1° lat ≈ 111 km, 1° lng ≈ 111 km × cos(lat)). That's good enough
+  /// for a 500 m buffer at Zanzibar's latitude (~6° S) — the worst-case
+  /// error is < 0.5 % and the buffer is wide enough to absorb it.
+  static LatLng? clampForRoute(LatLng point) {
+    if (UngujaBounds.contains(point)) return point;
+    final clamped = UngujaBounds.clampPoint(point);
+    final bufferMeters = AppConstants.routeOriginClampBufferMeters;
+    final distanceMeters = _flatEarthMeters(point, clamped);
+    if (distanceMeters > bufferMeters) return null;
+    return clamped;
+  }
+
+  /// Cheap, latitude-scaled distance in meters between two LatLngs.
+  ///
+  /// Only used to decide whether a point is within
+  /// [AppConstants.routeOriginClampBufferMeters] of a box edge. The full
+  /// haversine is overkill for that decision and would import trig at
+  /// every call site.
+  static double _flatEarthMeters(LatLng a, LatLng b) {
+    const metersPerDegLat = 111320.0;
+    final metersPerDegLng =
+        111320.0 * math.cos(_toRad((a.latitude + b.latitude) / 2));
+    final dLat = (b.latitude - a.latitude) * metersPerDegLat;
+    final dLng = (b.longitude - a.longitude) * metersPerDegLng;
+    return math.sqrt(dLat * dLat + dLng * dLng);
   }
 
   /// Great-circle distance between two coordinates, in meters. Used as the

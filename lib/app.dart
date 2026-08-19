@@ -10,6 +10,7 @@ import 'blocs/auth/auth_cubit.dart';
 import 'blocs/site_list/site_list_cubit.dart';
 import 'blocs/site_detail/site_detail_cubit.dart';
 import 'blocs/navigation/navigation_cubit.dart';
+import 'blocs/user_location/user_location_cubit.dart';
 import 'blocs/activity/activity_cubit.dart';
 import 'data/services/firestore_service.dart';
 import 'blocs/language/language_cubit.dart';
@@ -82,6 +83,7 @@ class _StoneTownAppState extends State<StoneTownApp> {
         ),
         BlocProvider<SiteListCubit>(create: (_) => SiteListCubit()),
         BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
+        BlocProvider<UserLocationCubit>(create: (_) => UserLocationCubit()),
         BlocProvider<LanguageCubit>(create: (_) => LanguageCubit()),
         // Registered before SiteDetailCubit: BlocProvider is lazy: false by
         // default, so each create closure runs during MultiBlocProvider's

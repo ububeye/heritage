@@ -269,6 +269,87 @@ void main() {
         service.dispose();
       },
     );
+
+    test(
+      'clamps a near-edge origin into UngujaBounds and dispatches to OSRM',
+      () async {
+        // Coastal GPS jitter: the fix lands ~30 m north of the Unguja
+        // box (top edge is ungujaMaxLat = -6.10). Without the clamp,
+        // this would short-circuit to a fallback before reaching OSRM
+        // and the user would see a misleading "routing engine
+        // unavailable" banner. With the clamp, OSRM is contacted and a
+        // real route comes back.
+        const nearEdgeOrigin = LatLng(-6.0995, 39.1900);
+        const stoneTown = LatLng(-6.1650, 39.1950);
+
+        Uri? captured;
+        var networkCalled = false;
+        Future<http.Response> handler(http.Request req) async {
+          networkCalled = true;
+          captured = req.url;
+          return _okRoute(req);
+        }
+
+        final service = RoutingService(client: MockClient(handler));
+        final result = await service.getRoute(
+          from: nearEdgeOrigin,
+          to: stoneTown,
+        );
+
+        expect(
+          networkCalled,
+          isTrue,
+          reason: 'near-edge origin must be clamped, not rejected',
+        );
+        expect(result.isFallback, isFalse);
+        // The OSRM URL embeds the origin as `lng,lat`. The clamp must
+        // have snapped the raw -6.0995 to the box edge (-6.10), so the
+        // first coord in the URL must NOT be the jittered value.
+        expect(captured, isNotNull);
+        // `/route/v1/foot/{fromLng},{fromLat};{toLng},{toLat}`
+        final pathSegments = captured!.pathSegments;
+        // Path is ['route', 'v1', 'foot', '{lng,lat};{lng,lat}']
+        final coordPair = pathSegments.last;
+        final fromPart = coordPair.split(';').first;
+        final fromParts = fromPart.split(',');
+        expect(
+          double.parse(fromParts[1]),
+          greaterThanOrEqualTo(-6.10),
+          reason: 'OSRM URL must embed clamped origin, not raw GPS jitter',
+        );
+
+        service.dispose();
+      },
+    );
+
+    test(
+      'still rejects an origin far outside Unguja (beyond clamp buffer)',
+      () async {
+        // 5 km south of the box — well beyond routeOriginClampBufferMeters
+        // (500 m). This is the regression guard against accidentally
+        // letting Dar es Salaam slip into a Zanzibar route.
+        const farOut = LatLng(-6.55, 39.1900);
+        const stoneTown = LatLng(-6.1650, 39.1950);
+
+        var networkCalled = false;
+        Future<http.Response> handler(http.Request req) async {
+          networkCalled = true;
+          return _okRoute(req);
+        }
+
+        final service = RoutingService(client: MockClient(handler));
+        final result = await service.getRoute(from: farOut, to: stoneTown);
+
+        expect(networkCalled, isFalse);
+        expect(result.isFallback, isTrue);
+        expect(
+          result.errorMessage,
+          contains('Origin is outside Zanzibar'),
+        );
+
+        service.dispose();
+      },
+    );
   });
 }
 

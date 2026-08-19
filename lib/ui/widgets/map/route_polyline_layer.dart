@@ -11,12 +11,16 @@ import '../../../core/theme/app_semantic_colors.dart';
 /// effect on light tiles) and a tinted foreground. The foreground colour
 /// switches to an amber warning tint when [isOffRoute] is true, so the user
 /// can see at a glance that the route has been invalidated and a reroute is
-/// in flight.
+/// in flight. When [isFallback] is true the foreground is rendered as a
+/// dashed amber stroke — this is the straight-line "we couldn't reach the
+/// routing engine" state. The underlay stays solid so the directional cue
+/// is still visible.
 class RoutePolylineLayer extends StatelessWidget {
   const RoutePolylineLayer({
     super.key,
     required this.points,
     this.isOffRoute = false,
+    this.isFallback = false,
     this.underlayColor,
     this.routeColor,
     this.warningColor,
@@ -29,6 +33,12 @@ class RoutePolylineLayer extends StatelessWidget {
   /// Whether the user currently violates off-route threshold. Drives the
   /// amber tint.
   final bool isOffRoute;
+
+  /// True when the routing engine returned a 2-point straight-line
+  /// fallback (HTTP error, timeout, parse error, etc.). Renders the
+  /// foreground as a dashed amber stroke so the user can see at a glance
+  /// that this is not a real route.
+  final bool isFallback;
 
   /// Optional override for the underlay stroke colour (typically white).
   final Color? underlayColor;
@@ -47,9 +57,14 @@ class RoutePolylineLayer extends StatelessWidget {
     if (points.length < 2) {
       return const SizedBox.shrink();
     }
-    final fg = isOffRoute
-        ? (warningColor ?? context.semanticColors.warning)
-        : (routeColor ?? context.semanticColors.mapRoute);
+    final Color fg;
+    if (isFallback) {
+      fg = warningColor ?? context.semanticColors.warning;
+    } else if (isOffRoute) {
+      fg = warningColor ?? context.semanticColors.warning;
+    } else {
+      fg = routeColor ?? context.semanticColors.mapRoute;
+    }
     final bg = underlayColor ?? context.semanticColors.onImage;
 
     return PolylineLayer(
@@ -63,6 +78,17 @@ class RoutePolylineLayer extends StatelessWidget {
           points: points,
           color: fg,
           strokeWidth: AppConstants.routePolylineWidth,
+          // Dashed when this is a fallback so the user can tell at a
+          // glance the line is not a real route. flutter_map's
+          // `StrokePattern.dashed` takes a list of alternating on/off
+          // segment lengths in logical pixels. The list literal is not
+          // const because of the assert inside StrokePattern.dashed
+          // accessing .length, but the same pattern list is reused on
+          // every fallback render.
+          pattern: isFallback
+              ? StrokePattern.dashed(segments: const [6, 6])
+              : const StrokePattern.solid(),
+          strokeCap: isFallback ? StrokeCap.butt : StrokeCap.round,
         ),
       ],
     );

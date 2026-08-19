@@ -6,10 +6,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../blocs/localization/localization_cubit.dart';
+import '../../blocs/user_location/user_location_cubit.dart';
+import '../../blocs/user_location/user_location_state.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/utils/heading_source.dart';
 import '../../core/utils/nav_guard.dart';
 import '../../core/utils/stone_town_bounds.dart';
 import '../../core/utils/unguja_bounds.dart';
@@ -21,6 +24,7 @@ import '../screens/detail_screen.dart';
 import 'map_scale_bar.dart';
 import 'map/site_marker.dart';
 import 'map/selected_site_marker.dart';
+import 'map/user_marker.dart';
 
 /// Production-grade Heritage Map for Stone Town exploration and site picking.
 ///
@@ -105,9 +109,15 @@ class _HeritageMapState extends State<HeritageMap> {
   /// back to a private instance.
   final MapController _localMapController = MapController();
   final LocationService _locationService = LocationService();
+  final HeadingSource _headingSource = HeadingSource();
   LatLng? _pickedPoint;
   SiteModel? _selectedSite;
   bool _firstFitDone = false;
+  bool _permissionSnackbarShown = false;
+
+  /// Cached after the first build so we can ref/unref in didChangeDependencies
+  /// and dispose. Populated lazily to keep [initState] free of context reads.
+  UserLocationCubit? _userLocCubit;
 
   MapCameraController? _cameraController;
 
@@ -116,6 +126,9 @@ class _HeritageMapState extends State<HeritageMap> {
 
   MapController get _mapController =>
       _cameraController?.mapController ?? _localMapController;
+
+  String _tr(String key) =>
+      context.read<LocalizationCubit>().translate(key);
 
   @override
   void initState() {
@@ -137,6 +150,12 @@ class _HeritageMapState extends State<HeritageMap> {
     // state across screens.
     _cameraController =
         MapCameraController.maybeOf(context);
+    // Subscribe to the always-on user-location stream. Multiple
+    // HeritageMap instances share the cubit via its internal refcount,
+    // so a second map screen does NOT double-start the GPS stream.
+    _userLocCubit ??= context.read<UserLocationCubit>();
+    _userLocCubit!.ref();
+    _userLocCubit!.ensurePermissionAndStart();
   }
 
   @override
@@ -147,6 +166,8 @@ class _HeritageMapState extends State<HeritageMap> {
       _localMapController.dispose();
     }
     _locationService.dispose();
+    _headingSource.reset();
+    _userLocCubit?.unref();
     super.dispose();
   }
 
@@ -219,27 +240,42 @@ class _HeritageMapState extends State<HeritageMap> {
     }
   }
 
-  void _resetToAllSites() {
-    setState(() => _selectedSite = null);
-    if (widget.sites.length > 1) {
-      final points =
-          widget.sites.map((s) => LatLng(s.latitude, s.longitude)).toList();
-      final bounds = LatLngBounds.fromPoints(points);
-      _safeFitCamera(
-        CameraFit.bounds(
-          bounds: bounds,
-          padding: const EdgeInsets.all(48),
-          maxZoom: AppConstants.markerZoom,
-          minZoom: AppConstants.stoneTownMinZoom,
+  /// Browse-mode "My location" handler. Reads the cached position from
+  /// [UserLocationCubit] (no extra GPS round-trip) and flies the camera
+  /// there. Falls back to a snackbar when no fix is available yet.
+  void _locateUserFromCubit() {
+    final cubit = _userLocCubit;
+    if (cubit == null) return;
+
+    final state = cubit.state;
+    final pos = state.position;
+    if (pos == null) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text(_tr('error_location_service')),
+          duration: const Duration(seconds: 2),
         ),
       );
-    } else if (widget.sites.length == 1) {
-      _safeMove(
-        LatLng(widget.sites.first.latitude, widget.sites.first.longitude),
-        widget.initialZoom,
+      return;
+    }
+
+    final rawPoint = LatLng(pos.latitude, pos.longitude);
+    final clampedPoint = HeritageMap.clampForPicker(
+      rawPoint,
+      isPicker: false,
+    );
+    final wasOutsideBox = !UngujaBounds.contains(rawPoint);
+    _safeMove(clampedPoint, AppConstants.markerZoom);
+
+    if (wasOutsideBox && mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Location is outside Zanzibar — snapped to closest point.',
+          ),
+          duration: Duration(seconds: 2),
+        ),
       );
-    } else {
-      _safeMove(UngujaBounds.centre, widget.initialZoom);
     }
   }
 
@@ -305,7 +341,29 @@ class _HeritageMapState extends State<HeritageMap> {
   @override
   Widget build(BuildContext context) {
     final isPicker = widget.draggableMarker;
-    final markers = _buildMarkers();
+    // Static markers (site pins / picker pin) live outside the
+    // BlocSelector below so they do NOT repaint on every GPS fix. Only
+    // the user marker rebuilds when the cubit emits a new position.
+    final staticMarkers = buildStaticMarkers(
+      sites: widget.sites,
+      selectedSite: _selectedSite,
+      pickedPoint: _pickedPoint,
+      isPicker: widget.draggableMarker,
+      initialLat: widget.initialLat,
+      initialLng: widget.initialLng,
+      context: context,
+      onPickerDrag: (point) => setState(() => _pickedPoint = point),
+      onSiteTap: _selectSite,
+    );
+
+    // Feed each position through the local HeadingSource so the user
+    // marker can show a heading wedge on Android (where headingAccuracy
+    // is often unreliable — HeadingSource falls back to bearing-derived
+    // heading from two consecutive fixes).
+    _watchHeadingFromCubit();
+
+    // Surface the permission-denied snackbar once per session.
+    _maybeShowPermissionDeniedSnackbar();
 
     return Stack(
       children: [
@@ -338,7 +396,36 @@ class _HeritageMapState extends State<HeritageMap> {
               maxNativeZoom: 19,
               tileProvider: TileCacheService.instance.tileProvider(),
             ),
-            MarkerLayer(markers: markers),
+            // Static (site / picker) markers + a BlocSelector-driven user
+            // marker. The BlocSelector only rebuilds when the selected
+            // value (LatLng? or hasPermission) actually changes, so the
+            // MarkerLayer does NOT repaint on every GPS tick.
+            BlocSelector<UserLocationCubit, UserLocationState, _UserMarkerData?>(
+              selector: _userMarkerSelector,
+              builder: (context, userMarker) {
+                return MarkerLayer(
+                  markers: <Marker>[
+                    ...staticMarkers,
+                    if (userMarker != null)
+                      Marker(
+                        point: userMarker.point,
+                        width: 18 * 2.4,
+                        height: 18 * 2.4,
+                        alignment: Alignment.center,
+                        child: Opacity(
+                          opacity:
+                              userMarker.isInUnguja ? 1.0 : 0.4,
+                          child: UserMarker(
+                            headingDeg: _headingSource.currentDeg,
+                            color: context.semanticColors.mapUser,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
             RichAttributionWidget(
               alignment: AttributionAlignment.bottomLeft,
               attributions: const [
@@ -365,7 +452,7 @@ class _HeritageMapState extends State<HeritageMap> {
               borderRadius: AppRadius.smBorder,
               color: Theme.of(context).colorScheme.surface,
               child: InkWell(
-                onTap: isPicker ? _useCurrentLocation : _resetToAllSites,
+                onTap: isPicker ? _useCurrentLocation : _locateUserFromCubit,
                 borderRadius: AppRadius.smBorder,
                 child: Padding(
                   padding:
@@ -376,13 +463,13 @@ class _HeritageMapState extends State<HeritageMap> {
                       Icon(
                         isPicker
                             ? PhosphorIconsRegular.navigationArrow
-                            : Icons.center_focus_strong,
+                            : PhosphorIconsRegular.navigationArrow,
                         size: 18,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        isPicker ? 'My location' : 'Reset view',
+                        _tr('my_location'),
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               fontSize: 13,
                               color: Theme.of(context).colorScheme.primary,
@@ -453,72 +540,144 @@ class _HeritageMapState extends State<HeritageMap> {
     );
   }
 
-  List<Marker> _buildMarkers() {
-    if (widget.draggableMarker) {
-      final point = HeritageMap.clampForPicker(
-        _pickedPoint ?? LatLng(widget.initialLat, widget.initialLng),
-        isPicker: true,
-      );
-      return [
-        Marker(
-          point: point,
-          width: 60,
-          height: 60,
-          alignment: Alignment.bottomCenter,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              final newLat = (point.latitude - details.delta.dy * 0.00005).clamp(
-                AppConstants.stoneTownPickerMinLat,
-                AppConstants.stoneTownPickerMaxLat,
-              );
-              final newLng = (point.longitude + details.delta.dx * 0.00005).clamp(
-                AppConstants.stoneTownPickerMinLng,
-                AppConstants.stoneTownPickerMaxLng,
-              );
-              final clamped = StoneTownBounds.clampPoint(LatLng(newLat, newLng));
-              setState(() => _pickedPoint = clamped);
-              widget.onLocationPicked?.call(clamped.latitude, clamped.longitude);
-            },
-            child: const SelectedSiteMarker(
-              label: 'Pin',
-              color: Color(0xFF1D4ED8),
-              icon: PhosphorIconsFill.mapPin,
-              selected: true,
-              isPicker: true,
-            ),
-          ),
-        ),
-      ];
+  void _watchHeadingFromCubit() {
+    final cubit = _userLocCubit;
+    if (cubit == null) return;
+    final pos = cubit.state.position;
+    if (pos != null) {
+      _headingSource.onPosition(pos);
     }
+  }
 
-    return widget.sites.map((site) {
-      final isSelected = _selectedSite?.id == site.id;
-      // Selected pins render via [SelectedSiteMarker] for the gentle
-      // pulse + halo animation; the rest use the calmer [SiteMarker].
-      final pinLabel = site.nameEn;
-      final pinColor = _getCategoryColorFor(
-        site.category ?? 'historic',
-        context,
+  /// Selector that returns a [_UserMarkerData] only when there is a real
+  /// fix AND permission has been granted. The BlocSelector only rebuilds
+  /// when this record actually changes, so the MarkerLayer does NOT
+  /// repaint on every GPS tick.
+  static _UserMarkerData? _userMarkerSelector(UserLocationState state) {
+    if (state.position == null) return null;
+    return _UserMarkerData(
+      point: LatLng(state.position!.latitude, state.position!.longitude),
+      isInUnguja: state.isInUnguja,
+    );
+  }
+
+  /// Shows a permission-denied snackbar once per session. The cubit
+  /// emits `hasPermission == false` after `ensurePermissionAndStart`
+  /// runs — we listen for that transition and surface the action.
+  void _maybeShowPermissionDeniedSnackbar() {
+    final cubit = _userLocCubit;
+    if (cubit == null) return;
+    if (_permissionSnackbarShown) return;
+    // No permission + we already completed the first probe.
+    if (cubit.state.hasPermission) return;
+    // The cubit's `hasPermission == false` is the initial state — only
+    // fire the snackbar after the user has actually interacted with
+    // the screen at least once. Defer the check to a microtask so the
+    // first build doesn't double-fire.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _permissionSnackbarShown) return;
+      final s = _userLocCubit?.state;
+      if (s == null || s.hasPermission) return;
+      _permissionSnackbarShown = true;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text(_tr('location_permission_required')),
+          duration: const Duration(seconds: 3),
+        ),
       );
-      final pinIcon = _getCategoryIconFor(site.category ?? 'historic');
-      return Marker(
-        point: LatLng(site.latitude, site.longitude),
-        width: isSelected ? 120 : 90,
-        height: isSelected ? 72 : 56,
+    });
+  }
+}
+
+/// Minimal payload for the user marker — only the fields the
+/// BlocSelector actually uses. Keeps rebuild scope tiny.
+class _UserMarkerData {
+  const _UserMarkerData({required this.point, required this.isInUnguja});
+  final LatLng point;
+  final bool isInUnguja;
+}
+
+/// Pure builder for the static (non-user) markers on the map. Pulled
+/// out as a top-level helper so it can be unit-tested without mounting
+/// the full HeritageMap widget (which depends on flutter_map's
+/// `MapController` and tile providers — see
+/// `test/heritage_map_bounds_test.dart` L11-13).
+///
+/// [onPickerDrag] is invoked with the new LatLng whenever the
+/// draggable picker pin is moved; the caller is expected to update its
+/// own state in response.
+List<Marker> buildStaticMarkers({
+  required List<SiteModel> sites,
+  required SiteModel? selectedSite,
+  required LatLng? pickedPoint,
+  required bool isPicker,
+  required double initialLat,
+  required double initialLng,
+  required BuildContext context,
+  void Function(LatLng newPoint)? onPickerDrag,
+  void Function(SiteModel site)? onSiteTap,
+}) {
+  if (isPicker) {
+    final point = HeritageMap.clampForPicker(
+      pickedPoint ?? LatLng(initialLat, initialLng),
+      isPicker: true,
+    );
+    return [
+      Marker(
+        point: point,
+        width: 60,
+        height: 60,
         alignment: Alignment.bottomCenter,
         child: GestureDetector(
-          onTap: () => _selectSite(site),
-          child: isSelected
-              ? SelectedSiteMarker(
-                  label: pinLabel,
-                  color: pinColor,
-                  icon: pinIcon,
-                )
-              : SiteMarker(label: pinLabel, color: pinColor, icon: pinIcon),
+          onPanUpdate: (details) {
+            final newLat = (point.latitude - details.delta.dy * 0.00005).clamp(
+              AppConstants.stoneTownPickerMinLat,
+              AppConstants.stoneTownPickerMaxLat,
+            );
+            final newLng =
+                (point.longitude + details.delta.dx * 0.00005).clamp(
+              AppConstants.stoneTownPickerMinLng,
+              AppConstants.stoneTownPickerMaxLng,
+            );
+            final clamped = StoneTownBounds.clampPoint(
+              LatLng(newLat, newLng),
+            );
+            onPickerDrag?.call(clamped);
+          },
+          child: const SelectedSiteMarker(
+            label: 'Pin',
+            color: Color(0xFF1D4ED8),
+            icon: PhosphorIconsFill.mapPin,
+            selected: true,
+            isPicker: true,
+          ),
         ),
-      );
-    }).toList();
+      ),
+    ];
   }
+
+  return sites.map((site) {
+    final isSelected = selectedSite?.id == site.id;
+    final pinLabel = site.nameEn;
+    final pinColor = _getCategoryColorFor(site.category ?? 'historic', context);
+    final pinIcon = _getCategoryIconFor(site.category ?? 'historic');
+    return Marker(
+      point: LatLng(site.latitude, site.longitude),
+      width: isSelected ? 120 : 90,
+      height: isSelected ? 72 : 56,
+      alignment: Alignment.bottomCenter,
+      child: GestureDetector(
+        onTap: () => onSiteTap?.call(site),
+        child: isSelected
+            ? SelectedSiteMarker(
+                label: pinLabel,
+                color: pinColor,
+                icon: pinIcon,
+              )
+            : SiteMarker(label: pinLabel, color: pinColor, icon: pinIcon),
+      ),
+    );
+  }).toList();
 }
 
 /// Top-level helpers for category icon + colour. Used both by

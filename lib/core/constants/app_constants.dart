@@ -161,6 +161,16 @@ class AppConstants {
   /// resolved cleanly (no GPS yet, OSRM demo rate limit, etc.).
   static const double maxRouteDistanceMeters = 8000;
 
+  /// When the user's GPS fix lands just outside [UngujaBounds] (typical
+  /// for coastal fixes with ±30 m of noise), [RoutingService] snaps the
+  /// origin to the nearest box edge before sending to OSRM. This buffer
+  /// caps how far outside the box we'll silently clamp — anything beyond
+  /// it is still rejected up-front so a user in Dar es Salaam doesn't
+  /// get a Zanzibar route. 500 m is wider than the worst GPS noise we've
+  /// observed in testing, and narrower than any realistic "I'm outside
+  /// Zanzibar" distance.
+  static const double routeOriginClampBufferMeters = 500;
+
   /// Tile-cache age (days). Tiles older than this on disk are
   /// re-fetched on next miss. We don't proactively evict.
   static const int tileCacheMaxAgeDays = 30;

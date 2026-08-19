@@ -161,7 +161,6 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
   LatLng? _cameraTickerStart;
   LatLng? _cameraTickerEnd;
   LatLng? _lastUserPosition;
-  bool _userInsideBox = true;
 
   // ── Compass / heading ──────────────────────────────────────────────────────
 
@@ -411,18 +410,14 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
         final posLatLng =
             pos == null ? null : LatLng(pos.latitude, pos.longitude);
 
-        // 1. Pull a route once we know where the user is.
+        // 1. Pull a route once we know where the user is. We always pass the
+        //    real user position, even when it falls outside Unguja — the
+        //    routing engine itself rejects out-of-bounds origins and the
+        //    banner surfaces a fallback message instead of pretending
+        //    the user is at the island centre.
         if (_routeLoading && posLatLng != null) {
-          _fetchRoute(
-            UngujaBounds.contains(posLatLng)
-                ? posLatLng
-                : UngujaBounds.centre,
-          );
-          _fitInitial(
-            UngujaBounds.contains(posLatLng)
-                ? posLatLng
-                : UngujaBounds.centre,
-          );
+          _fetchRoute(posLatLng);
+          _fitInitial(posLatLng);
         }
 
         // 1b. Smooth the position via the GPS filter. Outliers (single bad
@@ -528,13 +523,8 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           }
         }
 
-        // 3. Track whether the user is inside the island.
-        if (posLatLng != null) {
-          final inside = UngujaBounds.contains(posLatLng);
-          if (inside != _userInsideBox) {
-            setState(() => _userInsideBox = inside);
-          }
-        }
+        // 3. (removed: out-of-bounds tracking. The user dot now renders
+        //    at low opacity instead of being hidden.)
 
         // 4. Show arrival overlay once.
         if (navState.status == nav_model.NavigationStatus.arrived &&
@@ -721,6 +711,7 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           RoutePolylineLayer(
             points: _routePoints,
             isOffRoute: _isOffRoute,
+            isFallback: _routeIsFallback,
           ),
         // Arrival-zone translucent circle.
         CircleLayer(
@@ -751,8 +742,11 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
               alignment: Alignment.topCenter,
               child: const _DestinationMarker(),
             ),
-            // User — pulsing blue dot. Only when GPS is fixed and on-island.
-            if (userLatLng != null && _userInsideBox)
+            // User — pulsing blue dot. Visible everywhere once we have a
+            // fix; the Browse/Site maps dim the dot when out of bounds,
+            // but on the live navigation screen the user must always see
+            // where they are.
+            if (userLatLng != null)
               Marker(
                 point: userLatLng,
                 width: 28,
@@ -996,6 +990,36 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     _fitInitial(target);
   }
 
+  /// User tapped the fallback banner. Re-fetch the route with the last
+  /// known user position, debounced via the existing [_rerouteDebounce]
+  /// Timer. Bumps _routeRequestId-equivalent state by calling
+  /// [_fetchRoute] which already invalidates stale responses.
+  void _retryRoute() {
+    if (_routeLoading) return;
+    final pos = _navigationCubit?.state.navigationState.currentPosition;
+    final origin =
+        pos != null ? LatLng(pos.latitude, pos.longitude) : _lastUserPosition;
+    if (origin == null) return;
+    _rerouteDebounce?.cancel();
+    // Optimistic UI clear so the tap registers visually — otherwise the
+    // banner stays frozen on the old fallback copy until the new response
+    // arrives (network round-trip can be several seconds). The debounce
+    // keeps a frustrated user from queueing dozens of fetches in a second.
+    setState(() {
+      _routeLoading = true;
+      _routeIsFallback = false;
+      _routeError = null;
+    });
+    _rerouteDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      _routingService.telemetry?.call('routing_reroute', {
+        'site_id': widget.site.id,
+        'reason': 'banner_retry',
+      });
+      _fetchRoute(origin, isReroute: true);
+    });
+  }
+
   /// Small banner shown below the top card while route is loading / error /
   /// fallback. Hidden once a clean route is loaded.
   Widget _buildBanner(BuildContext context, nav_model.NavigationState nav) {
@@ -1006,20 +1030,26 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
     final loc = context.read<LocalizationCubit>();
     String tr(String key) => loc.translate(key);
     final isRoutingAuthFailure = _routeError == 'routing_api_key_invalid';
-    final color =
-        hasError
-            ? Theme.of(context).colorScheme.error
+    final isOutsideUnguja =
+        _routeError != null &&
+        (_routeError!.startsWith('Origin is outside') ||
+            _routeError!.startsWith('Destination is outside'));
+    final color = hasError
+        ? Theme.of(context).colorScheme.error
+        : _routeIsFallback
+            ? Theme.of(context).colorScheme.onSurface
             : Theme.of(context).colorScheme.onSurface;
-    final text =
-        hasError
-            ? (nav.errorMessage ?? tr('error_generic'))
-            : _routeLoading
-            ? tr('loading')
+    final text = hasError
+        ? (nav.errorMessage ?? tr('error_generic'))
+        : _routeLoading
+            ? (_routeIsFallback
+                ? tr('route_fallback_retrying')
+                : tr('loading'))
             : (isRoutingAuthFailure
                 ? tr('routing_api_key_invalid')
-                : (_routeError != null
-                    ? '${tr('routing_offline')}\n$_routeError'
-                    : tr('routing_offline')));
+                : isOutsideUnguja
+                    ? tr('route_fallback_outside_unguja')
+                    : tr('route_fallback'));
 
     // Position below the top card (or top padding if no card yet).
     final topOffset =
@@ -1034,16 +1064,45 @@ class _NavigationScreenOpenState extends State<NavigationScreenOpen>
           color: color,
           elevation: 2,
           borderRadius: AppRadius.bannerBorder,
+          // Tap the banner to retry the route fetch. Debounced via
+          // [_rerouteDebounce] so a frustrated user can't queue dozens
+          // of fetches in a second.
+        child: InkWell(
+          borderRadius: AppRadius.bannerBorder,
+          onTap: _routeIsFallback && !_routeLoading
+              ? _retryRoute
+              : null,
           child: Padding(
             padding: AppInsets.bannerInner,
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.surface,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    text,
+                    textAlign: TextAlign.center,
+                    style:
+                        Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.surface,
+                            ),
+                  ),
+                ),
+                if (_routeIsFallback && !_routeLoading) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    tr('retry'),
+                    style:
+                        Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.surface,
+                              fontWeight: FontWeight.w700,
+                              decoration: TextDecoration.underline,
+                            ),
+                  ),
+                ],
+              ],
             ),
           ),
+        ),
         ),
       ),
     );

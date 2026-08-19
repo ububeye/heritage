@@ -270,5 +270,9 @@
   "continue_on": "Continue on",
   "onto": "onto",
   "routing_offline": "Routing offline — direct line.",
+  "route_fallback": "Using direct line — routing engine unavailable.",
+  "route_fallback_retrying": "Looking for a route…",
+  "route_fallback_outside_unguja": "Outside Zanzibar — showing direct line. Move closer to try again.",
+  "my_location": "My location",
   "coming_soon": "Coming soon"
 }
