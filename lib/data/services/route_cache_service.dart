@@ -30,6 +30,7 @@ import 'routing_service.dart' show RouteResult, RouteStep;
 ///       "distance": 12.5,
 ///       "duration": 35.0,
 ///       "provider": "osrmDemo",
+///       "origin_is_approximate": false,
 ///       "steps": [
 ///         {"maneuver":"depart","name":"...","distance":45.2,
 ///          "duration":32.0,
@@ -73,6 +74,12 @@ class FirestoreRouteCache implements RouteCacheService {
           if (result.durationSeconds != null)
             'duration': result.durationSeconds,
           'provider': result.provider,
+          // Persist origin policy so a subsequent session can tell a
+          // centre-fallback route from a real-GPS route. Without this,
+          // a stale centre-origin route would be presented on a future
+          // visit as if the user's dot was at the island centre — i.e.
+          // the polyline would visibly start far from the dot.
+          'origin_is_approximate': result.originIsApproximate,
           'steps': result.steps.map(_encodeStep).toList(),
         },
       };
@@ -127,6 +134,17 @@ class FirestoreRouteCache implements RouteCacheService {
               .map((s) => _decodeStep(s as Map<String, dynamic>))
               .whereType<RouteStep>()
               .toList();
+
+      // Reject any cached entry whose origin was approximate (centre
+      // substitution). A centre-origin polyline is wrong for any user
+      // whose GPS isn't at the centre — the polyline would visibly start
+      // far from the user's dot on the map. Returning null here forces
+      // the caller to hit OSRM with the real GPS position. Old payloads
+      // written before the field existed default to `false` (real GPS)
+      // so they keep working.
+      final originIsApproximate =
+          (props?['origin_is_approximate'] as bool?) ?? false;
+      if (originIsApproximate) return null;
 
       return RouteResult(
         points: points,

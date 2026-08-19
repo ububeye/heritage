@@ -222,6 +222,10 @@ class RouteResult {
   /// from the engine — but the starting point is the centre, not the
   /// user's actual position. The UI surfaces this with a soft
   /// "GPS unavailable" indicator rather than the orange fallback banner.
+  ///
+  /// Persisted alongside geometry by [RouteCacheService.save] so a stale
+  /// centre-origin route cannot be resurrected on a subsequent session
+  /// and presented as if it started from the user's actual position.
   final bool originIsApproximate;
 
   static RouteResult fallback({
