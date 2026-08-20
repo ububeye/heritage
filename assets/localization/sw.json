@@ -25,6 +25,14 @@
   "view_on_map": "Angalia kwenye ramani",
   "start_audio_guide": "Anzia Mwongozo wa Sauti",
 
+  "navigate_chooser_title": "Chagua jinsi ya kwenda",
+  "navigate_google_maps": "Google Maps",
+  "navigate_google_maps_subtitle": "Fungua programu ya Google Maps ya simu yako na eneo hili kama marudio",
+  "navigate_osrm": "Ramani ya ndani ya programu (OSRM)",
+  "navigate_osrm_subtitle": "Tumia ramani huria iliyo ndani ya programu — bila kubadilisha programu.",
+  "recommended": "Inapendekezwa",
+  "navigate_external_failed": "Imeshindwa kufungua programu ya ramani kwenye kifaa hiki.",
+
   "search_places": "Tafuta mahali...",
   "best_places": "Mahali Bora",
   "all": "Zote",

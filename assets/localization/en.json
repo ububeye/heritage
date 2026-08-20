@@ -25,6 +25,14 @@
   "view_on_map": "View on Map",
   "start_audio_guide": "Start Audio Guide",
 
+  "navigate_chooser_title": "Choose how to navigate",
+  "navigate_google_maps": "Google Maps",
+  "navigate_google_maps_subtitle": "Opens your phone's Google Maps app with this location as the destination",
+  "navigate_osrm": "In-app map (OSRM)",
+  "navigate_osrm_subtitle": "Use the in-app open-source map — no app switch.",
+  "recommended": "Recommended",
+  "navigate_external_failed": "Couldn't open a maps app on this device.",
+
   "search_places": "Search places...",
   "best_places": "Best Places",
   "all": "All",

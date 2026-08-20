@@ -12,6 +12,7 @@ import '../../blocs/language/language_cubit.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/favorites/favorites_cubit.dart';
 import '../../core/utils/nav_guard.dart';
+import '../../core/utils/navigate_chooser.dart';
 import '../widgets/audio_player_bar.dart';
 import '../widgets/transcript_section.dart';
 import '../widgets/upgrade_banner.dart';
@@ -708,7 +709,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed:
-                                  () => safePushNavigation(context, site),
+                                  () => showNavigateChooser(context, site),
                               icon: const Icon(
                                 PhosphorIconsRegular.navigationArrow,
                                 size: 18,
