@@ -2,17 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_shadows.dart';
-import '../../data/models/user_model.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
-import '../../blocs/premium/premium_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../blocs/runtime_config/runtime_config_cubit.dart';
-import '../../data/services/shared_prefs_service.dart';
 import 'login_screen.dart';
-import 'premium_offer_screen.dart';
-import 'home_screen.dart';
-import 'admin/admin_shell.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_durations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -75,32 +69,16 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state.status == AuthStatus.authenticated) {
-          // Check if user is admin - send to admin shell
-          if (state.user?.role == UserRole.admin) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const AdminShell()),
-            );
-            return;
-          }
-
-          // Non-admin users - check premium offer
-          final premiumCubit = context.read<PremiumCubit>();
-          // The post-login value-prop screen only appears for users who
-          // have not yet heard any audio preview. Once they have, the
-          // gated flag persists across sign-out by design.
-          final showOffer =
-              premiumCubit.state.showPremiumOffer &&
-              !SharedPrefsService.instance.audioPreviewedAtLeastOnce;
-          if (showOffer) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const PremiumOfferScreen()),
-            );
-          } else {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          }
+        if (state.status == AuthStatus.registered) {
+          // Sign-up created the Firebase Auth account but did not sign
+          // the user in (the cubit's signUpWithEmail emits `registered`,
+          // not `authenticated`). Route to LoginScreen so they enter
+          // credentials and reach the home via the normal sign-in path.
+          // Admin and premium-offer gating is handled inside
+          // LoginScreen's own BlocListener on `authenticated`.
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
         } else if (state.status == AuthStatus.error &&
             state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(

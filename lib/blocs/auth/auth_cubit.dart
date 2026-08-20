@@ -135,12 +135,13 @@ class AuthCubit extends Cubit<AuthState> {
         final liveRole = await _firestoreService.getUserRole(user.id);
         final resolved =
             liveRole == null ? user : user.copyWith(role: liveRole);
-        await SharedPrefsService.instance.setUserLoggedIn(
-          true,
-          userId: resolved.id,
-          userRole: resolved.role.name,
-        );
-        emit(state.copyWith(status: AuthStatus.authenticated, user: resolved));
+        // Intentionally do NOT call SharedPrefsService.setUserLoggedIn(true)
+        // here. Sign-up creates the Firebase Auth account but does not
+        // auto-sign-in. RegisterScreen's BlocListener watches for
+        // AuthStatus.registered and routes to LoginScreen, so the user
+        // reaches the home via the normal sign-in path. The persisted
+        // logged-in flag is updated by signInWithEmail.
+        emit(state.copyWith(status: AuthStatus.registered, user: resolved));
       } else {
         emit(
           state.copyWith(

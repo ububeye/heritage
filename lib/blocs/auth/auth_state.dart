@@ -16,6 +16,14 @@ enum AuthStatus {
   /// show a "check your inbox" SnackBar; the previous behaviour of
   /// flipping to `authenticated` for a logged-out user is a bug.
   passwordResetSent,
+
+  /// Email/password sign-up succeeded but the user has *not* been
+  /// signed in. The register screen's BlocListener routes to the
+  /// login screen on this status; the user enters their credentials
+  /// to actually authenticate. `isAuthenticated` returns false here
+  /// by construction (AuthState.isAuthenticated only matches
+  /// `authenticated`), so the root router stays on the auth shell.
+  registered,
 }
 
 class AuthState extends Equatable {
