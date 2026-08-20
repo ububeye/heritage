@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_semantic_colors.dart';
-import '../../core/theme/app_palette.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
@@ -150,14 +149,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ElevatedButton(
                         onPressed: isLast ? _completeOnboarding : _nextPage,
                         style: ElevatedButton.styleFrom(
-                          // The theme's primary is Colors.black, which
-                          // renders the button as a solid black box on
-                          // light theme — user reported the buttons
-                          // "appear full black". Use the brand coral
-                          // explicitly so the button reads as a brand
-                          // CTA on both themes.
-                          backgroundColor: AppPalette.coral500,
-                          foregroundColor: AppPalette.fixedWhite,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 32,
                             vertical: 16,
