@@ -18,7 +18,7 @@ import '../widgets/transcript_section.dart';
 import '../widgets/upgrade_banner.dart';
 import '../widgets/rating_stars.dart';
 import 'site_map_screen.dart';
-import 'upgrade_screen.dart';
+import '../navigation/upgrade_navigator.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -637,10 +637,15 @@ class _DetailScreenState extends State<DetailScreen> {
                       if (!isPremium)
                         UpgradeBanner(
                           onUpgrade:
-                              () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const UpgradeScreen(),
-                                ),
+                              () => UpgradeNavigator.open(
+                                context,
+                                // After a successful purchase, return to
+                                // this same detail screen so the user can
+                                // keep exploring with all 7 audio
+                                // languages. The banner rebuilds and
+                                // disappears as isPremium flips.
+                                onSuccessDismiss:
+                                    () => Navigator.of(context).pop(),
                               ),
                           message: '30 sec limit • Upgrade for full audio',
                         ),

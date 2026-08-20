@@ -24,7 +24,7 @@ import '../widgets/settings/settings_section_title.dart';
 import '../widgets/settings/settings_tile.dart';
 import '../widgets/user_avatar.dart';
 import 'login_screen.dart';
-import 'upgrade_screen.dart';
+import '../navigation/upgrade_navigator.dart';
 import 'user_profile_screen.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -198,10 +198,10 @@ class _SettingsBody extends StatelessWidget {
                       title: tr(locState, 'upgrade_to_premium'),
                       subtitle: tr(locState, 'unlock_premium'),
                       onTap:
-                          () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const UpgradeScreen(),
-                            ),
+                          () => UpgradeNavigator.open(
+                            context,
+                            onSuccessDismiss:
+                                () => Navigator.of(context).pop(),
                           ),
                     ),
                   ],
@@ -242,8 +242,9 @@ class _SettingsBody extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                  UpgradeNavigator.open(
+                    context,
+                    onSuccessDismiss: () => Navigator.of(context).pop(),
                   );
                 },
                 style: ElevatedButton.styleFrom(

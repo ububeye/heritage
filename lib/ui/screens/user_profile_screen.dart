@@ -6,7 +6,7 @@ import '../../blocs/auth/auth_state.dart';
 import '../../blocs/premium/premium_cubit.dart';
 import '../../blocs/premium/premium_state.dart';
 import 'login_screen.dart';
-import 'upgrade_screen.dart';
+import '../navigation/upgrade_navigator.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
@@ -797,10 +797,9 @@ class _UpgradePromptCard extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed:
-                    () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const UpgradeScreen(),
-                      ),
+                    () => UpgradeNavigator.open(
+                      context,
+                      onSuccessDismiss: () => Navigator.of(context).pop(),
                     ),
                 icon: const Icon(Icons.workspace_premium_rounded, size: 18),
                 label: const Text('Upgrade Now'),

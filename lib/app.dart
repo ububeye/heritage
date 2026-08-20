@@ -30,7 +30,7 @@ import 'ui/screens/welcome_screen.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/favorites_screen.dart';
 import 'ui/screens/admin/admin_shell.dart';
-import 'ui/screens/upgrade_screen.dart';
+import 'ui/navigation/upgrade_navigator.dart';
 
 // Top-level so StoneTownApp can stay const. The key is stable for the
 // lifetime of the process — there's only one MaterialApp at the root.
@@ -190,10 +190,9 @@ class _StoneTownAppState extends State<StoneTownApp> {
                   action: SnackBarAction(
                     label: 'Upgrade',
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const UpgradeScreen(),
-                        ),
+                      UpgradeNavigator.open(
+                        context,
+                        onSuccessDismiss: () => Navigator.of(context).pop(),
                       );
                     },
                   ),
