@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../core/utils/distance_calculator.dart';
+import 'shared_prefs_service.dart';
 
 class LocationService {
   StreamSubscription<Position>? _positionSubscription;
@@ -42,9 +43,7 @@ class LocationService {
     }
   }
 
-  void startListening({
-    int distanceFilter = 5,
-  }) {
+  void startListening({int distanceFilter = 5}) {
     _positionSubscription?.cancel();
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: LocationSettings(
@@ -99,7 +98,8 @@ class LocationService {
   }
 
   String formatDistance(double meters) {
-    return DistanceCalculator.formatDistance(meters);
+    final isImperial = SharedPrefsService.instance.distanceUnits == 'imperial';
+    return DistanceCalculator.formatDistance(meters, isImperial: isImperial);
   }
 
   Duration estimateWalkingTime(double distanceMeters) {

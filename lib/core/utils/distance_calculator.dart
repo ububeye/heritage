@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
+import '../../data/services/shared_prefs_service.dart';
 
 class DistanceCalculator {
   DistanceCalculator._();
@@ -13,13 +14,36 @@ class DistanceCalculator {
     return Geolocator.distanceBetween(startLat, startLng, endLat, endLng);
   }
 
-  static String formatDistance(double meters) {
-    if (meters < 1000) {
-      return '${meters.round()} m';
+  static String formatDistance(double meters, {bool isImperial = false}) {
+    if (isImperial) {
+      final feet = meters * 3.28084;
+      if (feet < 1000) {
+        return '${feet.round()} ft';
+      } else {
+        final miles = feet / 5280;
+        return '${miles.toStringAsFixed(1)} mi';
+      }
     } else {
-      final km = meters / 1000;
-      return '${km.toStringAsFixed(1)} km';
+      if (meters < 1000) {
+        return '${meters.round()} m';
+      } else {
+        final km = meters / 1000;
+        return '${km.toStringAsFixed(1)} km';
+      }
     }
+  }
+
+  /// Single entry-point for UI code that wants to render a distance
+  /// according to the user's stored unit preference. Reads
+  /// [SharedPrefsService.distanceUnits] on every call so a mid-session
+  /// toggle (Imperial ↔ Metric) takes effect without a rebuild.
+  ///
+  /// Callers should prefer this over the `isImperial:` form so the unit
+  /// lookup stays centralised.
+  static String formatDistanceForPrefs(double meters) {
+    final isImperial =
+        SharedPrefsService.instance.distanceUnits == 'imperial';
+    return formatDistance(meters, isImperial: isImperial);
   }
 
   static String formatDuration(Duration duration) {
@@ -62,7 +86,8 @@ class DistanceCalculator {
     final dLng = _toRadians(endLng - startLng);
 
     final y = math.sin(dLng) * math.cos(lat2);
-    final x = math.cos(lat1) * math.sin(lat2) -
+    final x =
+        math.cos(lat1) * math.sin(lat2) -
         math.sin(lat1) * math.cos(lat2) * math.cos(dLng);
 
     final bearing = math.atan2(y, x);
@@ -88,8 +113,12 @@ class DistanceCalculator {
     final A = math.sin((1 - fraction) * d / 6371000) / math.sin(d / 6371000);
     final B = math.sin(fraction * d / 6371000) / math.sin(d / 6371000);
 
-    final x = A * math.cos(lat1) * math.cos(lng1) + B * math.cos(lat2) * math.cos(lng2);
-    final y = A * math.cos(lat1) * math.sin(lng1) + B * math.cos(lat2) * math.sin(lng2);
+    final x =
+        A * math.cos(lat1) * math.cos(lng1) +
+        B * math.cos(lat2) * math.cos(lng2);
+    final y =
+        A * math.cos(lat1) * math.sin(lng1) +
+        B * math.cos(lat2) * math.sin(lng2);
     final z = A * math.sin(lat1) + B * math.sin(lat2);
 
     final lat = math.atan2(z, math.sqrt(x * x + y * y));

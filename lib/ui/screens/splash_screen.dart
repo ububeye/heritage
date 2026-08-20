@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
@@ -14,6 +14,8 @@ import 'home_screen.dart';
 import 'admin/admin_shell.dart';
 import 'maintenance_screen.dart';
 import 'onboarding_screen.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_durations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: AppDurations.splash,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -91,8 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
     // an active maintenance window still lands on the maintenance
     // screen instead of their cached route.
     final inMaintenance = RuntimeConfigService.instance.maintenanceMode;
-    final isAdmin =
-        authState.user?.role == UserRole.admin;
+    final isAdmin = authState.user?.role == UserRole.admin;
     if (inMaintenance && !isAdmin) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MaintenanceScreen()),
@@ -104,12 +105,15 @@ class _SplashScreenState extends State<SplashScreen>
     // user sees the app intro before any sign-in screen.
     if (SharedPrefsService.instance.isFirstLaunch) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen(isFirstLaunch: true)),
+        MaterialPageRoute(
+          builder: (_) => const OnboardingScreen(isFirstLaunch: true),
+        ),
       );
       return;
     }
 
-    if (authState.status == AuthStatus.authenticated && authState.user != null) {
+    if (authState.status == AuthStatus.authenticated &&
+        authState.user != null) {
       // User is logged in - navigate to appropriate screen
       if (authState.user!.role == UserRole.admin) {
         Navigator.of(context).pushReplacement(
@@ -168,18 +172,14 @@ class _SplashScreenState extends State<SplashScreen>
                             height: 140,
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(35),
-                              boxShadow: [
-                                BoxShadow(
-                                  // Logo shadow — theme-aware.
-                                  color: context.semanticColors.shadow,
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 15),
-                                ),
-                              ],
+                              borderRadius: AppRadius.heroImageBorder,
+                              boxShadow: AppShadows.heroLogoFor(
+                                Theme.of(context).brightness,
+                                shadowColor: context.semanticColors.shadow,
+                              ),
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(35),
+                              borderRadius: AppRadius.heroImageBorder,
                               child: Image.asset(
                                 'assets/images/logo.jpeg',
                                 fit: BoxFit.cover,
@@ -192,11 +192,16 @@ class _SplashScreenState extends State<SplashScreen>
                           offset: Offset(0, _slideAnimation.value),
                           child: Text(
                             'Stone Town Guide',
-                            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                  fontSize: 32,
-                                  color: Theme.of(context).textTheme.displayLarge?.color,
-                                  letterSpacing: 1.2,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.displayMedium?.copyWith(
+                              fontSize: 32,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).textTheme.displayLarge?.color,
+                              letterSpacing: 1.2,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -204,10 +209,16 @@ class _SplashScreenState extends State<SplashScreen>
                           offset: Offset(0, _slideAnimation.value),
                           child: Text(
                             'Explore Zanzibar\'s Heritage',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
-                                  letterSpacing: 0.5,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.8),
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 80),

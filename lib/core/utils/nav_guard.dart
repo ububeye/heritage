@@ -12,7 +12,7 @@ import '../../ui/screens/navigation_screen_open.dart';
 /// Callers should always go through this helper rather than instantiating
 /// [NavigationScreenOpen] directly so the screen remains a single swap point.
 void safePushNavigation(BuildContext context, SiteModel site) {
-  Navigator.of(context).push(
-    MaterialPageRoute(builder: (_) => NavigationScreenOpen(site: site)),
-  );
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute(builder: (_) => NavigationScreenOpen(site: site)));
 }

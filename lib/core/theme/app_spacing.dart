@@ -47,10 +47,79 @@ class AppInsets {
 
   /// Padding reserved at the bottom of a scroll view so the last item
   /// isn't covered by the bottom navigation bar.
-  static const EdgeInsets scrollBottomGutter =
-      EdgeInsets.only(bottom: AppSpacing.lg);
+  static const EdgeInsets scrollBottomGutter = EdgeInsets.only(
+    bottom: AppSpacing.lg,
+  );
 
   /// Horizontal gutter for centred banners (e.g. featured-site card).
-  static const EdgeInsets bannerHorizontal =
-      EdgeInsets.symmetric(horizontal: AppSpacing.md);
+  static const EdgeInsets bannerHorizontal = EdgeInsets.symmetric(
+    horizontal: AppSpacing.md,
+  );
+
+  /// Padding for a list-row body (mirrors [tile] but standalone).
+  static const EdgeInsets listItem = EdgeInsets.symmetric(
+    horizontal: AppSpacing.md,
+    vertical: AppSpacing.xs,
+  );
+
+  /// Padding inside a tall chip or trial badge body.
+  static const EdgeInsets chipTall = EdgeInsets.symmetric(
+    horizontal: AppSpacing.md,
+    vertical: AppSpacing.sm,
+  );
+
+  /// Padding inside a small inline tag.
+  static const EdgeInsets tag = EdgeInsets.symmetric(
+    horizontal: AppSpacing.xs,
+    vertical: AppSpacing.xxs,
+  );
+
+  /// Padding inside a small pill or language chip.
+  static const EdgeInsets pillSm = EdgeInsets.symmetric(
+    horizontal: AppSpacing.sm,
+    vertical:
+        AppSpacing.xs - 2, // 6 — borderline; intentionally separate from xs(8).
+  );
+
+  /// Padding inside a tiny pill badge.
+  static const EdgeInsets pillTiny = EdgeInsets.symmetric(
+    horizontal: AppSpacing.xs,
+    vertical: AppSpacing.xxs / 2, // 2 — preview / superscript-style badge.
+  );
+
+  /// Padding inside a language / status chip (h: 10).
+  static const EdgeInsets pillTight = EdgeInsets.symmetric(
+    horizontal: 10.0,
+    vertical: AppSpacing.xxs,
+  );
+
+  /// Padding inside a status-chip row (e.g. route progress banner).
+  static const EdgeInsets pillRow = EdgeInsets.symmetric(
+    horizontal: 10.0,
+    vertical: 6.0,
+  );
+
+  /// Padding inside a banner with 14/10 cadence.
+  static const EdgeInsets bannerInner = EdgeInsets.symmetric(
+    horizontal: 14.0,
+    vertical: 10.0,
+  );
+
+  /// Padding for tall elevated/outlined buttons (button vertical = 14).
+  static const EdgeInsets buttonTall = EdgeInsets.symmetric(
+    horizontal: AppSpacing.lg,
+    vertical: 14.0,
+  );
+
+  /// Padding for a compact badge / pill (h: 6, v: 2).
+  static const EdgeInsets badgePadding = EdgeInsets.symmetric(
+    horizontal: 6.0,
+    vertical: AppSpacing.xxs / 2,
+  );
+
+  /// Padding inside a form-field body (mirrors chipTall).
+  static const EdgeInsets formField = EdgeInsets.symmetric(
+    horizontal: AppSpacing.md,
+    vertical: AppSpacing.sm,
+  );
 }

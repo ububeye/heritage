@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
+import '../../../data/models/activity_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../widgets/search_bar_widget.dart';
 import 'admin_add_site_screen.dart';
 import 'admin_edit_site_screen.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminSitesScreen extends StatefulWidget {
-
   const AdminSitesScreen({super.key, this.addNew = false});
   final bool addNew;
 
@@ -32,9 +34,9 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
     context.read<SiteListCubit>().loadSites();
     if (widget.addNew) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AdminAddSiteScreen()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AdminAddSiteScreen()));
       });
     }
   }
@@ -84,7 +86,9 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
                   builder: (context, state) {
                     if (state.status == SiteListStatus.loading) {
                       return Center(
-                        child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
                       );
                     }
 
@@ -94,17 +98,18 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
                       return _EmptyState(
                         query: _searchQuery,
                         loc: loc,
-                        onAdd: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const AdminAddSiteScreen(),
-                          ),
-                        ),
+                        onAdd:
+                            () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const AdminAddSiteScreen(),
+                              ),
+                            ),
                       );
                     }
 
                     return RefreshIndicator(
-                      onRefresh: () =>
-                          context.read<SiteListCubit>().loadSites(),
+                      onRefresh:
+                          () => context.read<SiteListCubit>().loadSites(),
                       color: Theme.of(context).colorScheme.secondary,
                       child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
@@ -114,14 +119,19 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
                           return _SiteCard(
                             site: site,
                             loc: loc,
-                            onEdit: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => AdminEditSiteScreen(site: site),
-                              ),
-                            ),
+                            onEdit:
+                                () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => AdminEditSiteScreen(site: site),
+                                  ),
+                                ),
                             onDelete: () async {
-                              final confirmed =
-                                  await _confirmDelete(context, site, loc);
+                              final confirmed = await _confirmDelete(
+                                context,
+                                site,
+                                loc,
+                              );
                               if (confirmed == true) {
                                 await _deleteSite(site, loc);
                               }
@@ -138,11 +148,13 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AdminAddSiteScreen()),
-        ),
+        onPressed:
+            () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AdminAddSiteScreen()),
+            ),
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onPrimary),
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        child: const Icon(PhosphorIconsRegular.plus),
       ),
     );
   }
@@ -153,37 +165,49 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
     LocalizationState loc,
   ) {
     final bodyTemplate =
-        loc.translations['delete_site_confirm_body'] ?? 'Are you sure you want to delete "%s"?';
+        loc.translations['delete_site_confirm_body'] ??
+        'Are you sure you want to delete "%s"?';
     return showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          loc.translations['delete_site_confirm_title'] ?? 'Delete Site',
-        ),
-        content: Text(bodyTemplate.replaceAll('%s', site.nameEn)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(loc.translations['cancel'] ?? 'Cancel'),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: Text(
+              loc.translations['delete_site_confirm_title'] ?? 'Delete Site',
+            ),
+            content: Text(bodyTemplate.replaceAll('%s', site.nameEn)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(loc.translations['cancel'] ?? 'Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+                child: Text(loc.translations['delete'] ?? 'Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: Text(loc.translations['delete'] ?? 'Delete'),
-          ),
-        ],
-      ),
     );
   }
 
   Future<void> _deleteSite(SiteModel site, LocalizationState loc) async {
     try {
       await _firestoreService.deleteSite(site.id);
+      await _firestoreService.logActivity(
+        ActivityModel(
+          id: '', // Firestore auto-generates
+          type: 'site_updated',
+          title: 'Site deleted',
+          subtitle: 'Admin deleted "${site.nameEn}".',
+          timestamp: DateTime.now(),
+        ),
+      );
       if (mounted) {
         context.read<SiteListCubit>().loadSites();
         final messenger = ScaffoldMessenger.maybeOf(context);
-        final template =
-            loc.translations['site_deleted'] ?? '%s deleted';
+        final template = loc.translations['site_deleted'] ?? '%s deleted';
         messenger?.showSnackBar(
           SnackBar(
             content: Text(template.replaceAll('%s', site.nameEn)),
@@ -206,7 +230,6 @@ class _AdminSitesScreenState extends State<AdminSitesScreen> {
 }
 
 class _EmptyState extends StatelessWidget {
-
   const _EmptyState({
     required this.query,
     required this.loc,
@@ -224,7 +247,7 @@ class _EmptyState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            searching ? Icons.search_off : Icons.location_city,
+            searching ? PhosphorIconsRegular.magnifyingGlassMinus : Icons.location_city,
             size: 64,
             color: Theme.of(context).colorScheme.outline,
           ),
@@ -233,16 +256,16 @@ class _EmptyState extends StatelessWidget {
             searching
                 ? (loc.translations['no_results'] ?? 'No results')
                 : (loc.translations['no_favorites'] ?? 'No sites yet'),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           if (!searching) ...[
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onAdd,
-              icon: const Icon(Icons.add),
-              label: Text(
-                loc.translations['no_sites_cta'] ?? 'Add First Site',
-              ),
+              icon: const Icon(PhosphorIconsRegular.plus),
+              label: Text(loc.translations['no_sites_cta'] ?? 'Add First Site'),
             ),
           ],
         ],
@@ -252,7 +275,6 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _SiteCard extends StatelessWidget {
-
   const _SiteCard({
     required this.site,
     required this.loc,
@@ -266,51 +288,56 @@ class _SiteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final featuredLabel = site.featured
-        ? (loc.translations['remove_featured'] ?? 'Remove from featured')
-        : (loc.translations['set_featured'] ?? 'Set as featured');
+    final featuredLabel =
+        site.featured
+            ? (loc.translations['remove_featured'] ?? 'Remove from featured')
+            : (loc.translations['set_featured'] ?? 'Set as featured');
     final editLabel = loc.translations['edit_site_a11y'] ?? 'Edit site';
-    final deleteLabel =
-        loc.translations['delete_site_a11y'] ?? 'Delete site';
+    final deleteLabel = loc.translations['delete_site_a11y'] ?? 'Delete site';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
       child: InkWell(
         onTap: onEdit,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: AppRadius.bannerBorder,
                 child: CachedNetworkImage(
                   imageUrl: site.primaryImage,
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    width: 64,
-                    height: 64,
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    child: Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.secondary,
-                          strokeWidth: 2,
+                  placeholder:
+                      (context, url) => Container(
+                        width: 64,
+                        height: 64,
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.secondary,
+                              strokeWidth: 2,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    width: 64,
-                    height: 64,
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    child: Icon(Icons.image_not_supported, color: Theme.of(context).colorScheme.outline),
-                  ),
+                  errorWidget:
+                      (context, url, error) => Container(
+                        width: 64,
+                        height: 64,
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -323,46 +350,54 @@ class _SiteCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             site.nameEn,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.w600),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (site.featured) ...[
                           const SizedBox(width: 6),
-                          Icon(Icons.star, size: 16, color: Theme.of(context).colorScheme.secondary),
+                          Icon(
+                            PhosphorIconsFill.star,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
+                      padding: AppInsets.pillTiny,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.secondary.withValues(alpha: 0.1),
+                        borderRadius: AppRadius.xsBorder,
                       ),
                       child: Text(
                         site.category ?? 'Uncategorized',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.accent),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Icon(
-                          Icons.location_on,
+                          PhosphorIconsRegular.mapPin,
                           size: 14,
                           color: Theme.of(context).colorScheme.outline,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${site.latitude.toStringAsFixed(4)}, ${site.longitude.toStringAsFixed(4)}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textHint),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                       ],
                     ),
@@ -378,27 +413,34 @@ class _SiteCard extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: Icon(
-                      site.featured ? Icons.star : Icons.star_border,
-                      color: site.featured
-                          ? Theme.of(context).colorScheme.secondary
-                          : Theme.of(context).colorScheme.outline,
+                      site.featured ? PhosphorIconsFill.star : PhosphorIconsRegular.star,
+                      color:
+                          site.featured
+                              ? Theme.of(context).colorScheme.secondary
+                              : Theme.of(context).colorScheme.outline,
                     ),
                     tooltip: featuredLabel,
-                    onPressed: () =>
-                        context.read<SiteListCubit>().setFeatured(
-                              site.id,
-                              !site.featured,
-                            ),
+                    onPressed:
+                        () => context.read<SiteListCubit>().setFeatured(
+                          site.id,
+                          !site.featured,
+                        ),
                   ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(
+                      PhosphorIconsRegular.pencilSimple,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     tooltip: editLabel,
                     onPressed: onEdit,
                   ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                    icon: Icon(
+                      PhosphorIconsRegular.trash,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                     tooltip: deleteLabel,
                     onPressed: onDelete,
                   ),

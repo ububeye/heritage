@@ -3,17 +3,19 @@ rules_version = '2';
 // Firestore security rules for Stone Town Heritage VT-Guide.
 //
 // Model:
-//   - sites:    world-readable, admin-writable.
-//   - users:    each user can read/write their own profile; admins can
-//               read all users (needed for the Admin User Management
-//               screen) and delete any user.
-//   - roles:    the canonical role store. Each user has one document at
-//               roles/{uid} with `{ role: 'free' | 'premium' | 'admin',
-//               updated_at }`. New users default to `free`; only an
-//               existing admin can write here.
+//   - sites:      world-readable, admin-writable.
+//   - activities: world-readable, admin-writable (audit log surfaced in
+//                 the admin analytics screen).
+//   - users:      each user can read/write their own profile; admins can
+//                 read all users (needed for the Admin User Management
+//                 screen) and delete any user.
+//   - roles:      the canonical role store. Each user has one document at
+//                 roles/{uid} with `{ role: 'free' | 'premium' | 'admin',
+//                 updated_at }`. New users default to `free`; only an
+//                 existing admin can write here.
 //   - everything else: default-deny.
 //
-// Deploy with `firebase deploy --only firestore:rules` or via the
+// Deploy with `firebase deploy --only firestore` or via the
 // Firebase console editor. The `isAdmin()` helper reads the caller's
 // roles/{uid} doc on every admin-gated request — fine for demo traffic,
 // production should switch to custom claims via Cloud Functions.
@@ -36,6 +38,14 @@ service cloud.firestore {
 
     // sites: world-readable, admin-writable.
     match /sites/{siteId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // activities: world-readable, admin-writable. Same shape as sites so
+    // the admin analytics screen can fetch the feed without auth, while
+    // admins remain the only ones who can append events.
+    match /activities/{activityId} {
       allow read: if true;
       allow write: if isAdmin();
     }

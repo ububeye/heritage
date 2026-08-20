@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/site_model.dart';
 import '../models/user_model.dart';
+import '../models/activity_model.dart';
 import '../../core/constants/app_constants.dart';
 
 class FirestoreService {
-
   FirestoreService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
   final FirebaseFirestore _firestore;
 
   // Sites Collection
@@ -22,6 +23,10 @@ class FirestoreService {
   // updated_at }`. Only admins can write; users and admins can read.
   CollectionReference get _rolesCollection =>
       _firestore.collection(AppConstants.rolesCollection);
+
+  // Activities Collection
+  CollectionReference get _activitiesCollection =>
+      _firestore.collection(AppConstants.activitiesCollection);
 
   Future<List<SiteModel>> getAllSites() async {
     try {
@@ -50,9 +55,8 @@ class FirestoreService {
 
   Future<List<SiteModel>> getSitesByCategory(String category) async {
     try {
-      final snapshot = await _sitesCollection
-          .where('category', isEqualTo: category)
-          .get();
+      final snapshot =
+          await _sitesCollection.where('category', isEqualTo: category).get();
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id;
@@ -88,15 +92,17 @@ class FirestoreService {
             data['id'] = doc.id;
             return data;
           })
-          .where((data) =>
-              matches(data, 'name_en') ||
-              matches(data, 'name_sw') ||
-              matches(data, 'name_fr') ||
-              matches(data, 'name_de') ||
-              matches(data, 'name_ar') ||
-              matches(data, 'name_it') ||
-              matches(data, 'name_es') ||
-              matches(data, 'address'),)
+          .where(
+            (data) =>
+                matches(data, 'name_en') ||
+                matches(data, 'name_sw') ||
+                matches(data, 'name_fr') ||
+                matches(data, 'name_de') ||
+                matches(data, 'name_ar') ||
+                matches(data, 'name_it') ||
+                matches(data, 'name_es') ||
+                matches(data, 'address'),
+          )
           .map((data) => SiteModel.fromMap(data))
           .toList();
     } catch (e) {
@@ -181,6 +187,24 @@ class FirestoreService {
     }
   }
 
+  Future<void> setUserDisabled(String uid, bool disabled) async {
+    try {
+      await _usersCollection.doc(uid).update({'disabled': disabled});
+    } catch (e) {
+      throw Exception('Failed to update disabled status: $e');
+    }
+  }
+
+  Future<void> setUserSubscriptionExpiry(String uid, DateTime? expiry) async {
+    try {
+      await _usersCollection.doc(uid).update({
+        'subscription_expiry': expiry?.toIso8601String(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update subscription expiry: $e');
+    }
+  }
+
   /// Read the user's role from roles/{uid}. Returns null if no document
   /// exists (e.g. a brand-new user who hasn't been promoted yet).
   Future<UserRole?> getUserRole(String uid) async {
@@ -221,8 +245,9 @@ class FirestoreService {
     final ids = uids.toList();
     if (ids.isEmpty) return {};
     try {
-      final snaps =
-          await Future.wait(ids.map((id) => _rolesCollection.doc(id).get()));
+      final snaps = await Future.wait(
+        ids.map((id) => _rolesCollection.doc(id).get()),
+      );
       final out = <String, UserRole>{};
       for (var i = 0; i < ids.length; i++) {
         if (!snaps[i].exists) continue;
@@ -297,4 +322,33 @@ class FirestoreService {
       return 0;
     }
   }
+
+  // --- Activities ---
+
+  Future<void> logActivity(ActivityModel activity) async {
+    try {
+      await _activitiesCollection.add(activity.toMap());
+    } catch (e) {
+      // Activity logging is strictly fire-and-forget; don't bring down
+      // the caller if it fails.
+      debugPrint('Failed to log activity: $e');
+    }
+  }
+
+  Future<List<ActivityModel>> getRecentActivities({int limit = 10}) async {
+    try {
+      final snapshot = await _activitiesCollection
+          .orderBy('timestamp', descending: true)
+          .limit(limit)
+          .get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return ActivityModel.fromMap(data, doc.id);
+      }).toList();
+    } catch (e) {
+      debugPrint('Failed to fetch recent activities: $e');
+      return [];
+    }
+  }
+
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/language_meta.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Collapsible "Show transcript" widget. Used on the site detail screen
 /// below the description so deaf / quiet-environment users can read
@@ -46,11 +49,13 @@ class _TranscriptSectionState extends State<TranscriptSection>
     // and that would throw "deactivated widget's ancestor is unsafe".
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 220),
+      duration: AppDurations.navigation,
       value: widget.defaultExpanded ? 1.0 : 0.0,
     );
-    _expandCurve =
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    _expandCurve = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -86,7 +91,7 @@ class _TranscriptSectionState extends State<TranscriptSection>
     return Container(
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
         border: Border.all(color: scheme.outline),
       ),
       child: Column(
@@ -95,20 +100,23 @@ class _TranscriptSectionState extends State<TranscriptSection>
           // Tappable header — title, language flag, and a rotating chevron.
           InkWell(
             onTap: _toggle,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Row(
                 children: [
-                  Icon(Icons.subtitles_outlined,
-                      size: 18, color: scheme.onSurfaceVariant,),
+                  Icon(
+                    Icons.subtitles_outlined,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       widget.title,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: scheme.onSurface,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelLarge?.copyWith(color: scheme.onSurface),
                     ),
                   ),
                   Text(
@@ -119,7 +127,7 @@ class _TranscriptSectionState extends State<TranscriptSection>
                   RotationTransition(
                     turns: Tween(begin: 0.0, end: 0.5).animate(_expandCurve),
                     child: Icon(
-                      Icons.expand_more,
+                      PhosphorIconsRegular.caretDown,
                       size: 20,
                       color: scheme.onSurfaceVariant,
                     ),
@@ -140,10 +148,10 @@ class _TranscriptSectionState extends State<TranscriptSection>
                 child: SelectableText(
                   trailingText,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 15,
-                        height: 1.6,
-                        color: scheme.onSurface,
-                      ),
+                    fontSize: 15,
+                    height: 1.6,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
             ),

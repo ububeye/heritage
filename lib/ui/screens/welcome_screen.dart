@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../core/theme/app_semantic_colors.dart';
+import '../../core/theme/app_shadows.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -23,7 +28,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: AppDurations.entranceLong,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -122,21 +127,23 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 child: Material(
                                   color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: () => _showLanguageSelector(
-                                      context,
-                                      locState,
-                                    ),
-                                    borderRadius: BorderRadius.circular(30),
+                                    onTap:
+                                        () => _showLanguageSelector(
+                                          context,
+                                          locState,
+                                        ),
+                                    borderRadius: AppRadius.ctaButtonBorder,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 14,
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                        borderRadius: BorderRadius.circular(30),
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.surface,
+                                        borderRadius: AppRadius.ctaButtonBorder,
                                         border: Border.all(
                                           color: Theme.of(context).dividerColor,
                                         ),
@@ -145,10 +152,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
-                                            Icons.language,
-                                            color: Theme.of(context)
-                                                .iconTheme
-                                                .color,
+                                            PhosphorIconsRegular.globe,
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).iconTheme.color,
                                             size: 18,
                                           ),
                                           const SizedBox(width: 6),
@@ -184,18 +192,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 height: 160,
                                 decoration: BoxDecoration(
                                   color: Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(40),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      // Logo shadow — theme-aware.
-                                      color: context.semanticColors.shadow,
-                                      blurRadius: 30,
-                                      offset: const Offset(0, 15),
-                                    ),
-                                  ],
+                                  borderRadius: AppRadius.heroGreetingBorder,
+                                  boxShadow: AppShadows.heroLogoFor(
+                                    Theme.of(context).brightness,
+                                    shadowColor: context.semanticColors.shadow,
+                                  ),
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(40),
+                                  borderRadius: AppRadius.heroGreetingBorder,
                                   child: Image.asset(
                                     'assets/images/logo.jpeg',
                                     fit: BoxFit.cover,
@@ -209,9 +213,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               child: Text(
                                 _tr(locState, 'stone_town_guide'),
                                 textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .displayLarge
+                                style: Theme.of(context).textTheme.displayLarge
                                     ?.copyWith(letterSpacing: 1.2),
                               ),
                             ),
@@ -221,19 +223,18 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               child: Text(
                                 _tr(locState, 'welcome_subtitle'),
                                 textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.8),
-                                      height: 1.5,
-                                    ),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyLarge?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.8),
+                                  height: 1.5,
+                                ),
                               ),
                             ),
-                            if (!isCompact) const Spacer() else
+                            if (!isCompact)
+                              const Spacer()
+                            else
                               const SizedBox(height: 32),
                             Transform.translate(
                               offset: Offset(0, _slideAnimation.value),
@@ -243,16 +244,16 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                     width: double.infinity,
                                     height: 56,
                                     child: ElevatedButton(
-                                      onPressed: () => Navigator.of(context)
-                                          .push(
-                                        MaterialPageRoute(
-                                          builder: (_) => const LoginScreen(),
-                                        ),
-                                      ),
+                                      onPressed:
+                                          () => Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => const LoginScreen(),
+                                            ),
+                                          ),
                                       style: ElevatedButton.styleFrom(
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
+                                          borderRadius: AppRadius.lgBorder,
                                         ),
                                       ),
                                       child: Text(_tr(locState, 'login')),
@@ -263,17 +264,16 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                     width: double.infinity,
                                     height: 56,
                                     child: OutlinedButton(
-                                      onPressed: () => Navigator.of(context)
-                                          .push(
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const RegisterScreen(),
-                                        ),
-                                      ),
+                                      onPressed:
+                                          () => Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => const RegisterScreen(),
+                                            ),
+                                          ),
                                       style: OutlinedButton.styleFrom(
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
+                                          borderRadius: AppRadius.lgBorder,
                                         ),
                                       ),
                                       child: Text(_tr(locState, 'register')),
@@ -324,18 +324,22 @@ class _LanguageOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdBorder,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: AppInsets.chipTall,
         decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
-              : Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          color:
+              isSelected
+                  ? Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.08)
+                  : Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.mdBorder,
           border: Border.all(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).dividerColor,
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).dividerColor,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -343,28 +347,26 @@ class _LanguageOption extends StatelessWidget {
           children: [
             Text(
               flagEmoji,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(fontSize: 24),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(fontSize: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 languageName,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isSelected
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color:
+                      isSelected
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
-                    ),
+                ),
               ),
             ),
             if (isSelected)
               Icon(
-                Icons.check_circle,
+                PhosphorIconsRegular.checkCircle,
                 color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),

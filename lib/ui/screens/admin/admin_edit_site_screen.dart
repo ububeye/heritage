@@ -1,22 +1,25 @@
 import '../../../core/theme/app_spacing.dart';
 import 'dart:io';
+import '../../../core/theme/app_radius.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../data/models/site_model.dart';
+import '../../../data/models/activity_model.dart';
 import '../../../data/services/firestore_service.dart';
 import '../../../data/services/cloudinary_service.dart';
 import '../../widgets/heritage_map.dart';
+import '../../../core/utils/stone_town_bounds.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminEditSiteScreen extends StatefulWidget {
-
   const AdminEditSiteScreen({super.key, required this.site});
   final SiteModel site;
 
@@ -75,29 +78,49 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     _descArController = TextEditingController(text: widget.site.descriptionAr);
     _descItController = TextEditingController(text: widget.site.descriptionIt);
     _descEsController = TextEditingController(text: widget.site.descriptionEs);
-    _latController = TextEditingController(text: widget.site.latitude.toString());
-    _lngController = TextEditingController(text: widget.site.longitude.toString());
-    _radiusController = TextEditingController(text: widget.site.entryRadiusM.toString());
+    _latController = TextEditingController(
+      text: widget.site.latitude.toString(),
+    );
+    _lngController = TextEditingController(
+      text: widget.site.longitude.toString(),
+    );
+    _radiusController = TextEditingController(
+      text: widget.site.entryRadiusM.toString(),
+    );
     _addressController = TextEditingController(text: widget.site.address ?? '');
     _selectedCategory = widget.site.category ?? 'historic';
 
     // Prefer the modern `imageUrls` list; fall back to the legacy single
     // image URL for sites that haven't been migrated yet.
-    _existingImages = widget.site.imageUrls.isNotEmpty
-        ? List.of(widget.site.imageUrls)
-        : (widget.site.cloudinaryImageUrl.isNotEmpty
-            ? [widget.site.cloudinaryImageUrl]
-            : <String>[]);
+    _existingImages =
+        widget.site.imageUrls.isNotEmpty
+            ? List.of(widget.site.imageUrls)
+            : (widget.site.cloudinaryImageUrl.isNotEmpty
+                ? [widget.site.cloudinaryImageUrl]
+                : <String>[]);
   }
 
   @override
   void dispose() {
     for (final c in [
-      _nameEnController, _nameSwController, _nameFrController,
-      _nameDeController, _nameArController, _nameItController, _nameEsController,
-      _descEnController, _descSwController, _descFrController,
-      _descDeController, _descArController, _descItController, _descEsController,
-      _latController, _lngController, _radiusController, _addressController,
+      _nameEnController,
+      _nameSwController,
+      _nameFrController,
+      _nameDeController,
+      _nameArController,
+      _nameItController,
+      _nameEsController,
+      _descEnController,
+      _descSwController,
+      _descFrController,
+      _descDeController,
+      _descArController,
+      _descItController,
+      _descEsController,
+      _latController,
+      _lngController,
+      _radiusController,
+      _addressController,
     ]) {
       c.dispose();
     }
@@ -136,9 +159,10 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
     try {
       // Upload only the locally-picked files; existing Cloudinary URLs are
       // already in `imageUrls` shape and just need to be re-saved.
-      final uploaded = _selectedImages.isEmpty
-          ? <String>[]
-          : await _cloudinaryService.uploadImages(_selectedImages);
+      final uploaded =
+          _selectedImages.isEmpty
+              ? <String>[]
+              : await _cloudinaryService.uploadImages(_selectedImages);
       final allImages = <String>[..._existingImages, ...uploaded];
 
       final site = widget.site.copyWith(
@@ -161,13 +185,23 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
         latitude: double.parse(_latController.text),
         longitude: double.parse(_lngController.text),
         entryRadiusM: double.parse(_radiusController.text),
-        address: _addressController.text.trim().isEmpty
-            ? null
-            : _addressController.text.trim(),
+        address:
+            _addressController.text.trim().isEmpty
+                ? null
+                : _addressController.text.trim(),
         category: _selectedCategory,
       );
 
       await _firestoreService.updateSite(widget.site.id, site);
+      await _firestoreService.logActivity(
+        ActivityModel(
+          id: '',
+          type: 'site_updated',
+          title: 'Site Updated',
+          subtitle: 'Admin updated "${site.nameEn}".',
+          timestamp: DateTime.now(),
+        ),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -209,23 +243,34 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                   child: Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: AppRadius.bannerBorder,
                         child: CachedNetworkImage(
                           imageUrl: _existingImages[index],
                           width: 110,
                           height: 110,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(
-                            width: 110,
-                            height: 110,
-                            color: Theme.of(context).colorScheme.surfaceContainer,
-                          ),
-                          errorWidget: (_, __, ___) => Container(
-                            width: 110,
-                            height: 110,
-                            color: Theme.of(context).colorScheme.surfaceContainer,
-                            child: Icon(Icons.broken_image, color: Theme.of(context).colorScheme.outline),
-                          ),
+                          placeholder:
+                              (_, __) => Container(
+                                width: 110,
+                                height: 110,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
+                              ),
+                          errorWidget:
+                              (_, __, ___) => Container(
+                                width: 110,
+                                height: 110,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
                         ),
                       ),
                       Positioned(
@@ -239,7 +284,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                               color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onError, size: 16),
+                            child: Icon(
+                              PhosphorIconsRegular.x,
+                              color: Theme.of(context).colorScheme.onError,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -248,17 +297,18 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                           bottom: 4,
                           left: 4,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: AppInsets.badgePadding,
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: AppRadius.xsBorder,
                             ),
                             child: Text(
                               'Cover',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
                             ),
                           ),
                         ),
@@ -283,7 +333,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                   child: Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: AppRadius.bannerBorder,
                         child: Image.file(
                           File(_selectedImages[index].path),
                           width: 110,
@@ -302,7 +352,11 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                               color: Theme.of(context).colorScheme.error,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(Icons.close, color: Theme.of(context).colorScheme.onError, size: 16),
+                            child: Icon(
+                              PhosphorIconsRegular.x,
+                              color: Theme.of(context).colorScheme.onError,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -310,17 +364,18 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
                         bottom: 4,
                         left: 4,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: AppInsets.badgePadding,
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: AppRadius.xsBorder,
                           ),
                           child: Text(
                             'New',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(color: Theme.of(context).colorScheme.onSecondary),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSecondary,
+                            ),
                           ),
                         ),
                       ),
@@ -334,22 +389,27 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
         ],
         InkWell(
           onTap: _pickImages,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdBorder,
               border: Border.all(color: Theme.of(context).colorScheme.primary),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_photo_alternate, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  PhosphorIconsRegular.image,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Add More Photos',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ],
             ),
@@ -374,7 +434,7 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: AppInsets.card,
           children: [
             const _SectionTitle(title: 'Photos'),
             _buildPhotoSection(),
@@ -404,32 +464,74 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
             ),
             const SizedBox(height: 24),
             const _SectionTitle(title: 'Descriptions'),
-            _TextField(controller: _descEnController, label: 'Description (English)', maxLines: 3),
-            _TextField(controller: _descSwController, label: 'Description (Swahili)', maxLines: 3),
-            _TextField(controller: _descFrController, label: 'Description (French)', maxLines: 3),
-            _TextField(controller: _descDeController, label: 'Description (German)', maxLines: 3),
-            _TextField(controller: _descArController, label: 'Description (Arabic)', maxLines: 3),
-            _TextField(controller: _descItController, label: 'Description (Italian)', maxLines: 3),
-            _TextField(controller: _descEsController, label: 'Description (Spanish)', maxLines: 3),
+            _TextField(
+              controller: _descEnController,
+              label: 'Description (English)',
+              maxLines: 3,
+            ),
+            _TextField(
+              controller: _descSwController,
+              label: 'Description (Swahili)',
+              maxLines: 3,
+            ),
+            _TextField(
+              controller: _descFrController,
+              label: 'Description (French)',
+              maxLines: 3,
+            ),
+            _TextField(
+              controller: _descDeController,
+              label: 'Description (German)',
+              maxLines: 3,
+            ),
+            _TextField(
+              controller: _descArController,
+              label: 'Description (Arabic)',
+              maxLines: 3,
+            ),
+            _TextField(
+              controller: _descItController,
+              label: 'Description (Italian)',
+              maxLines: 3,
+            ),
+            _TextField(
+              controller: _descEsController,
+              label: 'Description (Spanish)',
+              maxLines: 3,
+            ),
             const SizedBox(height: 24),
             const _SectionTitle(title: 'Location'),
             Container(
               height: 400,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).colorScheme.outline),
+                borderRadius: AppRadius.mdBorder,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               ),
               clipBehavior: Clip.antiAlias,
-              child: HeritageMap.picker(
-                initialLat: widget.site.latitude,
-                initialLng: widget.site.longitude,
-                onLocationPicked: (pickedLat, pickedLng) {
-                  // setState keeps the lat/lng fields in sync visually
-                  // with the map marker.
-                  setState(() {
-                    _latController.text = pickedLat.toStringAsFixed(6);
-                    _lngController.text = pickedLng.toStringAsFixed(6);
-                  });
+              child: Builder(
+                builder: (context) {
+                  // Clamp the seed to Stone Town so legacy sites whose
+                  // coords were authored outside the box (or who round-
+                  // trip through OSRM with a misplaced doorway) don't
+                  // crash the picker's CameraConstraint.contain check
+                  // on first rebuild.
+                  final clamped = StoneTownBounds.clampPoint(
+                    LatLng(widget.site.latitude, widget.site.longitude),
+                  );
+                  return HeritageMap.picker(
+                    initialLat: clamped.latitude,
+                    initialLng: clamped.longitude,
+                    onLocationPicked: (pickedLat, pickedLng) {
+                      // setState keeps the lat/lng fields in sync
+                      // visually with the map marker.
+                      setState(() {
+                        _latController.text = pickedLat.toStringAsFixed(6);
+                        _lngController.text = pickedLng.toStringAsFixed(6);
+                      });
+                    },
+                  );
                 },
               ),
             ),
@@ -467,16 +569,17 @@ class _AdminEditSiteScreenState extends State<AdminEditSiteScreen> {
               height: AppSpacing.xxl,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _updateSite,
-                child: _isLoading
-                    ? SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text('Update Site'),
+                child:
+                    _isLoading
+                        ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : const Text('Update Site'),
               ),
             ),
             const SizedBox(height: 32),
@@ -497,14 +600,15 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
     );
   }
 }
 
 class _TextField extends StatelessWidget {
-
   const _TextField({
     required this.controller,
     required this.label,
@@ -527,15 +631,22 @@ class _TextField extends StatelessWidget {
         maxLines: maxLines,
         keyboardType: keyboardType,
         validator: validator,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
       ),
     );
   }
 }
 
 class _DropdownField extends StatelessWidget {
-
-  const _DropdownField({required this.label, required this.value, required this.items, required this.onChanged});
+  const _DropdownField({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
   final String label;
   final String value;
   final List<String> items;
@@ -548,7 +659,10 @@ class _DropdownField extends StatelessWidget {
       child: DropdownButtonFormField<String>(
         value: value,
         decoration: InputDecoration(labelText: label),
-        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+        items:
+            items
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
         onChanged: onChanged,
       ),
     );

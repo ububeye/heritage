@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/site_list/site_list_cubit.dart';
 import '../../../blocs/site_list/site_list_state.dart';
@@ -8,13 +8,19 @@ import '../../../blocs/user/user_cubit.dart';
 import '../../../blocs/auth/auth_cubit.dart';
 import '../../../blocs/auth/auth_state.dart';
 import '../../../blocs/localization/localization_cubit.dart';
+import '../../../blocs/activity/activity_cubit.dart';
+import '../../../blocs/activity/activity_state.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/services/runtime_config_service.dart';
 import '../maintenance_screen.dart';
+import '../user_profile_screen.dart';
 import 'admin_sites_screen.dart';
 import 'admin_user_management_screen.dart';
 import 'admin_settings_screen.dart';
 import 'admin_analytics_screen.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -25,6 +31,12 @@ class AdminShell extends StatefulWidget {
 
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<ActivityCubit>().loadActivities();
+  }
 
   String _tr(LocalizationState state, String key) {
     return state.translations[key] ?? key;
@@ -41,8 +53,7 @@ class _AdminShellState extends State<AdminShell> {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
         final isAdmin = authState.user?.role == UserRole.admin;
-        final inMaintenance =
-            RuntimeConfigService.instance.maintenanceMode;
+        final inMaintenance = RuntimeConfigService.instance.maintenanceMode;
         if (inMaintenance && !isAdmin) {
           return const MaintenanceScreen();
         }
@@ -91,8 +102,8 @@ class _AdminShellState extends State<AdminShell> {
                 tooltip: _tr(locState, 'admin_tab_users'),
               ),
               NavigationDestination(
-                icon: const Icon(Icons.settings_outlined),
-                selectedIcon: const Icon(Icons.settings),
+                icon: const Icon(PhosphorIconsRegular.gear),
+                selectedIcon: const Icon(PhosphorIconsRegular.gear),
                 label: _tr(locState, 'admin_tab_settings'),
                 tooltip: _tr(locState, 'admin_tab_settings'),
               ),
@@ -105,7 +116,6 @@ class _AdminShellState extends State<AdminShell> {
 }
 
 class _AdminDashboard extends StatelessWidget {
-
   const _AdminDashboard({
     required this.locState,
     required this.tr,
@@ -130,29 +140,26 @@ class _AdminDashboard extends StatelessWidget {
         onRefresh: () async {
           context.read<SiteListCubit>().loadSites();
           context.read<UserCubit>().loadUsers();
+          context.read<ActivityCubit>().loadActivities();
         },
-        color: Theme.of(context).colorScheme.secondary,
+        color: Theme.of(context).colorScheme.primary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: AppInsets.card,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _WelcomeCard(locState: locState, tr: tr),
-              const SizedBox(height: 20),
-              _StatsSection(locState: locState, tr: tr),
-              const SizedBox(height: 24),
-              _MenuSection(
+              _WelcomeHeader(locState: locState, tr: tr),
+              const SizedBox(height: 32),
+              _StatsRowContainer(locState: locState, tr: tr),
+              const SizedBox(height: 40),
+              _QuickActionsGrid(
                 locState: locState,
                 tr: tr,
                 onNavigateToTab: onNavigateToTab,
               ),
-              const SizedBox(height: 24),
-              _QuickActionsSection(
-                locState: locState,
-                tr: tr,
-                onNavigateToTab: onNavigateToTab,
-              ),
+              const SizedBox(height: 40),
+              _RecentActivities(locState: locState, tr: tr),
             ],
           ),
         ),
@@ -161,9 +168,8 @@ class _AdminDashboard extends StatelessWidget {
   }
 }
 
-class _WelcomeCard extends StatelessWidget {
-
-  const _WelcomeCard({required this.locState, required this.tr});
+class _WelcomeHeader extends StatelessWidget {
+  const _WelcomeHeader({required this.locState, required this.tr});
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
 
@@ -171,186 +177,142 @@ class _WelcomeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, authState) {
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.primaryContainer,
-                Theme.of(context).colorScheme.primary,
-              ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              tr(locState, 'admin_welcome'),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 6),
+            const SizedBox(height: 4),
+            Text(
+              authState.user?.email ?? 'Admin',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(Icons.admin_panel_settings, color: Theme.of(context).colorScheme.onPrimary, size: 32),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr(locState, 'admin_welcome'),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      authState.user?.email ?? '',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         );
       },
     );
   }
 }
 
-class _StatsSection extends StatelessWidget {
-
-  const _StatsSection({required this.locState, required this.tr});
+class _StatsRowContainer extends StatelessWidget {
+  const _StatsRowContainer({required this.locState, required this.tr});
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadius.lgBorder,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: BlocBuilder<SiteListCubit, SiteListState>(
+                builder: (context, state) {
+                  return _StatItem(
+                    value: state.sites.length.toString(),
+                    label: tr(locState, 'best_places'),
+                  );
+                },
+              ),
+            ),
+            VerticalDivider(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.2),
+              thickness: 1,
+              width: 1,
+            ),
+            Expanded(
+              child: BlocBuilder<UserCubit, UserState>(
+                builder: (context, state) {
+                  return _StatItem(
+                    value: state.totalUsers.toString(),
+                    label: tr(locState, 'user_management'),
+                  );
+                },
+              ),
+            ),
+            VerticalDivider(
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.2),
+              thickness: 1,
+              width: 1,
+            ),
+            Expanded(
+              child: BlocBuilder<UserCubit, UserState>(
+                builder: (context, state) {
+                  return _StatItem(
+                    value: state.premiumUsers.toString(),
+                    label:
+                        tr(locState, 'premium_users') == 'premium_users'
+                            ? 'Premium Users'
+                            : tr(locState, 'premium_users'),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  const _StatItem({required this.value, required this.label});
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(
-          child: BlocBuilder<SiteListCubit, SiteListState>(
-            builder: (context, state) {
-              return _StatCard(
-                icon: Icons.location_city,
-                value: state.sites.length.toString(),
-                label: tr(locState, 'best_places'),
-                color: Theme.of(context).colorScheme.primary,
-              );
-            },
+        Text(
+          value,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) {
-              return _StatCard(
-                icon: Icons.people,
-                value: state.totalUsers.toString(),
-                label: tr(locState, 'user_management'),
-                color: Theme.of(context).colorScheme.secondary,
-              );
-            },
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) {
-              return _StatCard(
-                icon: Icons.workspace_premium,
-                value: state.premiumUsers.toString(),
-                label: tr(locState, 'upgrade_to_premium'),
-                color: context.semanticColors.success,
-              );
-            },
-          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-
-  const _StatCard({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: context.semanticColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontSize: 22,
-                  color: color,
-                ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuSection extends StatelessWidget {
-
-  const _MenuSection({
+class _QuickActionsGrid extends StatelessWidget {
+  const _QuickActionsGrid({
     required this.locState,
     required this.tr,
     required this.onNavigateToTab,
@@ -364,112 +326,94 @@ class _MenuSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title: tr(locState, 'admin_dashboard_subtitle')),
-        const SizedBox(height: 12),
-        _MenuCard(
-          icon: Icons.location_on,
-          title: tr(locState, 'best_places'),
-          subtitle: tr(locState, 'admin_tab_sites'),
-          color: Theme.of(context).colorScheme.primary,
-          // Switch to the Sites tab (index 1) instead of pushing a new
-          // AdminSitesScreen instance — the bottom nav stays in sync.
-          onTap: () => onNavigateToTab(1),
+        Text(
+          'Quick Actions',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
         ),
-        const SizedBox(height: 12),
-        _MenuCard(
-          icon: Icons.people,
-          title: tr(locState, 'user_management'),
-          subtitle: tr(locState, 'admin_tab_users'),
-          color: Theme.of(context).colorScheme.secondary,
-          onTap: () => onNavigateToTab(2),
+        const SizedBox(height: 16),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 2.5,
+          children: [
+            _QuickActionTile(
+              icon: PhosphorIconsRegular.mapPin,
+              label: tr(locState, 'add_site'),
+              onTap: () => onNavigateToTab(1), // Nav to Sites
+            ),
+            _QuickActionTile(
+              icon: Icons.analytics,
+              label: tr(locState, 'analytics'),
+              onTap:
+                  () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AdminAnalyticsScreen(),
+                    ),
+                  ),
+            ),
+
+            _QuickActionTile(
+              icon: PhosphorIconsRegular.gear,
+              label: tr(locState, 'admin_tab_settings'),
+              onTap: () => onNavigateToTab(3), // Nav to Settings
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-
-  const _SectionHeader({required this.title});
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.textSecondary),
-    );
-  }
-}
-
-class _MenuCard extends StatelessWidget {
-
-  const _MenuCard({
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({
     required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
+    required this.label,
     required this.onTap,
   });
   final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
+  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppRadius.mdBorder,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Theme.of(context).colorScheme.outline),
-          boxShadow: [
-            BoxShadow(
-              color: context.semanticColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: AppRadius.mdBorder,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 28),
+            Icon(
+              icon,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ],
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.outline, size: 24),
           ],
         ),
       ),
@@ -477,99 +421,160 @@ class _MenuCard extends StatelessWidget {
   }
 }
 
-class _QuickActionsSection extends StatelessWidget {
-
-  const _QuickActionsSection({
-    required this.locState,
-    required this.tr,
-    required this.onNavigateToTab,
-  });
+class _RecentActivities extends StatelessWidget {
+  const _RecentActivities({required this.locState, required this.tr});
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
-  final ValueChanged<int> onNavigateToTab;
 
   @override
   Widget build(BuildContext context) {
+    // Stub for recent activities. In a real app this would be driven by a Cubit.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(title: tr(locState, 'start_audio_guide')),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickActionButton(
-                icon: Icons.add_location,
-                label: tr(locState, 'add_site'),
-                color: Theme.of(context).colorScheme.primary,
-                // Drop the redundant AdminSitesScreen(addNew:true) push —
-                // jump to the Sites tab and rely on its own FAB for "+".
-                onTap: () => onNavigateToTab(1),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _QuickActionButton(
-                icon: Icons.analytics,
-                label: tr(locState, 'analytics'),
-                color: Theme.of(context).colorScheme.secondary,
-                // Analytics is a pushed screen (not a tab). Pre-existing
-                // behaviour — keep it so the chip stays useful.
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminAnalyticsScreen()),
+        Text(
+          'Recent Activities',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 16),
+        BlocBuilder<ActivityCubit, ActivityState>(
+          builder: (context, state) {
+            if (state.status == ActivityStatus.loading && state.activities.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state.activities.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: AppRadius.lgBorder,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                  ),
                 ),
+                child: Text(
+                  'No recent activities.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              );
+            }
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: AppRadius.lgBorder,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                ),
+                boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
               ),
-            ),
-          ],
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: state.activities.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final activity = state.activities[index];
+                  IconData icon;
+                  switch (activity.type) {
+                    case 'user_registered':
+                      icon = PhosphorIconsRegular.userPlus;
+                      break;
+                    case 'site_updated':
+                      icon = PhosphorIconsRegular.mapPin;
+                      break;
+                    case 'premium_upgrade':
+                      icon = PhosphorIconsFill.star;
+                      break;
+                    default:
+                      icon = Icons.notifications;
+                  }
+                  
+                  // Simple relative time formatter
+                  final difference = DateTime.now().difference(activity.timestamp);
+                  String timeAgo = 'Just now';
+                  if (difference.inDays > 0) {
+                    timeAgo = '${difference.inDays}d ago';
+                  } else if (difference.inHours > 0) {
+                    timeAgo = '${difference.inHours}h ago';
+                  } else if (difference.inMinutes > 0) {
+                    timeAgo = '${difference.inMinutes}m ago';
+                  }
+
+                  return _ActivityTile(
+                    icon: icon,
+                    title: activity.title,
+                    subtitle: activity.subtitle,
+                    time: timeAgo,
+                  );
+                },
+              ),
+            );
+          },
         ),
       ],
     );
   }
 }
 
-class _QuickActionButton extends StatelessWidget {
-
-  const _QuickActionButton({
+class _ActivityTile extends StatelessWidget {
+  const _ActivityTile({
     required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
+    required this.title,
+    required this.subtitle,
+    required this.time,
   });
   final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
+  final String title;
+  final String subtitle;
+  final String time;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      button: true,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-              ),
-            ],
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      title: Text(
+        title,
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4.0),
+        child: Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
+        ),
+      ),
+      trailing: Text(
+        time,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );

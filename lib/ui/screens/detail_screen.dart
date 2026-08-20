@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/distance_calculator.dart';
+import '../../data/services/shared_prefs_service.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/site_detail/site_detail_state.dart';
@@ -11,6 +12,7 @@ import '../../blocs/language/language_cubit.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/favorites/favorites_cubit.dart';
 import '../../core/utils/nav_guard.dart';
+import '../../core/utils/navigate_chooser.dart';
 import '../widgets/audio_player_bar.dart';
 import '../widgets/transcript_section.dart';
 import '../widgets/upgrade_banner.dart';
@@ -18,9 +20,12 @@ import '../widgets/rating_stars.dart';
 import 'site_map_screen.dart';
 import 'upgrade_screen.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class DetailScreen extends StatefulWidget {
-
   const DetailScreen({super.key, required this.siteId});
   final String siteId;
 
@@ -35,6 +40,25 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
+    // CRITICAL: Stop any in-flight audio SYNCHRONOUSLY before the new
+    // screen's first frame. Without this, the customer's old site's
+    // audio keeps speaking for the full duration of the new screen's
+    // route transition + first-frame paint — sometimes several seconds
+    // — because the async `loadSite` (scheduled via addPostFrameCallback
+    // below) is the only other code path that would stop the engine.
+    //
+    // The cubit is provided at the root, so `context.read` is safe
+    // here. We fire-and-forget the future; `stopAudio` is idempotent
+    // and emits a fresh AudioState so the bottom-sheet bar pins to
+    // "stopped" before the first frame paints.
+    try {
+      context.read<SiteDetailCubit>().stopAudio();
+    } catch (_) {
+      // Best-effort — if the provider isn't in scope yet (cold
+      // launch, very first detail screen ever), the post-frame
+      // loadSite below will still tear down audio via its own
+      // invalidateSession() call.
+    }
     // Defer the load until after the first frame so the InheritedWidget
     // tree (and SiteDetailCubit itself) is settled. initState runs before
     // descendants finish mounting; reading providers here has historically
@@ -50,6 +74,11 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    try {
+      context.read<SiteDetailCubit>().stopAudio();
+    } catch (_) {
+      // Best-effort cleanup on screen pop
+    }
     super.dispose();
   }
 
@@ -62,15 +91,23 @@ class _DetailScreenState extends State<DetailScreen> {
   /// the 5 premium languages greyed out with a "Premium" badge; tapping a
   /// free language updates the cubit and (if audio is currently playing)
   /// restarts playback in the new language.
-  Future<void> _showAudioLanguagePicker(BuildContext context, bool isPremium) async {
+  Future<void> _showAudioLanguagePicker(BuildContext context) async {
+    // All context-dependent values are captured BEFORE the first await
+    // so we never touch BuildContext across an async gap
+    // (use_build_context_synchronously lint — Bug 9 + Bug 10 fix).
     final cubit = context.read<LanguageCubit>();
     final siteDetailCubit = context.read<SiteDetailCubit>();
+    // Re-read live premium state at call time (not build time) so a
+    // purchase that completes before the picker opens is applied.
+    final isPremium = context.read<AuthCubit>().state.isPremium;
 
     final picked = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheetBorderSm),
+        ),
       ),
       builder: (sheetContext) {
         return SafeArea(
@@ -83,7 +120,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 decoration: BoxDecoration(
                   color: Theme.of(sheetContext).colorScheme.outline,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: AppRadius.grabHandleBorder,
                 ),
               ),
               Padding(
@@ -91,61 +128,96 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: Text(
                   'Audio Language',
                   style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
+                    color: Theme.of(sheetContext).colorScheme.onSurface,
+                  ),
                 ),
               ),
               const Divider(height: 1),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
-                  children: AppConstants.ttsLanguages.map((code) {
-                    final isFree = AppConstants.freeTtsLanguages.contains(code);
-                    final locked = !isFree && !isPremium;
-                    final selected = cubit.state.audioLanguage == code;
-                    return ListTile(
-                      leading: Text(
-                        _audioLanguageName(code).isEmpty ? '🌐' : _flagForCode(code),
-                        style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
-                              fontSize: 22,
+                  children:
+                      AppConstants.ttsLanguages.map((code) {
+                        final isFree = AppConstants.freeTtsLanguages.contains(
+                          code,
+                        );
+                        final locked = !isFree && !isPremium;
+                        final selected = cubit.state.audioLanguage == code;
+                        return ListTile(
+                          leading: Text(
+                            _audioLanguageName(code).isEmpty
+                                ? '🌐'
+                                : _flagForCode(code),
+                            style: Theme.of(
+                              sheetContext,
+                            ).textTheme.titleMedium?.copyWith(fontSize: 22),
+                          ),
+                          title: Text(
+                            _audioLanguageName(code),
+                            style: Theme.of(
+                              sheetContext,
+                            ).textTheme.bodyLarge?.copyWith(
+                              color:
+                                  locked
+                                      ? Theme.of(
+                                        sheetContext,
+                                      ).colorScheme.outline
+                                      : Theme.of(
+                                        sheetContext,
+                                      ).colorScheme.onSurface,
+                              fontWeight:
+                                  selected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                             ),
-                      ),
-                      title: Text(
-                        _audioLanguageName(code),
-                        style: Theme.of(sheetContext).textTheme.bodyLarge?.copyWith(
-                              color: locked ? Theme.of(sheetContext).colorScheme.outline : Theme.of(sheetContext).colorScheme.onSurface,
-                              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                      ),
-                      trailing: locked
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Theme.of(sheetContext).colorScheme.secondary,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                'PREMIUM',
-                                style: Theme.of(sheetContext).textTheme.labelSmall?.copyWith(
-                                      color: Theme.of(sheetContext).colorScheme.onSecondary,
+                          ),
+                          trailing:
+                              locked
+                                  ? Container(
+                                    padding: AppInsets.pillTiny,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Theme.of(
+                                            sheetContext,
+                                          ).colorScheme.secondary,
+                                      borderRadius: AppRadius.bannerBorder,
                                     ),
-                              ),
-                            )
-                          : (selected
-                              ? Icon(Icons.check_circle, color: sheetContext.semanticColors.success)
-                              : null),
-                      onTap: locked
-                          ? () {
-                              ScaffoldMessenger.of(sheetContext).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Upgrade to Premium to unlock this language.'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            }
-                          : () => Navigator.of(sheetContext).pop(code),
-                    );
-                  }).toList(),
+                                    child: Text(
+                                      'PREMIUM',
+                                      style: Theme.of(
+                                        sheetContext,
+                                      ).textTheme.labelSmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              sheetContext,
+                                            ).colorScheme.onSecondary,
+                                      ),
+                                    ),
+                                  )
+                                  : (selected
+                                      ? Icon(
+                                        PhosphorIconsRegular.checkCircle,
+                                        color:
+                                            sheetContext.semanticColors.success,
+                                      )
+                                      : null),
+                          onTap:
+                              locked
+                                  ? () {
+                                    ScaffoldMessenger.of(
+                                      sheetContext,
+                                    ).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Upgrade to Premium to unlock this language.',
+                                        ),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                  : () => Navigator.of(sheetContext).pop(code),
+                        );
+                      }).toList(),
                 ),
               ),
               const SizedBox(height: 8),
@@ -170,7 +242,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
     // If audio was playing in the old language, stop and restart in the
     // new one. The bottom sheet's play/pause button reads from the cubit
-    // so it stays in sync.
+    // so it stays in sync. isPremium was captured before the first await
+    // so it's safe to use here without touching the BuildContext again.
     if (wasPlaying) {
       await siteDetailCubit.stopAudio();
       if (!mounted) return;
@@ -187,21 +260,25 @@ class _DetailScreenState extends State<DetailScreen> {
         if (state.status == SiteDetailStatus.loading) {
           return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             ),
           );
         }
 
         if (state.status == SiteDetailStatus.error || state.site == null) {
           return Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-            ),
+            appBar: AppBar(automaticallyImplyLeading: false),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.outline),
+                  Icon(
+                    PhosphorIconsRegular.warningCircle,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                   const SizedBox(height: 16),
                   Text(state.errorMessage ?? 'Site not found'),
                   const SizedBox(height: 16),
@@ -221,8 +298,8 @@ class _DetailScreenState extends State<DetailScreen> {
         // capture meant a user upgrading mid-session would still hear the
         // 30s preview until they rebuilt the screen, and a language pick
         // on this screen could race with an older closure.
-        final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
         final locState = context.read<LocalizationCubit>().state;
+        final uiLanguage = locState.currentLanguage;
         // Needed for the upgrade banner and other build-time conditions.
         final isPremium = context.read<AuthCubit>().state.isPremium;
         final allImages = site.allImages;
@@ -241,24 +318,29 @@ class _DetailScreenState extends State<DetailScreen> {
                     builder: (context, favState) {
                       final isFav = favState.favoriteIds.contains(site.id);
                       final loc = context.watch<LocalizationCubit>().state;
-                      final tooltipKey = isFav
-                          ? 'remove_from_favorites'
-                          : 'add_to_favorites';
+                      final tooltipKey =
+                          isFav ? 'remove_from_favorites' : 'add_to_favorites';
                       return IconButton(
                         icon: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
+                          isFav ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
                           // Favorite state uses the success semantic colour
                           // (love/like intent). The fallback (not favourite)
                           // renders over the SliverAppBar's hero image, so
                           // it uses onImage for foreground contrast.
-                          color: isFav
-                              ? context.semanticColors.success
-                              : context.semanticColors.onImage,
+                          color:
+                              isFav
+                                  ? context.semanticColors.success
+                                  : context.semanticColors.onImage,
                         ),
-                        tooltip: loc.translations[tooltipKey] ??
-                            (isFav ? 'Remove from favorites' : 'Add to favorites'),
-                        onPressed: () =>
-                            context.read<FavoritesCubit>().toggleFavorite(site.id),
+                        tooltip:
+                            loc.translations[tooltipKey] ??
+                            (isFav
+                                ? 'Remove from favorites'
+                                : 'Add to favorites'),
+                        onPressed:
+                            () => context.read<FavoritesCubit>().toggleFavorite(
+                              site.id,
+                            ),
                       );
                     },
                   ),
@@ -281,16 +363,32 @@ class _DetailScreenState extends State<DetailScreen> {
                               imageIndex: index,
                             ),
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: Theme.of(context).colorScheme.surfaceContainer,
-                              child: Center(
-                                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: Theme.of(context).colorScheme.surfaceContainer,
-                              child: const Icon(Icons.image_not_supported, size: 48),
-                            ),
+                            placeholder:
+                                (context, url) => Container(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainer,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                    ),
+                                  ),
+                                ),
+                            errorWidget:
+                                (context, url, error) => Container(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainer,
+                                  child: const Icon(
+                                    Icons.image_not_supported,
+                                    size: 48,
+                                  ),
+                                ),
                           );
                         },
                       ),
@@ -303,9 +401,13 @@ class _DetailScreenState extends State<DetailScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              context.semanticColors.imageScrim.withValues(alpha: 0.3),
+                              context.semanticColors.imageScrim.withValues(
+                                alpha: 0.3,
+                              ),
                               Colors.transparent,
-                              context.semanticColors.imageScrim.withValues(alpha: 0.5),
+                              context.semanticColors.imageScrim.withValues(
+                                alpha: 0.5,
+                              ),
                             ],
                             stops: const [0.0, 0.5, 1.0],
                           ),
@@ -325,26 +427,35 @@ class _DetailScreenState extends State<DetailScreen> {
                               allImages.length,
                               (index) => GestureDetector(
                                 onTap: () {
-                                  _pageController.animateToPage(
-                                    index,
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
+                                  if (SharedPrefsService.instance.reduceMotion) {
+                                    _pageController.jumpToPage(index);
+                                  } else {
+                                    _pageController.animateToPage(
+                                      index,
+                                      duration: AppDurations.normal,
+                                      curve: Curves.easeInOut,
+                                    );
+                                  }
                                 },
                                 behavior: HitTestBehavior.opaque,
                                 child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                                  duration: SharedPrefsService.instance.reduceMotion ? Duration.zero : AppDurations.fast,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
                                   width: _currentImageIndex == index ? 24 : 8,
                                   height: 8,
                                   decoration: BoxDecoration(
                                     // Page-indicator dots render over the
                                     // hero gallery image, so use the
                                     // onImage semantic foreground.
-                                    color: _currentImageIndex == index
-                                        ? context.semanticColors.onImage
-                                        : context.semanticColors.onImageMuted,
-                                    borderRadius: BorderRadius.circular(4),
+                                    color:
+                                        _currentImageIndex == index
+                                            ? context.semanticColors.onImage
+                                            : context
+                                                .semanticColors
+                                                .onImageMuted,
+                                    borderRadius: AppRadius.xsBorder,
                                   ),
                                 ),
                               ),
@@ -357,24 +468,30 @@ class _DetailScreenState extends State<DetailScreen> {
                           top: MediaQuery.of(context).padding.top + 56,
                           left: 16,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: AppInsets.pillTight,
                             decoration: BoxDecoration(
                               // Image-counter pill sits on top of the
                               // hero gallery photo. Scrim + onImage for
                               // legibility against any photograph.
                               color: context.semanticColors.imageScrim,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: AppRadius.mdBorder,
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.photo_library, color: context.semanticColors.onImage, size: 14),
+                                Icon(
+                                  PhosphorIconsRegular.image,
+                                  color: context.semanticColors.onImage,
+                                  size: 14,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${_currentImageIndex + 1}/${allImages.length}',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: context.semanticColors.onImage,
-                                      ),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.copyWith(
+                                    color: context.semanticColors.onImage,
+                                  ),
                                 ),
                               ],
                             ),
@@ -410,14 +527,20 @@ class _DetailScreenState extends State<DetailScreen> {
                           bottom: 0,
                           child: Center(
                             child: _GalleryArrow(
-                              icon: isRtl ? Icons.chevron_right : Icons.chevron_left,
-                              semanticsLabel: locState.translations['previous_image'] ?? 'Previous image',
-                              onTap: _currentImageIndex > 0
-                                  ? () => _pageController.previousPage(
-                                        duration: const Duration(milliseconds: 300),
+                              icon:
+                                  isRtl
+                                      ? PhosphorIconsRegular.caretRight
+                                      : PhosphorIconsRegular.caretLeft,
+                              semanticsLabel:
+                                  locState.translations['previous_image'] ??
+                                  'Previous image',
+                              onTap:
+                                  _currentImageIndex > 0
+                                      ? () => _pageController.previousPage(
+                                        duration: AppDurations.normal,
                                         curve: Curves.easeInOut,
                                       )
-                                  : null,
+                                      : null,
                             ),
                           ),
                         ),
@@ -428,14 +551,20 @@ class _DetailScreenState extends State<DetailScreen> {
                           bottom: 0,
                           child: Center(
                             child: _GalleryArrow(
-                              icon: isRtl ? Icons.chevron_left : Icons.chevron_right,
-                              semanticsLabel: locState.translations['next_image'] ?? 'Next image',
-                              onTap: _currentImageIndex < allImages.length - 1
-                                  ? () => _pageController.nextPage(
-                                        duration: const Duration(milliseconds: 300),
+                              icon:
+                                  isRtl
+                                      ? PhosphorIconsRegular.caretLeft
+                                      : PhosphorIconsRegular.caretRight,
+                              semanticsLabel:
+                                  locState.translations['next_image'] ??
+                                  'Next image',
+                              onTap:
+                                  _currentImageIndex < allImages.length - 1
+                                      ? () => _pageController.nextPage(
+                                        duration: AppDurations.normal,
                                         curve: Curves.easeInOut,
                                       )
-                                  : null,
+                                      : null,
                             ),
                           ),
                         ),
@@ -446,7 +575,7 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: AppInsets.card,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -458,9 +587,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       Row(
                         children: [
                           Icon(
-                            Icons.location_on,
+                            PhosphorIconsRegular.mapPin,
                             size: 16,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -477,9 +607,9 @@ class _DetailScreenState extends State<DetailScreen> {
                       const SizedBox(height: 12),
                       Text(
                         site.getDescription(uiLanguage),
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              height: 1.6,
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyLarge?.copyWith(height: 1.6),
                       ),
                       const SizedBox(height: 24),
                       // Transcript of what's actually being spoken — sits
@@ -489,10 +619,11 @@ class _DetailScreenState extends State<DetailScreen> {
                       // has been played once (so we have spokenText).
                       Builder(
                         builder: (innerContext) {
-                          final audioLang = innerContext
-                              .watch<LanguageCubit>()
-                              .state
-                              .audioLanguage;
+                          final audioLang =
+                              innerContext
+                                  .watch<LanguageCubit>()
+                                  .state
+                                  .audioLanguage;
                           final audioState = state.audioState;
                           return TranscriptSection(
                             title: 'Transcript',
@@ -505,11 +636,12 @@ class _DetailScreenState extends State<DetailScreen> {
                       const SizedBox(height: 16),
                       if (!isPremium)
                         UpgradeBanner(
-                          onUpgrade: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const UpgradeScreen(),
-                            ),
-                          ),
+                          onUpgrade:
+                              () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const UpgradeScreen(),
+                                ),
+                              ),
                           message: '30 sec limit • Upgrade for full audio',
                         ),
                       const SizedBox(height: 16),
@@ -528,15 +660,18 @@ class _DetailScreenState extends State<DetailScreen> {
                             // upgraded mid-session still got the 30s
                             // preview until they rebuilt the screen.
                             final audioLang =
-                                context.read<LanguageCubit>().state.audioLanguage;
+                                context
+                                    .read<LanguageCubit>()
+                                    .state
+                                    .audioLanguage;
                             final liveIsPremium =
                                 context.read<AuthCubit>().state.isPremium;
                             context.read<SiteDetailCubit>().playAudio(
-                                  audioLang,
-                                  isPremium: liveIsPremium,
-                                );
+                              audioLang,
+                              isPremium: liveIsPremium,
+                            );
                           },
-                          icon: const Icon(Icons.play_arrow),
+                          icon: const Icon(PhosphorIconsRegular.play),
                           label: const Text('Start Audio Guide'),
                         ),
                       ),
@@ -555,25 +690,41 @@ class _DetailScreenState extends State<DetailScreen> {
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.map_outlined, size: 18),
+                              icon: const Icon(PhosphorIconsRegular.mapTrifold, size: 18),
                               label: const Text('View on Map'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Theme.of(context).colorScheme.primary,
-                                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 1.5,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () => safePushNavigation(context, site),
-                              icon: const Icon(Icons.navigation_outlined, size: 18),
+                              onPressed:
+                                  () => showNavigateChooser(context, site),
+                              icon: const Icon(
+                                PhosphorIconsRegular.navigationArrow,
+                                size: 18,
+                              ),
                               label: const Text('Navigate'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Theme.of(context).colorScheme.primary,
-                                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 1.5,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                             ),
                           ),
@@ -591,17 +742,16 @@ class _DetailScreenState extends State<DetailScreen> {
               // Read the live audio-language pick inside the sheet so the
               // chip updates as soon as the user picks a new language
               // from the modal.
-              final audioLang = sheetContext
-                  .watch<LanguageCubit>()
-                  .state
-                  .audioLanguage;
+              final audioLang =
+                  sheetContext.watch<LanguageCubit>().state.audioLanguage;
               // Same logic for premium: a purchase that lands while the
               // sheet is mounted should not require rebuilding the whole
               // Scaffold to apply. The play callback closes over
               // `audioLang`/`isPremium` from this build, but we re-read
               // both inside the closure so the very next tap picks up
               // any freshly-purchased premium state.
-              final liveIsPremium = sheetContext.read<AuthCubit>().state.isPremium;
+              final liveIsPremium =
+                  sheetContext.read<AuthCubit>().state.isPremium;
               return AudioPlayerBar(
                 audioState: state.audioState,
                 audioLanguageCode: audioLang,
@@ -622,13 +772,13 @@ class _DetailScreenState extends State<DetailScreen> {
                     context.read<SiteDetailCubit>().resumeAudio();
                   } else {
                     context.read<SiteDetailCubit>().playAudio(
-                          freshLang,
-                          isPremium: freshPremium,
-                        );
+                      freshLang,
+                      isPremium: freshPremium,
+                    );
                   }
                 },
-                onLanguageTap: () =>
-                    _showAudioLanguagePicker(sheetContext, liveIsPremium),
+                onLanguageTap:
+                    () => _showAudioLanguagePicker(sheetContext),
                 onReplay: () async {
                   final cubit = context.read<SiteDetailCubit>();
                   // Read live values BEFORE the await so we never use
@@ -656,7 +806,6 @@ class _DetailScreenState extends State<DetailScreen> {
 /// When [onTap] is null the button renders disabled. [semanticsLabel] is
 /// read aloud by TalkBack / VoiceOver.
 class _GalleryArrow extends StatelessWidget {
-
   const _GalleryArrow({
     required this.icon,
     required this.semanticsLabel,
@@ -687,9 +836,10 @@ class _GalleryArrow extends StatelessWidget {
               icon,
               // Icon is rendered over the scrim/photograph; use the
               // fixed-content onImage foreground.
-              color: enabled
-                  ? context.semanticColors.onImage
-                  : context.semanticColors.onImageMuted,
+              color:
+                  enabled
+                      ? context.semanticColors.onImage
+                      : context.semanticColors.onImageMuted,
               size: 28,
             ),
           ),
@@ -698,4 +848,3 @@ class _GalleryArrow extends StatelessWidget {
     );
   }
 }
-

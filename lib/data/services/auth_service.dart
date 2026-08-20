@@ -63,29 +63,60 @@ class AuthService {
     }
   }
 
+  /// Sign in with Google. Returns null only when the user cancels the
+  /// picker; any real failure (missing SHA-1, OAuth client misconfigured,
+  /// no Play Services, network down) throws a clean, localised message
+  /// the caller can show in a SnackBar.
+  ///
+  /// The previous version re-threw a generic `Exception` whose `$e` was
+  /// a raw `PlatformException` or `FirebaseAuthException`. The cubit
+  /// threw that string verbatim into the SnackBar, which the user
+  /// reported as "Google sign-in doesn't work". Routing Firebase errors
+  /// through [_handleAuthError] and GoogleSignIn errors through a
+  /// dedicated localised message keeps the UI readable.
   Future<UserModel?> signInWithGoogle() async {
+    final GoogleSignInAccount? googleUser;
     try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
-
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final firebaseUser = await _auth.signInWithCredential(credential);
-      if (firebaseUser.user == null) return null;
-      final userModel = await _createUserModel(firebaseUser.user!);
-      try {
-        await _syncUserToFirestore(userModel);
-      } catch (_) {
-        // Profile sync is best-effort — see signInWithEmail.
-      }
-      return userModel;
-    } catch (e) {
-      throw Exception('Google sign-in failed: $e');
+      googleUser = await _googleSignIn.signIn();
+    } on FirebaseAuthException catch (e) {
+      // _googleSignIn.signIn() can throw FirebaseAuthException directly
+      // when the underlying auth provider is unavailable (e.g. an
+      // emulator with no Google Play Services). Route through the same
+      // mapper as the email path.
+      throw _handleAuthError(e);
+    } catch (_) {
+      // PlatformException from google_sign_in (missing SHA-1, OAuth
+      // client id, no Play Services) and any other native failure. The
+      // raw exception isn't user-actionable, so swap it for a friendly
+      // localised message.
+      throw Exception('Google sign-in is unavailable on this device');
     }
+    if (googleUser == null) return null; // user cancelled
+
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final firebaseUser = await _auth.signInWithCredential(credential);
+    if (firebaseUser.user == null) {
+      // Hard failure — credential exchange came back empty. Surface as
+      // a typed FirebaseAuthException so the cubit can route through
+      // _handleAuthError and the user sees a clean message instead of
+      // a silent no-op.
+      throw FirebaseAuthException(
+        code: 'null-user',
+        message: 'Google sign-in returned no user',
+      );
+    }
+    final userModel = await _createUserModel(firebaseUser.user!);
+    try {
+      await _syncUserToFirestore(userModel);
+    } catch (_) {
+      // Profile sync is best-effort — see signInWithEmail.
+    }
+    return userModel;
   }
 
   /// Persist the user record so admin role changes, preferences, and
@@ -165,10 +196,8 @@ class AuthService {
   }
 
   /// Build a [UserModel] from a Firebase Auth [User], resolving the
-  /// canonical role from `roles/{uid}`. New signups default to `free`.
-  ///
-  /// TODO(phase-3+): drop the `users/{uid}.role` fallback once a Cloud
-  /// Function has backfilled `roles/{uid}` for every legacy user.
+  /// canonical role from `roles/{uid}` with fallback to `users/{uid}.role`.
+  /// New signups default to `free`.
   Future<UserModel> _createUserModel(User user) async {
     UserRole role = UserRole.free;
     try {
@@ -190,7 +219,18 @@ class AuthService {
       photoUrl: user.photoURL,
       role: role,
       createdAt: user.metadata.creationTime,
+      signInProvider: _resolveProvider(user),
     );
+  }
+
+  /// Map Firebase Auth's provider list to a single [SignInProvider].
+  /// Google users have `google.com` in their providerData; password
+  /// users have `password`; everything else falls back to password.
+  SignInProvider _resolveProvider(User user) {
+    for (final info in user.providerData) {
+      if (info.providerId == 'google.com') return SignInProvider.google;
+    }
+    return SignInProvider.password;
   }
 
   String _handleAuthError(FirebaseAuthException e) {

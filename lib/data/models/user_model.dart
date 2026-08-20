@@ -2,8 +2,13 @@ import 'package:equatable/equatable.dart';
 
 enum UserRole { free, premium, admin }
 
-class UserModel extends Equatable {
+/// Cached identity provider — used by the UI to decide whether a
+/// password-reset flow makes sense (Firebase `User.providerData` is the
+/// source of truth; we mirror it here so we don't have to wire
+/// `firebase_auth` into every widget).
+enum SignInProvider { password, google, anonymous }
 
+class UserModel extends Equatable {
   const UserModel({
     required this.id,
     required this.email,
@@ -13,6 +18,7 @@ class UserModel extends Equatable {
     this.createdAt,
     this.subscriptionExpiry,
     this.disabled = false,
+    this.signInProvider = SignInProvider.password,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -22,13 +28,16 @@ class UserModel extends Equatable {
       displayName: map['display_name'],
       photoUrl: map['photo_url'],
       role: _parseRole(map['role']),
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'])
-          : null,
-      subscriptionExpiry: map['subscription_expiry'] != null
-          ? DateTime.tryParse(map['subscription_expiry'])
-          : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'])
+              : null,
+      subscriptionExpiry:
+          map['subscription_expiry'] != null
+              ? DateTime.tryParse(map['subscription_expiry'])
+              : null,
       disabled: map['disabled'] ?? false,
+      signInProvider: _parseProvider(map['sign_in_provider']),
     );
   }
   final String id;
@@ -39,6 +48,7 @@ class UserModel extends Equatable {
   final DateTime? createdAt;
   final DateTime? subscriptionExpiry;
   final bool disabled;
+  final SignInProvider signInProvider;
 
   bool get isPremium => role == UserRole.premium || role == UserRole.admin;
   bool get isAdmin => role == UserRole.admin;
@@ -52,6 +62,7 @@ class UserModel extends Equatable {
     DateTime? createdAt,
     DateTime? subscriptionExpiry,
     bool? disabled,
+    SignInProvider? signInProvider,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -62,6 +73,7 @@ class UserModel extends Equatable {
       createdAt: createdAt ?? this.createdAt,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
       disabled: disabled ?? this.disabled,
+      signInProvider: signInProvider ?? this.signInProvider,
     );
   }
 
@@ -75,6 +87,7 @@ class UserModel extends Equatable {
       'created_at': createdAt?.toIso8601String(),
       'subscription_expiry': subscriptionExpiry?.toIso8601String(),
       'disabled': disabled,
+      'sign_in_provider': signInProvider.name,
     };
   }
 
@@ -89,14 +102,26 @@ class UserModel extends Equatable {
     }
   }
 
+  static SignInProvider _parseProvider(String? provider) {
+    switch (provider) {
+      case 'google':
+        return SignInProvider.google;
+      case 'anonymous':
+        return SignInProvider.anonymous;
+      default:
+        return SignInProvider.password;
+    }
+  }
+
   @override
   List<Object?> get props => [
-        id,
-        email,
-        displayName,
-        photoUrl,
-        role,
-        createdAt,
-        subscriptionExpiry,
-      ];
+    id,
+    email,
+    displayName,
+    photoUrl,
+    role,
+    createdAt,
+    subscriptionExpiry,
+    signInProvider,
+  ];
 }

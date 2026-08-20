@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// User avatar with photo + initials fallback. Replaces the inline
 /// `CircleAvatar` patterns that lived in `admin_user_management_screen`
@@ -10,7 +10,6 @@ import '../../core/theme/app_colors.dart';
 /// when the photo isn't available. Pass an empty string to render the
 /// default person icon.
 class UserAvatar extends StatelessWidget {
-
   const UserAvatar({
     super.key,
     this.photoUrl,
@@ -43,23 +42,26 @@ class UserAvatar extends StatelessWidget {
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+      backgroundColor: Theme.of(
+        context,
+      ).colorScheme.outline.withValues(alpha: 0.1),
       backgroundImage: hasPhoto ? NetworkImage(photoUrl!) : null,
-      child: hasPhoto
-          ? null
-          : initials.isNotEmpty
+      child:
+          hasPhoto
+              ? null
+              : initials.isNotEmpty
               ? Text(
-                  initials,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontSize: radius * 0.7,
-                      ),
-                )
-              : Icon(
-                  Icons.person_outline,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: radius,
+                initials,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: radius * 0.7,
                 ),
+              )
+              : Icon(
+                PhosphorIconsRegular.user,
+                color: Theme.of(context).colorScheme.onSurface,
+                size: radius * 1.2,
+              ),
     );
   }
 }

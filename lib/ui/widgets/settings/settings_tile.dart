@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import '../../../core/theme/app_colors.dart';
+
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_radius.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Square leading icon chip with a tinted background. Mirrors the
 /// `_ModernIcon` helper previously inlined in `settings_screen.dart`.
 class SettingsTileIcon extends StatelessWidget {
-
   const SettingsTileIcon({super.key, required this.icon, required this.color});
   final IconData icon;
   final Color color;
@@ -16,8 +16,9 @@ class SettingsTileIcon extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+        borderRadius: AppRadius.smBorder,
       ),
       child: Icon(icon, color: color, size: 20),
     );
@@ -29,7 +30,6 @@ class SettingsTileIcon extends StatelessWidget {
 /// app's [ListTileTheme] / [ThemeData.listTileTheme]; we set explicit
 /// padding only.
 class SettingsTile extends StatelessWidget {
-
   const SettingsTile({
     super.key,
     required this.icon,
@@ -56,17 +56,19 @@ class SettingsTile extends StatelessWidget {
       ),
       leading: SettingsTileIcon(icon: icon, color: iconColor),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            )
-          : null,
-      trailing: trailing ??
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              )
+              : null,
+      trailing:
+          trailing ??
           Icon(
-            CupertinoIcons.chevron_right,
+            PhosphorIconsRegular.caretRight,
             size: 16,
             color: Theme.of(context).colorScheme.outline,
           ),
@@ -78,7 +80,6 @@ class SettingsTile extends StatelessWidget {
 /// Switch variant of [SettingsTile] — convenience for boolean toggles so
 /// callers don't have to assemble the trailing `Switch.adaptive` manually.
 class SettingsSwitchTile extends StatelessWidget {
-
   const SettingsSwitchTile({
     super.key,
     required this.icon,
@@ -105,14 +106,15 @@ class SettingsSwitchTile extends StatelessWidget {
       ),
       secondary: SettingsTileIcon(icon: icon, color: iconColor),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            )
-          : null,
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              )
+              : null,
       value: value,
       activeColor: Theme.of(context).colorScheme.primary,
       onChanged: onChanged,

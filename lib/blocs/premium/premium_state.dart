@@ -1,10 +1,21 @@
 import 'package:flutter/foundation.dart';
 
-/// Which subscription plan the user picked on the upgrade screen. Maps
-/// 1:1 to the productIds in the store console:
-///   `monthly`  →  `stone_town_premium_monthly`
-///   `yearly`   →  `stone_town_premium_yearly`  (default selection)
-enum PlanId { monthly, yearly }
+/// Which subscription plan the user picked on the upgrade screen.
+///
+/// Tiers:
+///   Explorer  — casual visitor     ($4.99/mo · $29.99/yr)
+///   Pro       — repeat visitor     ($9.99/mo · $59.99/yr)  ← recommended
+///   Lifetime  — one-time purchase  ($49.99)
+///
+/// `monthly` and `yearly` are kept as aliases for Explorer so existing
+/// SharedPrefs data and billing receipts don't break.
+enum PlanId {
+  monthly,     // Explorer monthly  (legacy alias)
+  yearly,      // Explorer yearly   (legacy alias)
+  proMonthly,  // Pro monthly
+  proYearly,   // Pro yearly
+  lifetime,    // Lifetime one-time
+}
 
 /// Outcome of the last purchase / restore flow. Latched on the cubit so
 /// the UI can paint a banner / dialog without re-deriving from raw
@@ -14,7 +25,7 @@ enum PurchaseOutcome { idle, success, cancelled, pending, error }
 @immutable
 class PremiumState {
   const PremiumState({
-    this.selectedPlanId = PlanId.yearly,
+    this.selectedPlanId = PlanId.proYearly,
     this.isPremium = false,
     this.isLoading = false,
     this.showPremiumOffer = true,

@@ -7,10 +7,13 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/polyline_decoder.dart';
 import '../../core/utils/stone_town_bounds.dart';
+import '../../core/utils/unguja_bounds.dart';
 import '../models/site_model.dart';
 import 'route_cache_service.dart';
 import 'runtime_config_service.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// A single turn-by-turn instruction returned by the routing engine.
 ///
@@ -23,7 +26,6 @@ import 'runtime_config_service.dart';
 /// We persist this whole list to Firestore so cold starts don't have to
 /// re-hit OSRM just to render instructions.
 class RouteStep {
-
   const RouteStep({
     required this.maneuver,
     required this.name,
@@ -59,8 +61,7 @@ class RouteStep {
     if (main == 'arrive') return tr('arrive_at_destination');
 
     final modifierKey = _modifierTranslationKey(main, modifier);
-    final prettyModifier =
-        modifierKey != null ? tr(modifierKey) : null;
+    final prettyModifier = modifierKey != null ? tr(modifierKey) : null;
 
     if (name.isNotEmpty) {
       return prettyModifier != null
@@ -141,7 +142,7 @@ class ManeuverIcon {
 
     // Special main-word cases first — these don't follow the
     // "modifier is the second word" pattern.
-    if (main == 'depart') return Icons.play_arrow;
+    if (main == 'depart') return PhosphorIconsRegular.play;
     if (main == 'arrive') return Icons.flag;
     if (main == 'fork') {
       return mod1 == 'left' ? Icons.fork_left : Icons.fork_right;
@@ -179,7 +180,6 @@ class ManeuverIcon {
 
 /// Result of a routing request.
 class RouteResult {
-
   const RouteResult({
     required this.points,
     required this.distanceMeters,
@@ -188,7 +188,9 @@ class RouteResult {
     this.errorMessage,
     this.provider = 'none',
     this.steps = const [],
+    this.originIsApproximate = false,
   });
+
   /// Ordered list of coordinates forming the route polyline.
   final List<LatLng> points;
 
@@ -215,6 +217,18 @@ class RouteResult {
   /// result is a fallback (no engine data).
   final List<RouteStep> steps;
 
+  /// True when the routing origin was substituted (the user's GPS fix
+  /// was wildly outside UngujaBounds, so we routed from the island
+  /// centre instead). The route itself is real — the geometry came back
+  /// from the engine — but the starting point is the centre, not the
+  /// user's actual position. The UI surfaces this with a soft
+  /// "GPS unavailable" indicator rather than the orange fallback banner.
+  ///
+  /// Persisted alongside geometry by [RouteCacheService.save] so a stale
+  /// centre-origin route cannot be resurrected on a subsequent session
+  /// and presented as if it started from the user's actual position.
+  final bool originIsApproximate;
+
   static RouteResult fallback({
     required LatLng from,
     required LatLng to,
@@ -234,15 +248,24 @@ class RouteResult {
 
 /// Which routing engine served the [RouteResult].
 ///
-/// The service tries OpenRouteService first (when an API key is supplied),
-/// then falls back to the public OSRM demo. Both are open source / free
-/// tier; no billing account required for the demo.
+/// The service tries OpenRouteService first (when an API key is
+/// supplied), then the public OSRM demo, then the public Valhalla
+/// demo. All three are open-source / free-tier — no billing account
+/// required for either demo. Valhalla is the last-resort fallback
+/// because the OSRM demo is famously flaky (rate limits, regional
+/// outages, captcha-style blocks) and a single-engine failure used to
+/// strand the user with no route.
 enum _RoutingProvider {
   /// POST to `ORS_BASE_URL` with a GeoJSON body. Requires an API key.
   openRouteService,
 
   /// GET `OSRM_BASE_URL` with `foot` profile. No auth required.
   osrmDemo,
+
+  /// POST to `VALHALLA_BASE_URL/route` with a JSON body. No auth
+  /// required. Returns an encoded polyline (not GeoJSON), decoded
+  /// inline by [_decodePolyline].
+  valhallaDemo,
 }
 
 /// Routing request lifecycle:
@@ -258,16 +281,29 @@ enum _RoutingProvider {
 /// Both providers return GeoJSON LineString geometry of the same shape,
 /// so a single parser handles both responses.
 class RoutingService {
-
   RoutingService({
     http.Client? client,
     RouteCacheService? routeCache,
     this.timeout = const Duration(seconds: 6),
-  })  : _client = client ?? http.Client(),
-        _routeCache = routeCache;
+    this.telemetry,
+    this.retryDelay = const Duration(milliseconds: 250),
+  }) : _client = client ?? http.Client(),
+       _routeCache = routeCache;
   final http.Client _client;
   final RouteCacheService? _routeCache;
   final Duration timeout;
+
+  /// Optional telemetry sink. Used by callers (e.g. NavigationScreenOpen)
+  /// to record routing events without forcing RoutingService to depend on
+  /// any specific analytics package. Today we only emit `'routing_reroute'`
+  /// and `'routing_5xx_retry'`; the map is intentionally a small schema so
+  /// a future analytics adapter can serialize it as-is.
+  final void Function(String event, Map<String, Object?> payload)? telemetry;
+
+  /// Backoff delay between 5xx retries. Defaults to 250 ms — small enough
+  /// to stay sub-second on a flaky connection, large enough to let the
+  /// server's own retry logic clear out.
+  final Duration retryDelay;
 
   /// 30-minute TTL on successful routes. Re-asking for the same
   /// `(from, to)` tuple reuses the cached [RouteResult] without
@@ -294,25 +330,27 @@ class RoutingService {
     required LatLng to,
     SiteModel? site,
   }) async {
-    // 0. Stone Town only — reject anything outside the box up-front. The
-    //    app is a heritage guide for a single peninsula; we don't want to
-    //    burn network requests or render a route to a place we don't cover.
-    if (!StoneTownBounds.contains(to)) {
+    // 0. GPS origin policy. The bounding box hugs the island, so
+    //    coastal jitter routinely lands a fix ~30 m outside it; the
+    //    previous strict-rejection produced a misleading "routing
+    //    engine unavailable" banner — the engine was never contacted.
+    //    [clampForRoute] is the single source of truth:
+    //      • inside the box      → use as-is
+    //      • near-edge (≤500 m)  → snap to the edge
+    //      • wildly outside      → fall back to [UngujaBounds.centre]
+    //    The third case is the common "user opened the app on the
+    //    emulator with no location" or "phone cached a stale fix from
+    //    a flight". We don't strand them — they still get a route, just
+    //    not from their actual position. [gpsUnavailableReason]
+    //    surfaces this so the banner can be honest about it.
+    final (origin, gpsUnavailableReason) = clampForRoute(from);
+    if (!UngujaBounds.contains(to)) {
       return RouteResult.fallback(
-        from: from,
+        from: origin,
         to: to,
-        distanceMeters: _haversineMeters(from, to),
+        distanceMeters: _haversineMeters(origin, to),
         provider: 'none',
-        errorMessage: 'Destination is outside Stone Town',
-      );
-    }
-    if (!StoneTownBounds.contains(from)) {
-      return RouteResult.fallback(
-        from: from,
-        to: to,
-        distanceMeters: _haversineMeters(from, to),
-        provider: 'none',
-        errorMessage: 'Origin is outside Stone Town',
+        errorMessage: 'Destination is outside Zanzibar',
       );
     }
 
@@ -324,35 +362,51 @@ class RoutingService {
       final cached = await _routeCache.load(site);
       if (cached != null) {
         // Also warm the in-memory cache so the next refetch in the same
-        // session skips the Firestore round-trip too.
-        _cache[_cacheKey(from, to)] =
-            _CacheEntry(cached, DateTime.now());
+        // session skips the Firestore round-trip too. Cache key uses the
+        // clamped origin so a noisy GPS fix near the coast hits the
+        // same cache slot as the previous fix.
+        _cache[_cacheKey(origin, to)] = _CacheEntry(cached, DateTime.now());
         return cached;
       }
     }
 
     // 1. Cached path.
-    final cacheKey = _cacheKey(from, to);
+    final cacheKey = _cacheKey(origin, to);
     final cached = _cache[cacheKey];
     if (cached != null && DateTime.now().difference(cached.at) < _cacheTtl) {
       return cached.result;
     }
 
-    final straightLineMeters = _haversineMeters(from, to);
+    final straightLineMeters = _haversineMeters(origin, to);
 
     // 2. Provider chain. We try ORS first only when a key is configured —
     // otherwise the public endpoint will reject every request and we'd
     // burn the timeout twice for nothing. The key is read fresh on each
     // call so admin-side runtime changes take effect on the next request
     // without recreating this service.
-    final providers = RuntimeConfigService.instance.orsApiKey.isNotEmpty
-        ? const [_RoutingProvider.openRouteService, _RoutingProvider.osrmDemo]
-        : const [_RoutingProvider.osrmDemo];
+    // 2. Provider chain. We try ORS first only when a key is configured —
+    // otherwise the public endpoint will reject every request and we'd
+    // burn the timeout twice for nothing. The key is read fresh on each
+    // call so admin-side runtime changes take effect on the next request
+    // without recreating this service. Valhalla is always last — it's
+    // the safety net when both ORS and OSRM fail (rate limits, regional
+    // blocks, transient outages). All three are open source / no-cost.
+    final providers =
+        RuntimeConfigService.instance.orsApiKey.isNotEmpty
+            ? const [
+              _RoutingProvider.openRouteService,
+              _RoutingProvider.osrmDemo,
+              _RoutingProvider.valhallaDemo,
+            ]
+            : const [
+              _RoutingProvider.osrmDemo,
+              _RoutingProvider.valhallaDemo,
+            ];
 
     Object? lastError;
     for (final provider in providers) {
       try {
-        final result = await _dispatch(provider, from, to);
+        final result = await _dispatch(provider, origin, to);
         if (!result.isFallback) {
           // 3a. Sanity-clip the polyline. Engines sometimes return
           // long-distance geometry on bad inputs; the navigation screen
@@ -361,23 +415,48 @@ class RoutingService {
           final distance = result.distanceMeters;
           if (distance > AppConstants.maxRouteDistanceMeters) {
             final clipped = RouteResult.fallback(
-              from: from,
+              from: origin,
               to: to,
               distanceMeters: straightLineMeters,
               provider: result.provider,
               errorMessage:
                   'Route too long (${distance.round()} m), clipped to direct line',
             );
-            _cache[cacheKey] = _CacheEntry(clipped, DateTime.now());
+            // Fallback results are intentionally NOT cached — a stale
+            // straight-line fallback would lock the user out of a real
+            // route for up to 30 minutes. The next _fetchRoute() call
+            // will retry the engine.
             return clipped;
           }
 
-          _cache[cacheKey] = _CacheEntry(result, DateTime.now());
+          // Success path — defensive isFallback guard documents that we
+          // never cache fallbacks even if a future caller constructs one.
+          if (!result.isFallback) {
+            _cache[cacheKey] = _CacheEntry(result, DateTime.now());
+          }
 
           // 3b. Best-effort write to Firestore. Fire-and-forget — a
           //     failed write just means the next cold start re-fetches.
+          //     We don't persist the approximate-origin flag — a real
+          //     GPS fix later should re-fetch and overwrite with a
+          //     non-approximate route.
           if (site != null && _routeCache != null) {
             unawaited(_routeCache.save(site.id, result));
+          }
+          // Tag the success with originIsApproximate so the UI can
+          // surface "GPS unavailable — routing from island centre"
+          // instead of pretending the user is at the centre.
+          if (gpsUnavailableReason != null) {
+            return RouteResult(
+              points: result.points,
+              distanceMeters: result.distanceMeters,
+              durationSeconds: result.durationSeconds,
+              isFallback: false,
+              errorMessage: gpsUnavailableReason,
+              provider: result.provider,
+              steps: result.steps,
+              originIsApproximate: true,
+            );
           }
           return result;
         }
@@ -391,7 +470,7 @@ class RoutingService {
 
     // 4. Every provider failed — straight line.
     return RouteResult.fallback(
-      from: from,
+      from: origin,
       to: to,
       distanceMeters: straightLineMeters,
       provider: 'none',
@@ -411,6 +490,8 @@ class RoutingService {
         return _routeFromORS(from, to);
       case _RoutingProvider.osrmDemo:
         return _routeFromOSRM(from, to);
+      case _RoutingProvider.valhallaDemo:
+        return _routeFromValhalla(from, to);
     }
   }
 
@@ -459,9 +540,10 @@ class RoutingService {
       // errorMessage now carries enough signal for the banner to
       // surface "check your ORS API key" specifically.
       final authFailure = resp.statusCode == 401 || resp.statusCode == 403;
-      final errorMessage = authFailure
-          ? 'routing_api_key_invalid' // localized key; UI swaps to text
-          : 'HTTP ${resp.statusCode}';
+      final errorMessage =
+          authFailure
+              ? 'routing_api_key_invalid' // localized key; UI swaps to text
+              : 'HTTP ${resp.statusCode}';
       return RouteResult.fallback(
         from: from,
         to: to,
@@ -488,20 +570,49 @@ class RoutingService {
   Future<RouteResult> _routeFromOSRM(LatLng from, LatLng to) async {
     final straightLineMeters = _haversineMeters(from, to);
 
-    final uri = Uri.parse(
+    // 1. Try with initial 25m radius constraint.
+    var res = await _fetchOsrmUrl(
       '${AppConstants.osrmBaseUrl}/route/v1/foot/'
       '${from.longitude},${from.latitude};'
       '${to.longitude},${to.latitude}'
       '?overview=full&geometries=geojson'
       '&steps=true&annotations=false'
       '&radiuses=25;25',
+      from,
+      to,
+      straightLineMeters,
     );
 
-    // OSRM's public demo enforces a User-Agent on all requests; clients
-    // without one get a 429/403 and fall through to the straight-line
-    // banner. Mirror the header we send on OSM tile fetches so the routing
-    // and basemap layers are identified the same way.
-    final resp = await _client
+    // 2. If 25m radius fails because a doorway/courtyard is slightly off-road,
+    // retry with adaptive 60m radius before failing to a straight line.
+    if (res.isFallback && res.errorMessage != null && res.errorMessage!.contains('NoSegment')) {
+      final retryRes = await _fetchOsrmUrl(
+        '${AppConstants.osrmBaseUrl}/route/v1/foot/'
+        '${from.longitude},${from.latitude};'
+        '${to.longitude},${to.latitude}'
+        '?overview=full&geometries=geojson'
+        '&steps=true&annotations=false'
+        '&radiuses=60;60',
+        from,
+        to,
+        straightLineMeters,
+      );
+      if (!retryRes.isFallback) {
+        return retryRes;
+      }
+    }
+
+    return res;
+  }
+
+  Future<RouteResult> _fetchOsrmUrl(
+    String url,
+    LatLng from,
+    LatLng to,
+    double straightLineMeters,
+  ) async {
+    final uri = Uri.parse(url);
+    var resp = await _client
         .get(
           uri,
           headers: const {
@@ -510,6 +621,28 @@ class RoutingService {
           },
         )
         .timeout(timeout);
+
+    // 5xx — transient server error. Retry once with a short backoff before
+    // reporting the failure to the caller. Demoted from the previous
+    // immediate-fallback behaviour after we observed occasional 502s from
+    // the public OSRM demo under load.
+    if (resp.statusCode >= 500 && resp.statusCode < 600) {
+      telemetry?.call('routing_5xx_retry', {
+        'url_host': uri.host,
+        'status': resp.statusCode,
+        'retry_delay_ms': retryDelay.inMilliseconds,
+      });
+      await Future<void>.delayed(retryDelay);
+      resp = await _client
+          .get(
+            uri,
+            headers: const {
+              'User-Agent':
+                  'com.example.stone_town_heritage_vt_guide/1.0 (Flutter)',
+            },
+          )
+          .timeout(timeout);
+    }
     if (resp.statusCode != 200) {
       return RouteResult.fallback(
         from: from,
@@ -556,14 +689,15 @@ class RoutingService {
       );
     }
 
-    final points = coords.map<LatLng>((c) {
-      final pair = c as List<dynamic>;
-      // GeoJSON convention is [lng, lat]; latlong2 wants LatLng(lat, lng).
-      return LatLng(
-        (pair[1] as num).toDouble(),
-        (pair[0] as num).toDouble(),
-      );
-    }).toList();
+    final points =
+        coords.map<LatLng>((c) {
+          final pair = c as List<dynamic>;
+          // GeoJSON convention is [lng, lat]; latlong2 wants LatLng(lat, lng).
+          return LatLng(
+            (pair[1] as num).toDouble(),
+            (pair[0] as num).toDouble(),
+          );
+        }).toList();
 
     final engineDistance = (first['distance'] as num?)?.toDouble();
     final engineDuration = (first['duration'] as num?)?.toDouble();
@@ -578,6 +712,164 @@ class RoutingService {
       steps: steps,
     );
   }
+
+  /// Valhalla — `POST {baseUrl}/route` with a JSON body, response shape
+  /// is the Valhalla trip object (NOT GeoJSON). Geometry comes back as
+  /// an encoded polyline string under `trip.legs[*].shape` and is
+  /// decoded by [_decodePolyline].
+  ///
+  /// Response shape (relevant fields only):
+  ///
+  ///   {
+  ///     "trip": {
+  ///       "legs": [{ "shape": "<encoded polyline>", ... }],
+  ///       "summary": { "length": km, "time": seconds, ... },
+  ///       "status_message": "Found route between points",
+  ///       "status": 0
+  ///     }
+  ///   }
+  ///
+  /// Valhalla's `costing=pedestrian` is the equivalent of OSRM's
+  /// `foot` profile: sidewalks, walkways, and pedestrian paths. We use
+  /// `costing=pedestrian` (not `foot`) — that's Valhalla's documented
+  /// name for the pedestrian profile.
+  Future<RouteResult> _routeFromValhalla(LatLng from, LatLng to) async {
+    final straightLineMeters = _haversineMeters(from, to);
+    final body = jsonEncode({
+      'locations': [
+        {'lat': from.latitude, 'lon': from.longitude},
+        {'lat': to.latitude, 'lon': to.longitude},
+      ],
+      'costing': 'pedestrian',
+      'directions_options': {'units': 'kilometers'},
+      // The "shape" field on each leg is what we read. Valhalla also
+      // accepts `geometry=true` (returns shape per leg) and
+      // `format=geojson` but it ignores the format flag and always
+      // returns encoded polyline — we decode inline.
+    });
+
+    final resp = await _client
+        .post(
+          Uri.parse('${AppConstants.valhallaBaseUrl}/route'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: body,
+        )
+        .timeout(timeout);
+
+    if (resp.statusCode != 200) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'HTTP ${resp.statusCode}',
+      );
+    }
+
+    Map<String, dynamic> body_;
+    try {
+      body_ = jsonDecode(resp.body) as Map<String, dynamic>;
+    } catch (_) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'Parse error',
+      );
+    }
+
+    final trip = body_['trip'] as Map<String, dynamic>?;
+    if (trip == null) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'No trip',
+      );
+    }
+    final status = (trip['status'] as num?)?.toInt() ?? -1;
+    if (status != 0) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: trip['status_message']?.toString() ?? 'No route',
+      );
+    }
+
+    final legs = (trip['legs'] as List<dynamic>?) ?? const [];
+    if (legs.isEmpty) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'No legs',
+      );
+    }
+
+    // Valhalla returns `summary.length` in the configured units — we
+    // asked for kilometers, so multiply by 1000 for metres.
+    final summary = trip['summary'] as Map<String, dynamic>?;
+    final distanceKm = (summary?['length'] as num?)?.toDouble();
+    final distanceMeters = distanceKm != null ? distanceKm * 1000.0 : null;
+    final durationSeconds = (summary?['time'] as num?)?.toDouble();
+
+    // Stitch together the encoded polylines from each leg. Valhalla
+    // returns one shape per leg; the legs share endpoints, so we
+    // concatenate with the last point of leg N dropped to avoid
+    // duplicates.
+    final allPoints = <LatLng>[];
+    for (var i = 0; i < legs.length; i++) {
+      final leg = legs[i] as Map<String, dynamic>;
+      final shape = (leg['shape'] as String?) ?? '';
+      if (shape.isEmpty) continue;
+      final pts = decodePolyline(shape, precision: 6);
+      if (pts.isEmpty) continue;
+      if (allPoints.isNotEmpty) {
+        // Drop the first point of subsequent legs — it's a duplicate of
+        // the last point of the previous leg.
+        allPoints.addAll(pts.sublist(1));
+      } else {
+        allPoints.addAll(pts);
+      }
+    }
+
+    if (allPoints.length < 2) {
+      return RouteResult.fallback(
+        from: from,
+        to: to,
+        distanceMeters: straightLineMeters,
+        provider: 'valhallaDemo',
+        errorMessage: 'Empty geometry',
+      );
+    }
+
+    return RouteResult(
+      points: allPoints,
+      distanceMeters: distanceMeters ?? straightLineMeters,
+      durationSeconds: durationSeconds,
+      isFallback: false,
+      provider: 'valhallaDemo',
+      steps: const [], // Valhalla turn-steps aren't surfaced in the UI today
+    );
+  }
+
+  /// Decode a Google-style encoded polyline string into a list of
+  /// [LatLng]. Standard 5-bit ASCII encoding with sign-bit twos-
+  /// complement deltas. Lives in
+  /// [../../core/utils/polyline_decoder.dart] so tests can import it
+  /// without crossing the library boundary. [precision] is the
+  /// divisor for the integer values — Valhalla uses 6 (1e-6 degree
+  /// resolution), Google Maps uses 5.
+  ///
+  /// Spec: https://developers.google.com/maps/documentation/utilities/polylinealgorithm
 
   /// Parse `routes[0].legs[0].steps[]` into a list of [RouteStep]s.
   ///
@@ -616,32 +908,30 @@ class RoutingService {
         final type = maneuver?['type'] as String? ?? 'continue';
         final modifier = maneuver?['modifier'] as String?;
         final maneuverString =
-            modifier != null && modifier.isNotEmpty
-                ? '$type $modifier'
-                : type;
+            modifier != null && modifier.isNotEmpty ? '$type $modifier' : type;
         final name = step['name'] as String? ?? '';
         final distance = (step['distance'] as num?)?.toDouble() ?? 0;
         final duration = (step['duration'] as num?)?.toDouble();
         final loc = maneuver?['location'] as List<dynamic>?;
-        final startLatLng = (loc != null && loc.length >= 2)
-            ? LatLng(
-                (loc[1] as num).toDouble(),
-                (loc[0] as num).toDouble(),
-              )
-            : LatLng(0, 0);
+        final startLatLng =
+            (loc != null && loc.length >= 2)
+                ? LatLng((loc[1] as num).toDouble(), (loc[0] as num).toDouble())
+                : LatLng(0, 0);
         // The end of step N is the start of step N+1, by construction.
         // For the last step we approximate with the same start location —
         // exact arrival coords aren't needed for instruction rendering.
-        result.add(RouteStep(
-          maneuver: maneuverString,
-          name: name,
-          distanceMeters: distance,
-          durationSeconds: duration,
-          startLocation: startLatLng,
-          endLocation: startLatLng, // populated below in a second pass
-          bearingBefore: (maneuver?['bearing_before'] as num?)?.toInt(),
-          bearingAfter: (maneuver?['bearing_after'] as num?)?.toInt(),
-        ),);
+        result.add(
+          RouteStep(
+            maneuver: maneuverString,
+            name: name,
+            distanceMeters: distance,
+            durationSeconds: duration,
+            startLocation: startLatLng,
+            endLocation: startLatLng, // populated below in a second pass
+            bearingBefore: (maneuver?['bearing_before'] as num?)?.toInt(),
+            bearingAfter: (maneuver?['bearing_after'] as num?)?.toInt(),
+          ),
+        );
       }
       // Second pass: end of step N = start of step N+1.
       for (var i = 0; i < result.length - 1; i++) {
@@ -733,13 +1023,14 @@ class RoutingService {
         );
       }
 
-      final points = coords.map<LatLng>((c) {
-        final pair = c as List<dynamic>;
-        return LatLng(
-          (pair[1] as num).toDouble(),
-          (pair[0] as num).toDouble(),
-        );
-      }).toList();
+      final points =
+          coords.map<LatLng>((c) {
+            final pair = c as List<dynamic>;
+            return LatLng(
+              (pair[1] as num).toDouble(),
+              (pair[0] as num).toDouble(),
+            );
+          }).toList();
 
       final props = first['properties'] as Map<String, dynamic>?;
       final summary = props?['summary'] as Map<String, dynamic>?;
@@ -778,6 +1069,59 @@ class RoutingService {
     return '$fromPart|$toPart';
   }
 
+  /// Decide whether [point] is a usable routing origin.
+  ///
+  /// - Inside [UngujaBounds] → returned unchanged.
+  /// - Outside the box but within
+  ///   [AppConstants.routeOriginClampBufferMeters] of the nearest edge
+  ///   → snapped to that edge. This is the GPS-jitter case (a coastal
+  ///   fix landing ~30 m outside the box).
+  /// - Outside the box AND beyond the buffer (e.g. emulator default
+  ///   location, lost GPS in the Indian Ocean, mainland Tanzania) →
+  ///   falls back to [UngujaBounds.centre] so the user still gets a
+  ///   usable route. The caller's banner surfaces this honestly via
+  ///   [gpsUnavailableReason].
+  ///
+  /// The buffer is measured as a flat-earth distance approximation
+  /// (1° lat ≈ 111 km, 1° lng ≈ 111 km × cos(lat)). That's good enough
+  /// for a 500 m buffer at Zanzibar's latitude (~6° S) — the worst-case
+  /// error is < 0.5 % and the buffer is wide enough to absorb it.
+  static (LatLng origin, String? gpsUnavailableReason) clampForRoute(
+    LatLng point,
+  ) {
+    if (UngujaBounds.contains(point)) return (point, null);
+    final clamped = UngujaBounds.clampPoint(point);
+    final bufferMeters = AppConstants.routeOriginClampBufferMeters;
+    final distanceMeters = _flatEarthMeters(point, clamped);
+    if (distanceMeters <= bufferMeters) {
+      // Coastal GPS jitter — clamp to edge and dispatch normally.
+      return (clamped, null);
+    }
+    // GPS is wildly out of bounds. This happens in three situations:
+    //   1. Emulator with no location set (default = Googleplex).
+    //   2. Phone with stale "last known position" cached from travel.
+    //   3. Genuine user outside Zanzibar (mainland, ferry, etc.).
+    // In all three the user needs *something* on the map. Falling back
+    // to the island centre produces a usable route from a known
+    // anchor; the banner tells the user their GPS isn't trustworthy.
+    return (UngujaBounds.centre, 'GPS position is outside Zanzibar');
+  }
+
+  /// Cheap, latitude-scaled distance in meters between two LatLngs.
+  ///
+  /// Only used to decide whether a point is within
+  /// [AppConstants.routeOriginClampBufferMeters] of a box edge. The full
+  /// haversine is overkill for that decision and would import trig at
+  /// every call site.
+  static double _flatEarthMeters(LatLng a, LatLng b) {
+    const metersPerDegLat = 111320.0;
+    final metersPerDegLng =
+        111320.0 * math.cos(_toRad((a.latitude + b.latitude) / 2));
+    final dLat = (b.latitude - a.latitude) * metersPerDegLat;
+    final dLng = (b.longitude - a.longitude) * metersPerDegLng;
+    return math.sqrt(dLat * dLat + dLng * dLng);
+  }
+
   /// Great-circle distance between two coordinates, in meters. Used as the
   /// fallback baseline and as a sanity check on the engine response.
   static double _haversineMeters(LatLng a, LatLng b) {
@@ -786,7 +1130,8 @@ class RoutingService {
     final dLng = _toRad(b.longitude - a.longitude);
     final lat1 = _toRad(a.latitude);
     final lat2 = _toRad(b.latitude);
-    final h = (1 - math.cos(dLat)) / 2 +
+    final h =
+        (1 - math.cos(dLat)) / 2 +
         math.cos(lat1) * math.cos(lat2) * (1 - math.cos(dLng)) / 2;
     return 2 * earthRadius * math.asin(h.clamp(0.0, 1.0));
   }

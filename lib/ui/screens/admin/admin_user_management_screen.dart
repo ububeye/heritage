@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../blocs/localization/localization_cubit.dart';
 import '../../../blocs/user/user_cubit.dart';
 import '../../../data/models/user_model.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AdminUserManagementScreen extends StatefulWidget {
   const AdminUserManagementScreen({super.key});
@@ -52,39 +54,46 @@ class _UserManagementContent extends StatelessWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             child: BlocBuilder<UserCubit, UserState>(
               builder: (context, state) {
                 return TextField(
                   decoration: InputDecoration(
                     hintText: 'Search users...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: state.searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () => context.read<UserCubit>().searchUsers(''),
-                          )
-                        : null,
+                    prefixIcon: const Icon(PhosphorIconsRegular.magnifyingGlass),
+                    suffixIcon:
+                        state.searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed:
+                                  () =>
+                                      context.read<UserCubit>().searchUsers(''),
+                            )
+                            : null,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      borderRadius: AppRadius.mdBorder,
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      borderRadius: AppRadius.mdBorder,
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                     filled: true,
                     fillColor: Theme.of(context).colorScheme.surface,
                   ),
-                  onChanged: (value) => context.read<UserCubit>().searchUsers(value),
+                  onChanged:
+                      (value) => context.read<UserCubit>().searchUsers(value),
                 );
               },
             ),
           ),
           _buildStatsBar(),
-          Expanded(
-            child: _buildUserList(),
-          ),
+          _buildFilterAndSort(),
+          Expanded(child: _buildUserList()),
         ],
       ),
     );
@@ -95,18 +104,33 @@ class _UserManagementContent extends StatelessWidget {
       builder: (context, state) {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          padding: AppInsets.chipTall,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem(context, 'Total', state.totalUsers.toString(), Theme.of(context).colorScheme.primary),
-              _buildStatItem(context, 'Premium', state.premiumUsers.toString(), Theme.of(context).colorScheme.secondary),
-              _buildStatItem(context, 'Admins', state.adminUsers.toString(), context.semanticColors.success),
+              _buildStatItem(
+                context,
+                'Total',
+                state.totalUsers.toString(),
+                Theme.of(context).colorScheme.primary,
+              ),
+              _buildStatItem(
+                context,
+                'Premium',
+                state.premiumUsers.toString(),
+                Theme.of(context).colorScheme.secondary,
+              ),
+              _buildStatItem(
+                context,
+                'Admins',
+                state.adminUsers.toString(),
+                context.semanticColors.success,
+              ),
             ],
           ),
         );
@@ -114,7 +138,105 @@ class _UserManagementContent extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, Color color) {
+  Widget _buildFilterAndSort() {
+    return BlocBuilder<UserCubit, UserState>(
+      builder: (context, state) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: state.roleFilter == null,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(null),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Admins',
+                        isSelected: state.roleFilter == UserRole.admin,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(
+                              UserRole.admin,
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Premium',
+                        isSelected: state.roleFilter == UserRole.premium,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(
+                              UserRole.premium,
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      _FilterChip(
+                        label: 'Free',
+                        isSelected: state.roleFilter == UserRole.free,
+                        onTap:
+                            () => context.read<UserCubit>().setRoleFilter(
+                              UserRole.free,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  borderRadius: AppRadius.smBorder,
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<UserSortOrder>(
+                    value: state.sortOrder,
+                    icon: const Icon(PhosphorIconsRegular.sortAscending, size: 18),
+                    style: Theme.of(context).textTheme.bodySmall,
+                    items: const [
+                      DropdownMenuItem(
+                        value: UserSortOrder.nameAsc,
+                        child: Text('A-Z'),
+                      ),
+                      DropdownMenuItem(
+                        value: UserSortOrder.nameDesc,
+                        child: Text('Z-A'),
+                      ),
+                      DropdownMenuItem(
+                        value: UserSortOrder.newestFirst,
+                        child: Text('Newest'),
+                      ),
+                    ],
+                    onChanged: (order) {
+                      if (order != null) {
+                        context.read<UserCubit>().setSortOrder(order);
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatItem(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Column(
       children: [
         Text(
@@ -123,7 +245,9 @@ class _UserManagementContent extends StatelessWidget {
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -134,7 +258,9 @@ class _UserManagementContent extends StatelessWidget {
       builder: (context, state) {
         if (state.status == UserStatus.loading) {
           return Center(
-            child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.secondary,
+            ),
           );
         }
 
@@ -143,7 +269,11 @@ class _UserManagementContent extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+                Icon(
+                  PhosphorIconsRegular.warningCircle,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 const Text('Failed to load users'),
                 const SizedBox(height: 8),
@@ -164,14 +294,20 @@ class _UserManagementContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  state.searchQuery.isEmpty ? Icons.people_outline : Icons.search_off,
+                  state.searchQuery.isEmpty
+                      ? Icons.people_outline
+                      : PhosphorIconsRegular.magnifyingGlassMinus,
                   size: 64,
                   color: Theme.of(context).colorScheme.outline,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  state.searchQuery.isEmpty ? 'No users found' : 'No matching users',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+                  state.searchQuery.isEmpty
+                      ? 'No users found'
+                      : 'No matching users',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -182,14 +318,13 @@ class _UserManagementContent extends StatelessWidget {
           onRefresh: () => context.read<UserCubit>().loadUsers(),
           color: Theme.of(context).colorScheme.secondary,
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: AppInsets.card,
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
               return _UserCard(
                 user: user,
-                onRoleChange: (role) => context.read<UserCubit>().updateUserRole(user.id, role),
-                onDelete: () => _confirmDelete(context, user),
+                onTap: () => _showUserManagementSheet(context, user),
               );
             },
           ),
@@ -198,69 +333,62 @@ class _UserManagementContent extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, UserModel user) async {
-    final confirmed = await showDialog<bool>(
+  void _showUserManagementSheet(BuildContext context, UserModel user) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text('Delete user "${user.email}"? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('Delete'),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: AppRadius.sheetTopBorder,
       ),
+      builder: (ctx) => _UserManagementSheet(user: user, parentContext: context),
     );
-
-    if (confirmed == true && context.mounted) {
-      await context.read<UserCubit>().deleteUser(user.id);
-    }
   }
 }
 
 class _UserCard extends StatelessWidget {
-
   const _UserCard({
     required this.user,
-    required this.onRoleChange,
-    required this.onDelete,
+    required this.onTap,
   });
   final UserModel user;
-  final Function(UserRole) onRoleChange;
-  final VoidCallback onDelete;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    final deleteLabel = loc.translations['delete_user_a11y'] ?? 'Delete user';
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: AppInsets.card,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  backgroundImage: user.photoUrl != null
-                      ? NetworkImage(user.photoUrl!)
-                      : null,
-                  child: user.photoUrl == null
-                      ? Text(
-                          user.email[0].toUpperCase(),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary),
-                        )
-                      : null,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundImage:
+                      user.photoUrl != null
+                          ? NetworkImage(user.photoUrl!)
+                          : null,
+                  child:
+                      user.photoUrl == null
+                          ? Text(
+                            user.email[0].toUpperCase(),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          )
+                          : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -270,15 +398,17 @@ class _UserCard extends StatelessWidget {
                       Text(
                         user.displayName ?? user.email,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                          fontWeight: FontWeight.w600,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         user.email,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -288,22 +418,9 @@ class _UserCard extends StatelessWidget {
                 _buildRoleBadge(context),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildRoleDropdown(context),
-                ),
-                const SizedBox(width: 12),
-                IconButton(
-                  icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                  tooltip: deleteLabel,
-                  onPressed: onDelete,
-                ),
-              ],
-            ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -315,75 +432,205 @@ class _UserCard extends StatelessWidget {
       case UserRole.admin:
         color = context.semanticColors.success;
         label = 'Admin';
+        break;
       case UserRole.premium:
         color = Theme.of(context).colorScheme.secondary;
         label = 'Premium';
+        break;
       case UserRole.free:
         color = Theme.of(context).colorScheme.onSurfaceVariant;
         label = 'Free';
+        break;
+    }
+
+    if (user.disabled) {
+      color = Theme.of(context).colorScheme.error;
+      label = 'Disabled';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: AppInsets.pillTight,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdBorder,
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontSize: 12,
-              color: color,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(fontSize: 12, color: color),
       ),
     );
   }
+}
 
-  Widget _buildRoleDropdown(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<UserRole>(
-          value: user.role,
-          isExpanded: true,
-          items: UserRole.values.map((role) {
-            return DropdownMenuItem(
-              value: role,
-              child: Row(
-                children: [
-                  Icon(
-                    role == UserRole.admin
-                        ? Icons.admin_panel_settings
-                        : role == UserRole.premium
-                            ? Icons.workspace_premium
-                            : Icons.person,
-                    size: 18,
-                    color: role == UserRole.admin
-                        ? context.semanticColors.success
-                        : role == UserRole.premium
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    role.name[0].toUpperCase() + role.name.substring(1),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          onChanged: (role) {
-            if (role != null && role != user.role) {
-              onRoleChange(role);
-            }
-          },
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.fullBorder,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.fullBorder,
+          border: Border.all(
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color:
+                isSelected
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.onSurface,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
         ),
       ),
     );
   }
 }
+
+class _UserManagementSheet extends StatelessWidget {
+  const _UserManagementSheet({required this.user, required this.parentContext});
+  final UserModel user;
+  final BuildContext parentContext;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: AppInsets.card,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  borderRadius: AppRadius.fullBorder,
+                ),
+              ),
+            ),
+            Text(
+              'Manage User',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              user.email,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Access Level
+            Text(
+              'Access Level',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: UserRole.values.map((role) {
+                final isSelected = user.role == role;
+                return ChoiceChip(
+                  label: Text(role.name[0].toUpperCase() + role.name.substring(1)),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) {
+                      parentContext.read<UserCubit>().updateUserRole(user.id, role);
+                      Navigator.pop(context);
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+
+            // Security
+            Text(
+              'Security',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                user.disabled ? PhosphorIconsRegular.lockOpen : PhosphorIconsRegular.lock,
+                color: user.disabled ? context.semanticColors.success : Theme.of(context).colorScheme.error,
+              ),
+              title: Text(user.disabled ? 'Unsuspend Account' : 'Suspend Account'),
+              onTap: () {
+                parentContext.read<UserCubit>().toggleUserDisabled(user.id, !user.disabled);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.password),
+              title: const Text('Force Password Reset'),
+              onTap: () async {
+                try {
+                  await parentContext.read<UserCubit>().sendPasswordReset(user.email);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Password reset email sent')),
+                    );
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
+                }
+              },
+            ),
+            
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                parentContext.read<UserCubit>().deleteUser(user.id);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              icon: const Icon(PhosphorIconsRegular.trash),
+              label: const Text('Delete Account Permanently'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

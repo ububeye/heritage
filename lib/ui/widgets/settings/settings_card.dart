@@ -8,7 +8,6 @@ import '../../../core/theme/app_shadows.dart';
 /// existing card radius, and the low shadow — so the two screens stay
 /// visually consistent without copy-paste.
 class SettingsCard extends StatelessWidget {
-
   const SettingsCard({super.key, required this.children});
   final List<Widget> children;
 
@@ -35,7 +34,6 @@ class SettingsCard extends StatelessWidget {
 /// (after the icon column). Used between settings tiles inside a
 /// [SettingsCard] so the grouping reads as one card.
 class SettingsDivider extends StatelessWidget {
-
   const SettingsDivider({super.key});
 
   @override
@@ -44,10 +42,9 @@ class SettingsDivider extends StatelessWidget {
       padding: const EdgeInsets.only(left: 56), // Align with title text
       child: Divider(
         height: 1,
-        color: Theme.of(context)
-            .colorScheme
-            .outlineVariant
-            .withValues(alpha: 0.5),
+        color: Theme.of(
+          context,
+        ).colorScheme.outlineVariant.withValues(alpha: 0.5),
       ),
     );
   }

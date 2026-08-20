@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
+import '../../core/theme/app_spacing.dart';
 
 import '../../blocs/premium/premium_state.dart';
 
@@ -31,15 +34,13 @@ class TrialBadge extends StatelessWidget {
     final scheme = theme.colorScheme;
     final isActive = trialActiveUntil != null;
 
-    final accent = scheme.secondary;
-    final accentOn = scheme.onSecondary;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: AppInsets.chipTall,
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        color: scheme.surface,
+        borderRadius: AppRadius.badgeBorder,
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
+        boxShadow: AppShadows.lowFor(theme.brightness),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -47,10 +48,11 @@ class TrialBadge extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.20),
-              borderRadius: BorderRadius.circular(10),
+              color: scheme.surface,
+              border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
+              borderRadius: AppRadius.bannerBorder,
             ),
-            child: Icon(Icons.card_giftcard, color: accentOn, size: 22),
+            child: Icon(Icons.card_giftcard, color: scheme.onSurface, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -62,18 +64,18 @@ class TrialBadge extends StatelessWidget {
                       ? 'Your free trial is active'
                       : 'Try free for $trialDays days',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface,
-                      ),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   _body(),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 13,
-                        color: scheme.onSurface.withValues(alpha: 0.75),
-                      ),
+                    fontSize: 13,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

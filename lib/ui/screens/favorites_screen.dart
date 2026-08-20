@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../blocs/site_list/site_list_cubit.dart';
 import '../../blocs/site_list/site_list_state.dart';
@@ -10,6 +10,9 @@ import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/site_model.dart';
 import 'detail_screen.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -21,9 +24,9 @@ class FavoritesScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: BlocBuilder<LocalizationCubit, LocalizationState>(
-          builder: (context, loc) => Text(
-            loc.translations['favorites'] ?? 'Favorites',
-          ),
+          builder:
+              (context, loc) =>
+                  Text(loc.translations['favorites'] ?? 'Favorites'),
         ),
       ),
       body: BlocBuilder<FavoritesCubit, FavoritesState>(
@@ -36,21 +39,18 @@ class FavoritesScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.favorite_border,
+                        PhosphorIconsRegular.heart,
                         size: 80,
                         color: Theme.of(context).colorScheme.outline,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         loc.translations['no_favorites'] ?? 'No favorites yet',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Padding(
@@ -59,10 +59,12 @@ class FavoritesScreen extends StatelessWidget {
                           loc.translations['no_favorites_hint'] ??
                               'Tap the heart icon on any site to add it to your favorites',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: AppColors.textSecondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ],
@@ -76,15 +78,18 @@ class FavoritesScreen extends StatelessWidget {
             builder: (context, siteState) {
               if (siteState.status == SiteListStatus.loading) {
                 return Center(
-                  child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
+                  child: CircularProgressIndicator(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
                 );
               }
 
               // Use O(1) lookups to build the favorites list
-              final favoriteSites = favState.favoriteIds
-                  .map((id) => siteState.sitesById[id])
-                  .whereType<SiteModel>()
-                  .toList();
+              final favoriteSites =
+                  favState.favoriteIds
+                      .map((id) => siteState.sitesById[id])
+                      .whereType<SiteModel>()
+                      .toList();
 
               if (favoriteSites.isEmpty) {
                 return BlocBuilder<LocalizationCubit, LocalizationState>(
@@ -94,31 +99,35 @@ class FavoritesScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.favorite_border,
+                            PhosphorIconsRegular.heart,
                             size: 80,
-                            color: AppColors.textHint,
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            loc.translations['no_favorites'] ?? 'No favorites yet',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
+                            loc.translations['no_favorites'] ??
+                                'No favorites yet',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge?.copyWith(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             loc.translations['no_favorites_hint'] ??
                                 'Tap the heart icon on any site to add it to your favorites',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: AppColors.textSecondary),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -128,7 +137,7 @@ class FavoritesScreen extends StatelessWidget {
               }
 
               return GridView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: AppInsets.card,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
@@ -138,8 +147,8 @@ class FavoritesScreen extends StatelessWidget {
                 itemCount: favoriteSites.length,
                 itemBuilder: (context, index) {
                   final site = favoriteSites[index];
-                  final uiLanguage = context.read<LanguageCubit>().state.uiLanguage;
                   final loc = context.read<LocalizationCubit>().state;
+                  final uiLanguage = loc.currentLanguage;
 
                   return _FavoriteSiteCard(
                     site: site,
@@ -162,7 +171,9 @@ class FavoritesScreen extends StatelessWidget {
                           action: SnackBarAction(
                             label: loc.translations['undo'] ?? 'Undo',
                             onPressed: () {
-                              context.read<FavoritesCubit>().addFavorite(site.id);
+                              context.read<FavoritesCubit>().addFavorite(
+                                site.id,
+                              );
                             },
                           ),
                         ),
@@ -180,7 +191,6 @@ class FavoritesScreen extends StatelessWidget {
 }
 
 class _FavoriteSiteCard extends StatelessWidget {
-
   const _FavoriteSiteCard({
     required this.site,
     required this.uiLanguage,
@@ -199,15 +209,8 @@ class _FavoriteSiteCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              // Card shadow uses the theme-aware semantic shadow tone.
-              color: context.semanticColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: AppRadius.lgBorder,
+          boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,31 +219,35 @@ class _FavoriteSiteCard extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(AppRadius.lg),
+                  ),
                   child: CachedNetworkImage(
                     imageUrl: site.primaryImage,
                     height: 120,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      height: 120,
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.secondary,
-                          strokeWidth: 2,
+                    placeholder:
+                        (context, url) => Container(
+                          height: 120,
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.secondary,
+                              strokeWidth: 2,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      height: 120,
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      child: Icon(
-                        Icons.image_not_supported,
-                        size: 40,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
+                    errorWidget:
+                        (context, url, error) => Container(
+                          height: 120,
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: Icon(
+                            Icons.image_not_supported,
+                            size: 40,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
                   ),
                 ),
                 // Remove button — sits over the hero image. The white
@@ -260,7 +267,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.favorite,
+                        PhosphorIconsFill.heart,
                         // Heart = love/like state — mapped to the success
                         // semantic role per the migration rules.
                         color: context.semanticColors.success,
@@ -275,22 +282,18 @@ class _FavoriteSiteCard extends StatelessWidget {
                     bottom: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: AppInsets.tag,
                       decoration: BoxDecoration(
                         // Badge sits over the photo — scrim background
                         // and fixed-content foreground for legibility.
                         color: context.semanticColors.imageScrim,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.smBorder,
                       ),
                       child: Text(
                         site.category!,
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelSmall
-                            ?.copyWith(color: context.semanticColors.onImage),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: context.semanticColors.onImage,
+                        ),
                       ),
                     ),
                   ),
@@ -306,7 +309,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                     Text(
                       site.getName(uiLanguage),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -315,7 +318,7 @@ class _FavoriteSiteCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          Icons.location_on,
+                          PhosphorIconsRegular.mapPin,
                           size: 14,
                           color: Theme.of(context).colorScheme.outline,
                         ),
@@ -323,13 +326,12 @@ class _FavoriteSiteCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             site.displayAddress,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  fontSize: 11,
-                                  color: AppColors.textHint,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

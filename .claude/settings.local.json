@@ -25,7 +25,11 @@
       "Bash(find \"c:\\\\Users\\\\noble\\\\StudioProjects\\\\stone_town_heritage_vt_guide\" -type f -not -path \"*/\\\\.*\" -not -path \"*/build/*\" -not -path \"*/node_modules/*\" -not -path \"*/.dart_tool/*\")",
       "Bash(flutter test *)",
       "Bash(git check-ignore *)",
-      "Bash(node -e \"console.log\\(new Date\\(1781730000000\\).toISOString\\(\\)\\)\")"
+      "Bash(node -e \"console.log\\(new Date\\(1781730000000\\).toISOString\\(\\)\\)\")",
+      "Bash(dart format *)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api *)",
+      "Bash(python -c \"import json,sys,base64; c=json.load\\(sys.stdin\\); print\\(base64.b64decode\\(c['content']\\).decode\\('utf-8'\\)\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\noble\\.android"

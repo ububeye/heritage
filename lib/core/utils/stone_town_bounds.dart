@@ -22,15 +22,22 @@ class StoneTownBounds {
   /// The strict bounding box. The map camera is clamped to this rectangle;
   /// pan/zoom operations that try to escape it are snapped back inside.
   static LatLngBounds get cameraBounds => LatLngBounds(
-        const LatLng(
-          AppConstants.stoneTownMinLat,
-          AppConstants.stoneTownMinLng,
-        ),
-        const LatLng(
-          AppConstants.stoneTownMaxLat,
-          AppConstants.stoneTownMaxLng,
-        ),
-      );
+    const LatLng(AppConstants.stoneTownMinLat, AppConstants.stoneTownMinLng),
+    const LatLng(AppConstants.stoneTownMaxLat, AppConstants.stoneTownMaxLng),
+  );
+
+  /// A wider bounding box (~20 % buffer around the strict box) used by the
+  /// admin picker map camera constraint. The tight strict box is so small that
+  /// a normal pinch-zoom-out easily pushes the camera past its edge, which
+  /// triggers flutter_map's CameraConstraint assertion and shows the red
+  /// "Access Blocked" overlay. This wider box gives the admin comfortable
+  /// scroll/zoom room without leaving Stone Town's neighbourhood.
+  ///
+  /// Routing validation still uses [cameraBounds] (the strict box).
+  static LatLngBounds get pickerCameraBounds => LatLngBounds(
+    const LatLng(AppConstants.stoneTownPickerMinLat, AppConstants.stoneTownPickerMinLng),
+    const LatLng(AppConstants.stoneTownPickerMaxLat, AppConstants.stoneTownPickerMaxLng),
+  );
 
   /// True if [point] is inside the strict Stone Town box. Used by the
   /// routing service to reject up-front any request that lands outside
@@ -53,3 +60,4 @@ class StoneTownBounds {
     return LatLng(lat, lng);
   }
 }
+

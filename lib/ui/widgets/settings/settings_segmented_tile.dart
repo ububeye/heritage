@@ -15,7 +15,6 @@ import 'settings_tile.dart';
 /// column when `SegmentedButton`'s intrinsic width exceeded the
 /// available space.
 class SettingsSegmentedTile<T extends Object> extends StatelessWidget {
-
   const SettingsSegmentedTile({
     super.key,
     required this.icon,
@@ -65,10 +64,7 @@ class SettingsSegmentedTile<T extends Object> extends StatelessWidget {
               ),
               segments: [
                 for (var i = 0; i < options.length; i++)
-                  ButtonSegment<T>(
-                    value: _values[i],
-                    label: Text(options[i]),
-                  ),
+                  ButtonSegment<T>(value: _values[i], label: Text(options[i])),
               ],
               selected: {value},
               onSelectionChanged: (selection) {

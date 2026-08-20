@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 class SiteModel extends Equatable {
-
   const SiteModel({
     required this.id,
     required this.nameEn,
@@ -66,17 +65,20 @@ class SiteModel extends Equatable {
       address: map['address'] as String?,
       rating: (map['rating'] as num?)?.toDouble(),
       category: map['category'],
-      createdAt: map['created_at'] != null
-          ? DateTime.tryParse(map['created_at'])
-          : null,
-      updatedAt: map['updated_at'] != null
-          ? DateTime.tryParse(map['updated_at'])
-          : null,
+      createdAt:
+          map['created_at'] != null
+              ? DateTime.tryParse(map['created_at'])
+              : null,
+      updatedAt:
+          map['updated_at'] != null
+              ? DateTime.tryParse(map['updated_at'])
+              : null,
       featured: map['featured'] == true,
       routeGeometry: map['route_geometry'] as String?,
-      routeGeometryUpdatedAt: map['route_geometry_updated_at'] != null
-          ? DateTime.tryParse(map['route_geometry_updated_at'] as String)
-          : null,
+      routeGeometryUpdatedAt:
+          map['route_geometry_updated_at'] != null
+              ? DateTime.tryParse(map['route_geometry_updated_at'] as String)
+              : null,
     );
   }
   final String id;
@@ -197,9 +199,8 @@ class SiteModel extends Equatable {
     final images = allImages;
     if (images.isEmpty) return '';
 
-    final imageUrl = imageIndex < images.length
-        ? images[imageIndex]
-        : images.first;
+    final imageUrl =
+        imageIndex < images.length ? images[imageIndex] : images.first;
 
     if (imageUrl.contains('upload')) {
       final parts = imageUrl.split('upload/');
@@ -308,35 +309,35 @@ class SiteModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        nameEn,
-        nameSw,
-        nameFr,
-        nameDe,
-        nameAr,
-        nameIt,
-        nameEs,
-        descriptionEn,
-        descriptionSw,
-        descriptionFr,
-        descriptionDe,
-        descriptionAr,
-        descriptionIt,
-        descriptionEs,
-        cloudinaryImageUrl,
-        imageUrls,
-        latitude,
-        longitude,
-        entryRadiusM,
-        address,
-        rating,
-        category,
-        createdAt,
-        updatedAt,
-        featured,
-        routeGeometry,
-        routeGeometryUpdatedAt,
-      ];
+    id,
+    nameEn,
+    nameSw,
+    nameFr,
+    nameDe,
+    nameAr,
+    nameIt,
+    nameEs,
+    descriptionEn,
+    descriptionSw,
+    descriptionFr,
+    descriptionDe,
+    descriptionAr,
+    descriptionIt,
+    descriptionEs,
+    cloudinaryImageUrl,
+    imageUrls,
+    latitude,
+    longitude,
+    entryRadiusM,
+    address,
+    rating,
+    category,
+    createdAt,
+    updatedAt,
+    featured,
+    routeGeometry,
+    routeGeometryUpdatedAt,
+  ];
 }
 
 // Site categories

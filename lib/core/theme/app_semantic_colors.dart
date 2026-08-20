@@ -138,21 +138,21 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
 
   @override
   int get hashCode => Object.hash(
-        success,
-        onSuccess,
-        warning,
-        onWarning,
-        info,
-        onInfo,
-        rating,
-        mapRoute,
-        mapUser,
-        mapMarker,
-        onImage,
-        onImageMuted,
-        imageScrim,
-        shadow,
-      );
+    success,
+    onSuccess,
+    warning,
+    onWarning,
+    info,
+    onInfo,
+    rating,
+    mapRoute,
+    mapUser,
+    mapMarker,
+    onImage,
+    onImageMuted,
+    imageScrim,
+    shadow,
+  );
 }
 
 /// Convenience accessor for [AppSemanticColors]. Crashes loudly via the

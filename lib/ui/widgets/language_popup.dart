@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class LanguagePopup extends StatelessWidget {
-
-  const LanguagePopup({
-    super.key,
-    required this.onSelect,
-  });
+  const LanguagePopup({super.key, required this.onSelect});
   final Function(String) onSelect;
 
   @override
@@ -17,13 +14,13 @@ class LanguagePopup extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lgBorder,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.language,
+              PhosphorIconsRegular.globe,
               size: 48,
               color: Theme.of(context).colorScheme.primary,
             ),
@@ -31,16 +28,16 @@ class LanguagePopup extends StatelessWidget {
             Text(
               'Choose Your Language',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Select your preferred language for the app interface',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -70,7 +67,6 @@ class LanguagePopup extends StatelessWidget {
 }
 
 class _LanguageButton extends StatelessWidget {
-
   const _LanguageButton({
     required this.flag,
     required this.label,
@@ -88,23 +84,20 @@ class _LanguageButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.mdBorder,
           border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
         child: Column(
           children: [
-            Text(
-              flag,
-              style: const TextStyle(fontSize: 32),
-            ),
+            Text(flag, style: const TextStyle(fontSize: 32)),
             const SizedBox(height: 8),
             Text(
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ],
         ),

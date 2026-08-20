@@ -42,8 +42,7 @@ class FakeBillingProvider implements BillingProvider {
   /// When non-null, the next [restore] call returns this entitlement.
   /// Lets tests assert the "already a member" flow without going through
   /// purchase first.
-  ({PlanId planId, DateTime? trialActiveUntil, String receiptId})?
-      restoreStash;
+  ({PlanId planId, DateTime? trialActiveUntil, String receiptId})? restoreStash;
 
   @override
   String get name => 'fake';
@@ -72,7 +71,12 @@ class FakeBillingProvider implements BillingProvider {
     }
 
     final receipt = 'fake-${DateTime.now().millisecondsSinceEpoch}';
-    final trialEnd = DateTime.now().add(const Duration(days: 3));
+    // Lifetime is a one-time purchase — no trial. Other plans
+    // (monthly, yearly, proMonthly, proYearly) start with a 3-day
+    // trial to mirror the real RevenueCat/Play Store semantics.
+    final isLifetime = planId == PlanId.lifetime;
+    final trialEnd =
+        isLifetime ? null : DateTime.now().add(const Duration(days: 3));
     return BillingSuccess(
       planId: planId,
       receiptId: receipt,
@@ -107,7 +111,7 @@ class FakeBillingProvider implements BillingProvider {
 
   @override
   Future<({PlanId planId, DateTime? trialActiveUntil, String receiptId})?>
-      currentEntitlement() async {
+  currentEntitlement() async {
     await _simulateLatency();
     return restoreStash;
   }

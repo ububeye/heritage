@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/language/language_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../blocs/site_detail/site_detail_cubit.dart';
 import '../../blocs/theme/theme_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import '../../data/services/tile_cache_service.dart';
@@ -25,6 +26,15 @@ import '../widgets/user_avatar.dart';
 import 'login_screen.dart';
 import 'upgrade_screen.dart';
 import 'user_profile_screen.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+/// Recipient for "Report a problem" mailto links. Configured at build time via
+/// `--dart-define=SUPPORT_EMAIL=help@example.com`. When empty the tile
+/// surfaces an in-app dialog instead of attempting a silent mailto.
+const String kSupportEmail = String.fromEnvironment(
+  'SUPPORT_EMAIL',
+  defaultValue: '',
+);
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,13 +44,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  /// Maps a "minutes-from-midnight" int to "HH:mm" for display.
-  static String _formatMinutes(int minutes) {
-    final h = (minutes ~/ 60).toString().padLeft(2, '0');
-    final m = (minutes % 60).toString().padLeft(2, '0');
-    return '$h:$m';
-  }
-
   String _tr(LocalizationState state, String key) =>
       state.translations[key] ?? key;
 
@@ -56,7 +59,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 authState: authState,
                 locState: locState,
                 tr: _tr,
-                formatMinutes: _formatMinutes,
               );
             },
           );
@@ -71,22 +73,16 @@ class _SettingsBody extends StatelessWidget {
     required this.authState,
     required this.locState,
     required this.tr,
-    required this.formatMinutes,
   });
   final AuthState authState;
   final LocalizationState locState;
   final String Function(LocalizationState, String) tr;
-  final String Function(int) formatMinutes;
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        _ProfileHeroAppBar(
-          authState: authState,
-          locState: locState,
-          tr: tr,
-        ),
+        _ProfileHeroAppBar(authState: authState, locState: locState, tr: tr),
         SliverPadding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -95,117 +91,121 @@ class _SettingsBody extends StatelessWidget {
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               // ── Tour preferences (NEW) ───────────────────────────────
-              SettingsSectionTitle(
-                label: tr(locState, 'tour_preferences'),
+              SettingsSectionTitle(label: tr(locState, 'tour_preferences')),
+              SettingsCard(
+                children: const [
+                  _AutoPlayTile(),
+                  SettingsDivider(),
+                  _PlaybackSpeedTile(),
+                  SettingsDivider(),
+                  _DistanceUnitsTile(),
+                  SettingsDivider(),
+                  _ReduceMotionTile(),
+                ],
               ),
-              SettingsCard(children: const [
-                _AutoPlayTile(),
-                SettingsDivider(),
-                _PlaybackSpeedTile(),
-                SettingsDivider(),
-                _DistanceUnitsTile(),
-                SettingsDivider(),
-                _ReduceMotionTile(),
-              ],),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Appearance ───────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'appearance')),
-              SettingsCard(children: const [
-                _ThemeTile(),
-                SettingsDivider(),
-                _MapProviderTile(),
-              ],),
+              SettingsCard(
+                children: const [
+                  _ThemeTile(),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Languages ────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'app_language')),
-              SettingsCard(children: [
-                _LanguageDropdownTile(
-                  icon: Icons.language,
-                  iconColor: context.semanticColors.info,
-                  code: locState.currentLanguage,
-                  items: AppConstants.uiLanguages,
-                  onChanged: (value) {
-                    if (value != null) {
-                      context.read<LocalizationCubit>().setLanguage(value);
-                    }
-                  },
-                ),
-                const SettingsDivider(),
-                _LanguageDropdownTile(
-                  icon: Icons.record_voice_over,
-                  iconColor: context.semanticColors.warning,
-                  code: context.watch<LanguageCubit>().state.audioLanguage,
-                  items: authState.isPremium
-                      ? AppConstants.ttsLanguages
-                      : AppConstants.freeTtsLanguages,
-                  enabled: authState.isPremium,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    if (!authState.isPremium) {
-                      _showUpgradeDialog(context, locState);
-                      return;
-                    }
-                    context.read<LanguageCubit>().setAudioLanguage(value);
-                  },
-                ),
-              ],),
+              SettingsCard(
+                children: [
+                  _LanguageDropdownTile(
+                    icon: PhosphorIconsRegular.globe,
+                    iconColor: context.semanticColors.info,
+                    code: locState.currentLanguage,
+                    items: AppConstants.uiLanguages,
+                    titleKey: 'app_language',
+                    subtitleKey: 'app_language_subtitle',
+                    onChanged: (value) {
+                      if (value != null) {
+                        context.read<LocalizationCubit>().setLanguage(value);
+                      }
+                    },
+                  ),
+                  const SettingsDivider(),
+                  _LanguageDropdownTile(
+                    icon: Icons.record_voice_over,
+                    iconColor: context.semanticColors.warning,
+                    code: context.watch<LanguageCubit>().state.audioLanguage,
+                    items:
+                        authState.isPremium
+                            ? AppConstants.ttsLanguages
+                            : AppConstants.freeTtsLanguages,
+                    enabled: authState.isPremium,
+                    titleKey: 'audio_language',
+                    subtitleKey: 'audio_language_subtitle',
+                    onChanged: (value) {
+                      if (value == null) return;
+                      if (!authState.isPremium) {
+                        _showUpgradeDialog(context, locState);
+                        return;
+                      }
+                      context.read<LanguageCubit>().setAudioLanguage(value);
+                    },
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Notifications ────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'notifications')),
-              SettingsCard(children: [
-                _ArrivalNotificationsGroup(),
-              ],),
+              SettingsCard(children: [_ArrivalNotificationsGroup()]),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Storage ──────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'storage')),
-              SettingsCard(children: const [
-                _ClearMapCacheTile(),
-                SettingsDivider(),
-                _OfflineDataTile(),
-              ],),
+              SettingsCard(
+                children: const [
+                  _ClearMapCacheTile(),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               // ── Account ──────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'account')),
-              SettingsCard(children: [
-                _AccountRow(authState: authState),
-              ],),
+              SettingsCard(children: [_AccountRow(authState: authState)]),
               const SizedBox(height: AppSpacing.lg),
 
               // ── About ────────────────────────────────────────────────
               SettingsSectionTitle(label: tr(locState, 'about')),
-              SettingsCard(children: const [
-                _VersionTile(),
-                SettingsDivider(),
-                _OpenSourceLicensesTile(),
-                SettingsDivider(),
-                _PrivacyAndDataTile(),
-                SettingsDivider(),
-                _ReportAProblemTile(),
-              ],),
+              SettingsCard(
+                children: const [
+                  _VersionTile(),
+                  SettingsDivider(),
+                  _OpenSourceLicensesTile(),
+                  SettingsDivider(),
+                  _ReportAProblemTile(),
+                ],
+              ),
 
               if (!authState.isPremium) ...[
                 const SizedBox(height: AppSpacing.lg),
-                SettingsSectionTitle(
-                  label: tr(locState, 'upgrade_to_premium'),
-                ),
-                SettingsCard(children: [
-                  SettingsTile(
-                    icon: Icons.workspace_premium,
-                    iconColor: Theme.of(context).colorScheme.secondary,
-                    title: tr(locState, 'upgrade_to_premium'),
-                    subtitle: tr(locState, 'unlock_premium'),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const UpgradeScreen(),
-                      ),
+                SettingsSectionTitle(label: tr(locState, 'upgrade_to_premium')),
+                SettingsCard(
+                  children: [
+                    SettingsTile(
+                      icon: Icons.workspace_premium,
+                      iconColor: Theme.of(context).colorScheme.secondary,
+                      title: tr(locState, 'upgrade_to_premium'),
+                      subtitle: tr(locState, 'unlock_premium'),
+                      onTap:
+                          () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const UpgradeScreen(),
+                            ),
+                          ),
                     ),
-                  ),
-                ],),
+                  ],
+                ),
               ],
               const SizedBox(height: AppSpacing.xl),
 
@@ -224,36 +224,37 @@ class _SettingsBody extends StatelessWidget {
   void _showUpgradeDialog(BuildContext context, LocalizationState locState) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: Text(
-          tr(locState, 'unlock_premium'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(tr(locState, 'benefit_audio_tours')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(tr(locState, 'try_free')),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const UpgradeScreen()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.button),
-              ),
+      builder:
+          (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Text(tr(locState, 'go_premium')),
+            title: Text(
+              tr(locState, 'unlock_premium'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Text(tr(locState, 'benefit_audio_tours')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(tr(locState, 'try_free')),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.button),
+                  ),
+                ),
+                child: Text(tr(locState, 'go_premium')),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -298,14 +299,17 @@ class _ProfileHeroAppBar extends StatelessWidget {
         style: Theme.of(context).textTheme.titleLarge,
       ),
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsetsDirectional.only(
-          start: AppSpacing.md,
-          bottom: AppSpacing.md,
-        ),
-        title: SafeArea(
-          top: false,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+        background: SafeArea(
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: AppSpacing.md,
+              bottom: AppSpacing.md,
+              end: AppSpacing.md,
+            ),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               UserAvatar(
                 photoUrl: user?.photoUrl,
@@ -336,9 +340,7 @@ class _ProfileHeroAppBar extends StatelessWidget {
                       Text(
                         emailSubtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -347,24 +349,31 @@ class _ProfileHeroAppBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              OutlinedButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const UserProfileScreen(),
+              // Only show the Edit button for authed users — for guests
+              // the row below ("Sign in") is the entry point, and the
+              // Edit button would silently push an empty profile.
+              if (authState.isAuthenticated)
+                OutlinedButton.icon(
+                  onPressed:
+                      () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const UserProfileScreen(),
+                        ),
+                      ),
+                  icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 16),
+                  label: Text(tr(locState, 'edit_profile')),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
                   ),
                 ),
-                icon: const Icon(Icons.edit, size: 16),
-                label: Text(tr(locState, 'edit_profile')),
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
+      ),
+      ),
       ),
     );
   }
@@ -378,11 +387,12 @@ class _PlanBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final key = isPremium ? 'premium_badge' : 'free_badge';
-    final color = isPremium
-        ? Theme.of(context).colorScheme.secondary
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+    final color =
+        isPremium
+            ? Theme.of(context).colorScheme.secondary
+            : Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: AppInsets.badgePadding,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
@@ -409,36 +419,44 @@ class _AccountRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isAuthed = authState.isAuthenticated;
     final email = authState.user?.email;
+    final loc = context.watch<LocalizationCubit>().state;
+    if (!isAuthed) {
+      // Guest row — no empty email, no premium/free subtitle. Push the
+      // user to the login screen rather than into an empty profile.
+      return SettingsTile(
+        icon: PhosphorIconsRegular.signIn,
+        iconColor: Theme.of(context).colorScheme.primary,
+        title: loc.translations['sign_in'] ?? 'Sign in',
+        subtitle: loc.translations['sign_in_subtitle'] ?? 'Sync your itinerary and favorites',
+        trailing: Icon(
+          PhosphorIconsRegular.caretRight,
+          size: 16,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+        onTap: () {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+        },
+      );
+    }
     return SettingsTile(
-      icon: isAuthed ? Icons.person : Icons.person_outline,
+      icon: PhosphorIconsRegular.userCircle,
       iconColor: Theme.of(context).colorScheme.primary,
-      title: email ?? '',
-      subtitle: authState.isPremium
-          ? (context
-              .watch<LocalizationCubit>()
-              .state
-              .translations['premium_badge'] ??
-              'Premium')
-          : (context
-                  .watch<LocalizationCubit>()
-                  .state
-                  .translations['free_badge'] ??
-              'Free'),
+      title: email ?? loc.translations['account'] ?? 'Account',
+      subtitle:
+          authState.isPremium
+              ? (loc.translations['premium_badge'] ?? 'Premium')
+              : (loc.translations['free_badge'] ?? 'Free'),
       trailing: Icon(
-        CupertinoIcons.chevron_right,
+        PhosphorIconsRegular.caretRight,
         size: 16,
         color: Theme.of(context).colorScheme.outline,
       ),
       onTap: () {
-        if (!isAuthed) {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-          );
-        } else {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const UserProfileScreen()),
-          );
-        }
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const UserProfileScreen()));
       },
     );
   }
@@ -473,7 +491,8 @@ class _AutoPlayTileState extends State<_AutoPlayTile> {
       icon: Icons.play_circle_outline,
       iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['auto_play_on_arrival'] ?? 'Auto-play on arrival',
-      subtitle: loc.translations['auto_play_on_arrival_subtitle'] ??
+      subtitle:
+          loc.translations['auto_play_on_arrival_subtitle'] ??
           'Start narration as soon as you enter a site',
       value: _value,
       onChanged: _onChange,
@@ -545,7 +564,8 @@ class _ReduceMotionTileState extends State<_ReduceMotionTile> {
       icon: Icons.motion_photos_off_outlined,
       iconColor: Colors.deepPurpleAccent,
       title: loc.translations['reduce_motion'] ?? 'Reduce motion',
-      subtitle: loc.translations['reduce_motion_subtitle'] ??
+      subtitle:
+          loc.translations['reduce_motion_subtitle'] ??
           'Disable hero crossfades and the arrival pulse',
       value: _value,
       onChanged: _onChange,
@@ -572,6 +592,12 @@ class _PlaybackSpeedTileState extends State<_PlaybackSpeedTile> {
   Future<void> _onChange(double v) async {
     setState(() => _speed = v);
     await SharedPrefsService.instance.setPlaybackSpeed(v);
+    // Apply immediately so the next TTS utterance in this session uses
+    // the new rate without requiring an app restart. flutter_tts accepts
+    // platform-defined ranges (Android typically [0.5, 2.0]); the value
+    // we pass was picked from _options, so it's already in range.
+    if (!mounted) return;
+    await context.read<SiteDetailCubit>().applyPlaybackSpeed(v);
   }
 
   String _labelFor(BuildContext context, double v) {
@@ -593,14 +619,21 @@ class _PlaybackSpeedTileState extends State<_PlaybackSpeedTile> {
   Widget build(BuildContext context) {
     final loc = context.watch<LocalizationCubit>().state;
     // Snap persisted value into the option list so the dropdown never
-    // shows a stale / unmapped selection on next launch.
-    final safeValue = _options.contains(_speed) ? _speed : 1.0;
+    // shows a stale / unmapped selection on next launch. Use a tolerance
+    // instead of `contains` because SharedPreferences round-tripping
+    // a double can land on 0.75 ± ε from the literal in _options.
+    double safeValue = 1.0;
+    for (final opt in _options) {
+      if ((_speed - opt).abs() < 1e-6) {
+        safeValue = opt;
+        break;
+      }
+    }
     return SettingsDropdownTile<double>(
       icon: Icons.speed,
       iconColor: context.semanticColors.warning,
       title: loc.translations['playback_speed'] ?? 'Playback speed',
-      subtitle:
-          loc.translations['playback_speed_subtitle'] ?? 'Narration pace',
+      subtitle: loc.translations['playback_speed_subtitle'] ?? 'Narration pace',
       value: safeValue,
       items: _options,
       labels: _options.map((v) => _labelFor(context, v)).toList(),
@@ -633,7 +666,7 @@ class _ThemeTile extends StatelessWidget {
     return BlocBuilder<ThemeCubit, ThemeMode>(
       builder: (context, themeMode) {
         return SettingsSegmentedTile<String>(
-          icon: Icons.palette,
+          icon: PhosphorIconsRegular.palette,
           iconColor: Colors.deepPurpleAccent,
           options: [
             loc.translations['theme_light'] ?? 'Light',
@@ -659,66 +692,6 @@ class _ThemeTile extends StatelessWidget {
   }
 }
 
-class _MapProviderTile extends StatefulWidget {
-  const _MapProviderTile();
-
-  @override
-  State<_MapProviderTile> createState() => _MapProviderTileState();
-}
-
-class _MapProviderTileState extends State<_MapProviderTile> {
-  late String _active;
-
-  @override
-  void initState() {
-    super.initState();
-    _active = SharedPrefsService.instance.mapProvider;
-  }
-
-  void _select(String provider) {
-    if (provider == _active) return;
-    setState(() => _active = provider);
-    SharedPrefsService.instance.setMapProvider(provider);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final apiKey = AppConstants.googleMapsApiKey;
-    final googleEnabled = apiKey != null && apiKey.isNotEmpty;
-    final loc = context.watch<LocalizationCubit>().state;
-    final options = googleEnabled
-        ? const ['OSM', 'Google']
-        : const ['OSM'];
-    final values = googleEnabled
-        ? const <String>[AppConstants.mapProviderOpen, AppConstants.mapProviderGoogle]
-        : const <String>[AppConstants.mapProviderOpen];
-    return SettingsSegmentedTile<String>(
-      icon: Icons.public,
-      iconColor: Theme.of(context).colorScheme.primary,
-      options: options,
-      values: values,
-      value: _active,
-      // When the Google API key isn't configured we still render the OSM
-      // segment but show a hint if the user tries to tap Google. Tapping
-      // a disabled option used to be silently swallowed, which made the
-      // segmented control look broken.
-      onChanged: googleEnabled
-          ? _select
-          : (v) {
-              ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    loc.translations['map_provider_google_disabled'] ??
-                        'Add a Google Maps API key in AppConstants to enable Google tiles',
-                  ),
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-            },
-    );
-  }
-}
-
 // ── Languages dropdown tile (generic) ───────────────────────────────────
 
 class _LanguageDropdownTile extends StatelessWidget {
@@ -727,6 +700,8 @@ class _LanguageDropdownTile extends StatelessWidget {
     required this.iconColor,
     required this.code,
     required this.items,
+    required this.titleKey,
+    required this.subtitleKey,
     this.enabled = true,
     required this.onChanged,
   });
@@ -734,6 +709,11 @@ class _LanguageDropdownTile extends StatelessWidget {
   final Color iconColor;
   final String code;
   final List<String> items;
+  // Explicit translation keys so the title/subtitle can't get crossed
+  // when the items list happens to match AppConstants.uiLanguages by
+  // reference — the previous list-identity heuristic was fragile.
+  final String titleKey;
+  final String subtitleKey;
   final bool enabled;
   final ValueChanged<String?> onChanged;
 
@@ -743,15 +723,14 @@ class _LanguageDropdownTile extends StatelessWidget {
     return SettingsDropdownTile<String>(
       icon: icon,
       iconColor: iconColor,
-      title: items == AppConstants.uiLanguages
-          ? (loc.translations['app_language'] ?? 'App language')
-          : (loc.translations['audio_language'] ?? 'Audio language'),
-      subtitle: items == AppConstants.ttsLanguages
-          ? (loc.translations['benefit_audio_tours'] ?? 'Narration voice')
-          : (loc.translations['choose_language'] ?? ''),
+      title: loc.translations[titleKey] ?? titleKey,
+      subtitle: loc.translations[subtitleKey] ?? '',
       value: code,
       items: items,
-      labels: items.map((c) => '${LanguageMeta.flag(c)} ${LanguageMeta.name(c)}').toList(),
+      labels:
+          items
+              .map((c) => '${LanguageMeta.flag(c)} ${LanguageMeta.name(c)}')
+              .toList(),
       enabled: enabled,
       onChanged: onChanged,
     );
@@ -774,7 +753,8 @@ class _ArrivalNotificationsGroup extends StatefulWidget {
       _ArrivalNotificationsGroupState();
 }
 
-class _ArrivalNotificationsGroupState extends State<_ArrivalNotificationsGroup> {
+class _ArrivalNotificationsGroupState
+    extends State<_ArrivalNotificationsGroup> {
   late bool _enabled;
 
   @override
@@ -806,20 +786,19 @@ class _ArrivalNotificationsGroupState extends State<_ArrivalNotificationsGroup> 
         // AnimatedSize so the appear/disappear is a soft tween rather
         // than a hard cut.
         AnimatedSize(
-          duration: const Duration(milliseconds: 180),
+          duration: AppDurations.collapse,
           curve: Curves.easeOut,
           alignment: Alignment.topCenter,
-          child: _enabled
-              ? const Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SettingsDivider(),
-                    _ArrivalRadiusSubTile(),
-                    SettingsDivider(),
-                    _QuietHoursSubTile(),
-                  ],
-                )
-              : const SizedBox(width: double.infinity),
+          child:
+              _enabled
+                  ? const Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SettingsDivider(),
+                      _ArrivalRadiusSubTile(),
+                    ],
+                  )
+                  : const SizedBox(width: double.infinity),
         ),
       ],
     );
@@ -882,202 +861,6 @@ class _ArrivalRadiusSubTileState extends State<_ArrivalRadiusSubTile> {
   }
 }
 
-class _QuietHoursSubTile extends StatefulWidget {
-  const _QuietHoursSubTile();
-  @override
-  State<_QuietHoursSubTile> createState() => _QuietHoursSubTileState();
-}
-
-class _QuietHoursSubTileState extends State<_QuietHoursSubTile>
-    with SingleTickerProviderStateMixin {
-  late bool _enabled;
-  late int _startMin;
-  late int _endMin;
-  bool _expanded = false;
-
-  late final AnimationController _expandController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 220),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _enabled = SharedPrefsService.instance.quietHoursEnabled;
-    _startMin = SharedPrefsService.instance.quietHoursStartMinutes;
-    _endMin = SharedPrefsService.instance.quietHoursEndMinutes;
-    if (_enabled) _expandController.value = 1.0;
-  }
-
-  @override
-  void dispose() {
-    _expandController.dispose();
-    super.dispose();
-  }
-
-  Future<TimeOfDay?> _pickTime(BuildContext context, TimeOfDay initial) {
-    return showTimePicker(
-      context: context,
-      initialTime: initial,
-    );
-  }
-
-  Future<void> _pickStart() async {
-    final picked = await _pickTime(
-      context,
-      TimeOfDay(hour: _startMin ~/ 60, minute: _startMin % 60),
-    );
-    if (picked == null) return;
-    final m = picked.hour * 60 + picked.minute;
-    setState(() => _startMin = m);
-    await SharedPrefsService.instance.setQuietHoursStartMinutes(m);
-  }
-
-  Future<void> _pickEnd() async {
-    final picked = await _pickTime(
-      context,
-      TimeOfDay(hour: _endMin ~/ 60, minute: _endMin % 60),
-    );
-    if (picked == null) return;
-    final m = picked.hour * 60 + picked.minute;
-    setState(() => _endMin = m);
-    await SharedPrefsService.instance.setQuietHoursEndMinutes(m);
-  }
-
-  Future<void> _toggle(bool v) async {
-    setState(() {
-      _enabled = v;
-      if (v) _expanded = true; // expand on enable so the pickers surface
-    });
-    await SharedPrefsService.instance.setQuietHoursEnabled(v);
-    if (v) {
-      _expandController.forward();
-    } else {
-      _expandController.reverse();
-    }
-  }
-
-  void _toggleExpanded() {
-    setState(() => _expanded = !_expanded);
-    if (_expanded) {
-      _expandController.forward();
-    } else {
-      _expandController.reverse();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    final startStr =
-        '${(_startMin ~/ 60).toString().padLeft(2, '0')}:${(_startMin % 60).toString().padLeft(2, '0')}';
-    final endStr =
-        '${(_endMin ~/ 60).toString().padLeft(2, '0')}:${(_endMin % 60).toString().padLeft(2, '0')}';
-    final collapsedValue =
-        (loc.translations['quiet_hours_value'] ?? 'Quiet from %s to %s')
-            .replaceAll('%s', startStr)
-            .replaceAll('%s', endStr);
-
-    // Animated chevron — same ease as the size transition so the rotation
-    // and the height growth feel like one motion.
-    final expandCurve =
-        CurvedAnimation(parent: _expandController, curve: Curves.easeInOut);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ListTile(
-          contentPadding: const EdgeInsets.only(
-            left: AppSpacing.lg + AppSpacing.md,
-            right: AppSpacing.md,
-            top: 0,
-            bottom: 4,
-          ),
-          leading: SettingsTileIcon(
-            icon: Icons.bedtime_outlined,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-          title: Text(
-            loc.translations['quiet_hours'] ?? 'Quiet hours',
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          subtitle: Text(
-            _expanded
-                ? (loc.translations['quiet_hours_subtitle'] ?? '')
-                : collapsedValue,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!_expanded)
-                Text(
-                  collapsedValue,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 12,
-                    color: _enabled
-                        ? Theme.of(context).colorScheme.primary
-                        : AppColors.textHint,
-                  ),
-                ),
-              const SizedBox(width: 8),
-              RotationTransition(
-                turns: Tween(begin: 0.0, end: 0.5).animate(expandCurve),
-                child: Icon(
-                  Icons.expand_more,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Switch.adaptive(
-                value: _enabled,
-                onChanged: _toggle,
-              ),
-            ],
-          ),
-          onTap: _toggleExpanded,
-        ),
-        SizeTransition(
-          axisAlignment: -1.0,
-          sizeFactor: expandCurve,
-          child: FadeTransition(
-            opacity: expandCurve,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg + AppSpacing.lg + AppSpacing.md,
-                0,
-                AppSpacing.md,
-                AppSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickStart,
-                      icon: const Icon(Icons.schedule, size: 16),
-                      label: Text(startStr),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickEnd,
-                      icon: const Icon(Icons.schedule, size: 16),
-                      label: Text(endStr),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ── Storage tiles ───────────────────────────────────────────────────────
 
@@ -1129,9 +912,10 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
   @override
   Widget build(BuildContext context) {
     final loc = context.watch<LocalizationCubit>().state;
-    final sizeLabel = _bytes < 0
-        ? (loc.translations['cache_size_unknown'] ?? 'Calculating…')
-        : _formatBytes(_bytes);
+    final sizeLabel =
+        _bytes < 0
+            ? (loc.translations['cache_size_unknown'] ?? 'Calculating…')
+            : _formatBytes(_bytes);
     return SettingsTile(
       icon: CupertinoIcons.trash,
       iconColor: Colors.blueGrey,
@@ -1144,9 +928,10 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
             sizeLabel,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontSize: 12,
-              color: _bytes > 0
-                  ? Theme.of(context).colorScheme.primary
-                  : AppColors.textHint,
+              color:
+                  _bytes > 0
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.outline,
             ),
           ),
           const SizedBox(width: 8),
@@ -1168,30 +953,6 @@ class _ClearMapCacheTileState extends State<_ClearMapCacheTile> {
   }
 }
 
-class _OfflineDataTile extends StatelessWidget {
-  const _OfflineDataTile();
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    return SettingsTile(
-      icon: Icons.cloud_off_outlined,
-      iconColor: Theme.of(context).colorScheme.primary,
-      title: loc.translations['offline_data'] ?? 'Offline data',
-      subtitle: loc.translations['offline_data_subtitle'] ?? '',
-      onTap: () {
-        final messenger = ScaffoldMessenger.maybeOf(context);
-        messenger?.showSnackBar(
-          SnackBar(
-            content: Text(loc.translations['offline_data_subtitle'] ?? 'Coming soon'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      },
-    );
-  }
-}
-
 // ── About tiles ─────────────────────────────────────────────────────────
 
 class _VersionTile extends StatelessWidget {
@@ -1207,15 +968,15 @@ class _VersionTile extends StatelessWidget {
         final loc = context.watch<LocalizationCubit>().state;
         final value = (loc.translations['app_version_build'] ??
                 'Version %s (build %s)')
-            .replaceAll('%s', version)
-            .replaceAll('%s', build);
+            .replaceFirst('%s', version)
+            .replaceFirst('%s', build);
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: 4,
           ),
           leading: SettingsTileIcon(
-            icon: Icons.info_outline,
+            icon: PhosphorIconsRegular.info,
             color: Colors.teal,
           ),
           title: Text(
@@ -1225,7 +986,7 @@ class _VersionTile extends StatelessWidget {
           trailing: Text(
             value,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         );
@@ -1244,36 +1005,15 @@ class _OpenSourceLicensesTile extends StatelessWidget {
       icon: Icons.balance_outlined,
       iconColor: Theme.of(context).colorScheme.primary,
       title: loc.translations['open_source_licenses'] ?? 'Open-source licenses',
-      onTap: () => showLicensePage(
-        context: context,
-        applicationName: 'Stone Town Guide',
-        applicationVersion: '1.0.0',
-      ),
-    );
-  }
-}
-
-class _PrivacyAndDataTile extends StatelessWidget {
-  const _PrivacyAndDataTile();
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = context.watch<LocalizationCubit>().state;
-    return SettingsTile(
-      icon: Icons.privacy_tip_outlined,
-      iconColor: Theme.of(context).colorScheme.primary,
-      title: loc.translations['privacy_and_data'] ?? 'Privacy & data',
-      onTap: () {
-        // Stub — no privacy policy in this build. Surface a "coming
-        // soon" message rather than re-printing the title.
-        final messenger = ScaffoldMessenger.maybeOf(context);
-        messenger?.showSnackBar(
-          SnackBar(
-            content: Text(
-              loc.translations['coming_soon'] ?? 'Coming soon',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
+      onTap: () async {
+        // Pull the real version from PackageInfo instead of hard-coding
+        // '1.0.0' — the licenses page lists the app version + build.
+        final info = await PackageInfo.fromPlatform();
+        if (!context.mounted) return;
+        showLicensePage(
+          context: context,
+          applicationName: 'Stone Town Guide',
+          applicationVersion: '${info.version}+${info.buildNumber}',
         );
       },
     );
@@ -1285,13 +1025,39 @@ class _ReportAProblemTile extends StatelessWidget {
 
   Future<void> _launch(BuildContext context) async {
     final loc = context.read<LocalizationCubit>();
+    // Block mailto entirely when no support email is configured at
+    // build time. Shipping a dead 'support@example.com' address is
+    // worse than nothing — the user types a report and gets a bounce.
+    if (kSupportEmail.isEmpty) {
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(loc.state.translations['report_a_problem'] ?? 'Report a problem'),
+          content: Text(
+            loc.state.translations['support_email_not_configured'] ??
+                'Email support is not configured in this build. '
+                    'Please contact the developer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(loc.state.translations['ok'] ?? 'OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final info = await PackageInfo.fromPlatform();
-    final subject = 'Stone Town Guide ${info.version}+${info.buildNumber} — bug';
+    final subject =
+        'Stone Town Guide ${info.version}+${info.buildNumber} — bug';
     final body =
         'Locale: ${loc.state.currentLanguage}\nVersion: ${info.version}+${info.buildNumber}\n\n';
     final uri = Uri(
       scheme: 'mailto',
-      path: 'support@example.com',
+      path: kSupportEmail,
       queryParameters: {'subject': subject, 'body': body},
     );
 
@@ -1299,8 +1065,11 @@ class _ReportAProblemTile extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(
-          content: Text(loc.translate('error_generic')),
-          duration: const Duration(seconds: 2),
+          content: Text(
+            loc.state.translations['report_email_failed'] ??
+                'Could not open your email app — please email support directly.',
+          ),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -1342,33 +1111,34 @@ class _SignOutFooter extends StatelessWidget {
   Future<void> _confirmAndSignOut(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        title: Text(
-          tr(locState, 'logout'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text('${tr(locState, 'logout')}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(tr(locState, 'cancel')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.button),
-              ),
+      builder:
+          (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Text(tr(locState, 'logout')),
+            title: Text(
+              tr(locState, 'sign_out'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Text(tr(locState, 'sign_out_confirm')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(tr(locState, 'cancel')),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.button),
+                  ),
+                ),
+                child: Text(tr(locState, 'sign_out')),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     if (!context.mounted) return;
@@ -1378,10 +1148,16 @@ class _SignOutFooter extends StatelessWidget {
     // a stale `authenticated` state when LoginScreen reads AuthState
     // during its first build.
     await authCubit.signOut();
-    navigator.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    // The async signOut may have torn down the widget tree; if the
+    // Settings screen is no longer mounted, Navigator state is gone
+    // and the AuthCubit listener will route us instead.
+    if (!context.mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    });
   }
 
   @override
@@ -1401,7 +1177,7 @@ class _SignOutFooter extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.button),
           ),
         ),
-        icon: const Icon(Icons.logout, size: 18),
+        icon: const Icon(PhosphorIconsRegular.signOut, size: 18),
         label: Text(tr(locState, 'sign_out')),
       ),
     );

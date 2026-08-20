@@ -18,8 +18,8 @@ part 'runtime_config_state.dart';
 /// don't need a cubit because they're not widgets.
 class RuntimeConfigCubit extends Cubit<RuntimeConfigState> {
   RuntimeConfigCubit({RuntimeConfigService? service})
-      : _service = service ?? RuntimeConfigService.instance,
-        super(RuntimeConfigState.initial()) {
+    : _service = service ?? RuntimeConfigService.instance,
+      super(RuntimeConfigState.initial()) {
     _sub = _service.watch().listen(_onSnapshot);
   }
 

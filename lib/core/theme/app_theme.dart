@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_colors.dart';
 import 'app_palette.dart';
 import 'app_radius.dart';
 import 'app_semantic_colors.dart';
@@ -16,23 +15,29 @@ class AppTheme {
   /// the secondary brand colour with a tint of the navy accent.
   static ColorScheme _lightScheme() {
     return ColorScheme.fromSeed(
-      seedColor: AppPalette.coral500,
+      seedColor: Colors.black,
       brightness: Brightness.light,
-      secondary: AppPalette.navy500,
-      tertiary: AppPalette.sky500,
+      primary: Colors.black,
+      onPrimary: Colors.white,
+      secondary: AppPalette.charcoal500,
+      tertiary: AppPalette.charcoal400,
       error: AppPalette.red600,
-      surface: AppPalette.warmSurface,
+      surface: Colors.white,
+      onSurface: Colors.black,
     );
   }
 
   static ColorScheme _darkScheme() {
     return ColorScheme.fromSeed(
-      seedColor: AppPalette.coral500,
+      seedColor: Colors.white,
       brightness: Brightness.dark,
-      secondary: AppPalette.navy300,
-      tertiary: AppPalette.sky300,
+      primary: Colors.white,
+      onPrimary: Colors.black,
+      secondary: AppPalette.charcoal400,
+      tertiary: AppPalette.charcoal500,
       error: AppPalette.red400,
-      surface: AppPalette.charcoal900,
+      surface: Colors.black,
+      onSurface: Colors.white,
     );
   }
 
@@ -44,16 +49,16 @@ class AppTheme {
     onSuccess: AppPalette.fixedWhite,
     warning: AppPalette.orange700,
     onWarning: AppPalette.fixedWhite,
-    info: AppPalette.sky700,
+    info: AppPalette.charcoal700,
     onInfo: AppPalette.fixedWhite,
-    rating: AppPalette.amber500,
-    mapRoute: AppPalette.navy500,
-    mapUser: AppPalette.sky700,
-    mapMarker: AppPalette.coral500,
+    rating: AppPalette.charcoal700,
+    mapRoute: AppPalette.charcoal700,
+    mapUser: AppPalette.charcoal900,
+    mapMarker: Colors.black,
     onImage: AppPalette.fixedWhite,
     onImageMuted: Color(0xCCFFFFFF),
     imageScrim: Color(0x99000000),
-    shadow: Color(0x0D000000),
+    shadow: Color(0x0A000000),
   );
 
   static const AppSemanticColors _darkSemantic = AppSemanticColors(
@@ -61,12 +66,12 @@ class AppTheme {
     onSuccess: AppPalette.fixedWhite,
     warning: AppPalette.orange700,
     onWarning: AppPalette.fixedWhite,
-    info: AppPalette.sky300,
+    info: AppPalette.charcoal300,
     onInfo: AppPalette.fixedWhite,
-    rating: AppPalette.amber500,
-    mapRoute: AppPalette.navy300,
-    mapUser: AppPalette.sky300,
-    mapMarker: AppPalette.coral300,
+    rating: AppPalette.charcoal300,
+    mapRoute: AppPalette.charcoal300,
+    mapUser: AppPalette.charcoal100,
+    mapMarker: Colors.white,
     onImage: AppPalette.fixedWhite,
     onImageMuted: Color(0xCCFFFFFF),
     imageScrim: Color(0x99000000),
@@ -97,7 +102,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,
-        indicatorColor: scheme.primary.withValues(alpha: 0.14),
+        indicatorColor: scheme.outline.withValues(alpha: 0.1),
         elevation: 2,
         height: 72,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -126,12 +131,11 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
           elevation: AppShadows.elevationLow,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -142,12 +146,11 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.primary,
           side: BorderSide(color: scheme.primary, width: 1.5),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -219,7 +222,9 @@ class AppTheme {
         backgroundColor: scheme.onSurface,
         contentTextStyle: GoogleFonts.inter(color: scheme.surface),
         behavior: SnackBarBehavior.floating,
-        shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.buttonBorder,
+        ),
       ),
     );
   }
@@ -277,12 +282,11 @@ class AppTheme {
           backgroundColor: scheme.primary,
           foregroundColor: scheme.onPrimary,
           elevation: AppShadows.elevationLow,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -293,12 +297,11 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: scheme.primary,
           side: BorderSide(color: scheme.primary, width: 1.5),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 14,
-          ),
+          padding: AppInsets.buttonTall,
           minimumSize: const Size(AppSpacing.xxl, AppSpacing.xxl),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonBorder,
+          ),
           textStyle: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -371,7 +374,9 @@ class AppTheme {
         contentTextStyle: GoogleFonts.inter(color: scheme.onSurface),
         actionTextColor: scheme.primary,
         behavior: SnackBarBehavior.floating,
-        shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonBorder),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.buttonBorder,
+        ),
       ),
       dialogTheme: DialogTheme(
         backgroundColor: scheme.surfaceContainerHigh,

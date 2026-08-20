@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'welcome_screen.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class OnboardingScreen extends StatefulWidget {
-
   const OnboardingScreen({super.key, this.isFirstLaunch = false});
   final bool isFirstLaunch;
 
@@ -21,29 +24,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Build the page list from the current LocalizationState so the
   /// onboarding copy honours the user's chosen language.
-  List<OnboardingPage> _buildPages(BuildContext context, LocalizationState loc) => [
-        OnboardingPage(
-          icon: Icons.location_city,
-          title: loc.translations['onboarding_p1_title'] ?? 'Explore Heritage',
-          subtitle: loc.translations['onboarding_p1_subtitle'] ??
-              "Discover the rich history and culture of Stone Town, Zanzibar's UNESCO World Heritage Site",
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        OnboardingPage(
-          icon: Icons.headphones,
-          title: loc.translations['onboarding_p2_title'] ?? 'Audio Guides',
-          subtitle: loc.translations['onboarding_p2_subtitle'] ??
-              'Listen to fascinating stories and history in 7 languages with our audio guide',
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-        OnboardingPage(
-          icon: Icons.navigation,
-          title: loc.translations['onboarding_p3_title'] ?? 'GPS Navigation',
-          subtitle: loc.translations['onboarding_p3_subtitle'] ??
-              'Navigate to sites with turn-by-turn directions and auto-play audio when you arrive',
-          color: context.semanticColors.success,
-        ),
-      ];
+  List<OnboardingPage> _buildPages(
+    BuildContext context,
+    LocalizationState loc,
+  ) => [
+    OnboardingPage(
+      icon: Icons.location_city,
+      title: loc.translations['onboarding_p1_title'] ?? 'Explore Heritage',
+      subtitle:
+          loc.translations['onboarding_p1_subtitle'] ??
+          "Discover the rich history and culture of Stone Town, Zanzibar's UNESCO World Heritage Site",
+      color: Theme.of(context).colorScheme.primary,
+    ),
+    OnboardingPage(
+      icon: Icons.headphones,
+      title: loc.translations['onboarding_p2_title'] ?? 'Audio Guides',
+      subtitle:
+          loc.translations['onboarding_p2_subtitle'] ??
+          'Listen to fascinating stories and history in 7 languages with our audio guide',
+      color: Theme.of(context).colorScheme.secondary,
+    ),
+    OnboardingPage(
+      icon: PhosphorIconsFill.navigationArrow,
+      title: loc.translations['onboarding_p3_title'] ?? 'GPS Navigation',
+      subtitle:
+          loc.translations['onboarding_p3_subtitle'] ??
+          'Navigate to sites with turn-by-turn directions and auto-play audio when you arrive',
+      color: context.semanticColors.success,
+    ),
+  ];
 
   @override
   void dispose() {
@@ -54,7 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _nextPage() {
     if (_currentPage < 2) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
+        duration: AppDurations.normal,
         curve: Curves.easeInOut,
       );
     }
@@ -66,9 +75,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _completeOnboarding() {
     SharedPrefsService.instance.setFirstLaunchComplete();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const WelcomeScreen()));
   }
 
   @override
@@ -90,11 +99,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Text(
                       loc.translations['onboarding_skip'] ?? 'Skip',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.7),
-                          ),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
                     ),
                   ),
                 ),
@@ -124,15 +132,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         children: List.generate(
                           pages.length,
                           (index) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
+                            duration: AppDurations.fast,
                             margin: const EdgeInsets.only(right: 8),
                             width: _currentPage == index ? 24 : 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).dividerColor,
-                              borderRadius: BorderRadius.circular(4),
+                              color:
+                                  _currentPage == index
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).dividerColor,
+                              borderRadius: AppRadius.xsBorder,
                             ),
                           ),
                         ),
@@ -141,12 +150,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ElevatedButton(
                         onPressed: isLast ? _completeOnboarding : _nextPage,
                         style: ElevatedButton.styleFrom(
+                          // The theme's primary is Colors.black, which
+                          // renders the button as a solid black box on
+                          // light theme — user reported the buttons
+                          // "appear full black". Use the brand coral
+                          // explicitly so the button reads as a brand
+                          // CTA on both themes.
+                          backgroundColor: AppPalette.coral500,
+                          foregroundColor: AppPalette.fixedWhite,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 32,
                             vertical: 16,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: AppRadius.ctaButtonBorder,
                           ),
                         ),
                         child: Text(
@@ -170,7 +187,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _OnboardingPageWidget extends StatelessWidget {
-
   const _OnboardingPageWidget({required this.page});
   final OnboardingPage page;
 
@@ -186,14 +202,15 @@ class _OnboardingPageWidget extends StatelessWidget {
             width: 160,
             height: 160,
             decoration: BoxDecoration(
-              color: page.color.withValues(alpha: 0.1),
+              // The previous 10% tint made the icon blend into the
+              // background because the icon was the same colour as the
+              // tint — user reported seeing "only dark blue or white"
+              // inside the icons. Use a soft surface tint instead so the
+              // icon stays prominent regardless of the page colour.
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              page.icon,
-              size: 80,
-              color: page.color,
-            ),
+            child: Icon(page.icon, size: 80, color: page.color),
           ),
           const SizedBox(height: 48),
           // Title
@@ -207,12 +224,11 @@ class _OnboardingPageWidget extends StatelessWidget {
           Text(
             page.subtitle,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.75),
-                  height: 1.5,
-                ),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.75),
+              height: 1.5,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -228,27 +244,26 @@ class _LanguageSelector extends StatelessWidget {
       builder: (context, state) {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 24),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: AppInsets.listItem,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.mdBorder,
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Row(
             children: [
               Icon(
-                Icons.language,
+                PhosphorIconsRegular.globe,
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 12),
               Text(
                 'Language:',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
-                    ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -259,20 +274,12 @@ class _LanguageSelector extends StatelessWidget {
                     items: const [
                       DropdownMenuItem(
                         value: 'en',
-                        child: Row(
-                          children: [
-                            Text('🇬🇧 '),
-                            Text('English'),
-                          ],
-                        ),
+                        child: Row(children: [Text('🇬🇧 '), Text('English')]),
                       ),
                       DropdownMenuItem(
                         value: 'sw',
                         child: Row(
-                          children: [
-                            Text('🇹🇿 '),
-                            Text('Kiswahili'),
-                          ],
+                          children: [Text('🇹🇿 '), Text('Kiswahili')],
                         ),
                       ),
                     ],
@@ -293,7 +300,6 @@ class _LanguageSelector extends StatelessWidget {
 }
 
 class OnboardingPage {
-
   const OnboardingPage({
     required this.icon,
     required this.title,

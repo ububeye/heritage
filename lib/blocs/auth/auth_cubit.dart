@@ -6,13 +6,10 @@ import '../../data/services/shared_prefs_service.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-
-  AuthCubit({
-    AuthService? authService,
-    FirestoreService? firestoreService,
-  })  : _authService = authService ?? AuthService(),
-        _firestoreService = firestoreService ?? FirestoreService(),
-        super(const AuthState());
+  AuthCubit({AuthService? authService, FirestoreService? firestoreService})
+    : _authService = authService ?? AuthService(),
+      _firestoreService = firestoreService ?? FirestoreService(),
+      super(const AuthState());
   final AuthService _authService;
   final FirestoreService _firestoreService;
 
@@ -40,39 +37,44 @@ class AuthCubit extends Cubit<AuthState> {
       final userModel = await _authService.getCurrentUserModel();
       if (userModel != null) {
         // Authoritative role source: roles/{uid}.
-        // Legacy fallback: users/{uid}.role for users created before the
-        // roles collection existed.
-        // TODO(phase-3+): remove the users/{uid}.role fallback once a Cloud
-        // Function has backfilled roles/{uid} for every legacy user.
+        // Backward-compatible fallback: users/{uid}.role for documents
+        // where role is stored on the user profile.
         UserModel resolved = userModel;
-        final roleFromRoles =
-            await _firestoreService.getUserRole(userModel.id);
+        final roleFromRoles = await _firestoreService.getUserRole(userModel.id);
         if (roleFromRoles != null) {
           resolved = resolved.copyWith(role: roleFromRoles);
         } else {
-          final firestoreUser =
-              await _firestoreService.getUserById(userModel.id);
+          final firestoreUser = await _firestoreService.getUserById(
+            userModel.id,
+          );
           if (firestoreUser != null) {
             resolved = resolved.copyWith(role: firestoreUser.role);
           }
         }
+        if (resolved.disabled) {
+          await _authService.signOut();
+          emit(
+            state.copyWith(
+              status: AuthStatus.error,
+              errorMessage: 'Your account has been suspended.',
+            ),
+          );
+          return;
+        }
+
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
           userId: resolved.id,
           userRole: resolved.role.name,
         );
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          user: resolved,
-        ),);
+        emit(state.copyWith(status: AuthStatus.authenticated, user: resolved));
       } else {
         emit(state.copyWith(status: AuthStatus.unauthenticated));
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -86,31 +88,38 @@ class AuthCubit extends Cubit<AuthState> {
         // from roles/{uid} so first sign-in lands with the canonical role.
         final refreshedUser = await _authService.reloadUser();
         final base = refreshedUser ?? user;
-        final liveRole =
-            await _firestoreService.getUserRole(base.id);
-        final resolved = liveRole == null
-            ? base
-            : base.copyWith(role: liveRole);
+        final liveRole = await _firestoreService.getUserRole(base.id);
+        final resolved =
+            liveRole == null ? base : base.copyWith(role: liveRole);
+        if (resolved.disabled) {
+          await _authService.signOut();
+          emit(
+            state.copyWith(
+              status: AuthStatus.error,
+              errorMessage: 'Your account has been suspended.',
+            ),
+          );
+          return;
+        }
+
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
           userId: resolved.id,
           userRole: resolved.role.name,
         );
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          user: resolved,
-        ),);
+        emit(state.copyWith(status: AuthStatus.authenticated, user: resolved));
       } else {
-        emit(state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: 'Sign in failed',
-        ),);
+        emit(
+          state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: 'Sign in failed',
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -124,59 +133,87 @@ class AuthCubit extends Cubit<AuthState> {
         // no roles/{uid} doc yet, so this falls through and we keep the
         // service's default (`free`).
         final liveRole = await _firestoreService.getUserRole(user.id);
-        final resolved = liveRole == null
-            ? user
-            : user.copyWith(role: liveRole);
+        final resolved =
+            liveRole == null ? user : user.copyWith(role: liveRole);
         await SharedPrefsService.instance.setUserLoggedIn(
           true,
           userId: resolved.id,
           userRole: resolved.role.name,
         );
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          user: resolved,
-        ),);
+        emit(state.copyWith(status: AuthStatus.authenticated, user: resolved));
       } else {
-        emit(state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: 'Sign up failed',
-        ),);
+        emit(
+          state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: 'Sign up failed',
+          ),
+        );
       }
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
   Future<void> signInWithGoogle() async {
-    emit(state.copyWith(status: AuthStatus.loading));
+    // Re-entrancy guard: the Google button previously had no loading
+    // state, so a quick double-tap could race two credential exchanges
+    // and leave the second call with a half-cancelled UI. Mirror the
+    // email sign-in re-entrancy guard at the top of [signIn].
+    if (state.status == AuthStatus.loading) return;
 
+    // Wait for the native picker to resolve *before* emitting loading.
+    // The previous behaviour emitted loading immediately, which made
+    // both auth buttons show a spinner for the ~100-500ms gap between
+    // the tap and the picker actually appearing on screen. Holding the
+    // loading emit until we know the user didn't cancel eliminates the
+    // spinner flash entirely.
     try {
       final user = await _authService.signInWithGoogle();
-      if (user != null) {
-        final liveRole = await _firestoreService.getUserRole(user.id);
-        final resolved = liveRole == null
-            ? user
-            : user.copyWith(role: liveRole);
-        await SharedPrefsService.instance.setUserLoggedIn(
-          true,
-          userId: resolved.id,
-          userRole: resolved.role.name,
-        );
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          user: resolved,
-        ),);
-      } else {
+      if (isClosed) return;
+      if (user == null) {
+        // User cancelled the picker — return to the unauthenticated
+        // baseline silently. The previous behaviour emitted
+        // AuthStatus.unauthenticated here, which the login screen's
+        // BlocListener has no branch for, so a real cancellation looked
+        // like a silent failure to the user.
         emit(state.copyWith(status: AuthStatus.unauthenticated));
+        return;
       }
+
+      // Picker succeeded and Firebase credentials were exchanged —
+      // now flip to loading so the buttons reflect the in-flight
+      // role lookup (the only remaining async work).
+      emit(state.copyWith(status: AuthStatus.loading));
+
+      final liveRole = await _firestoreService.getUserRole(user.id);
+      if (isClosed) return;
+      final resolved =
+          liveRole == null ? user : user.copyWith(role: liveRole);
+      await SharedPrefsService.instance.setUserLoggedIn(
+        true,
+        userId: resolved.id,
+        userRole: resolved.role.name,
+      );
+      if (isClosed) return;
+      emit(state.copyWith(status: AuthStatus.authenticated, user: resolved));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      // AuthService routes its own FirebaseAuthException through
+      // _handleAuthError, which returns a localised String (the email
+      // paths throw that string directly — same pattern). The Google
+      // path also throws Exception('Google sign-in is unavailable on
+      // this device') for PlatformException-style failures. e.toString()
+      // gives the user-facing message either way, but strip the
+      // leading "Exception: " prefix so the SnackBar reads cleanly.
+      if (isClosed) return;
+      final raw = e.toString();
+      final message = raw.startsWith('Exception: ')
+          ? raw.substring('Exception: '.length)
+          : raw;
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: message),
+      );
     }
   }
 
@@ -189,10 +226,9 @@ class AuthCubit extends Cubit<AuthState> {
       await SharedPrefsService.instance.setUserLoggedIn(false);
       emit(const AuthState(status: AuthStatus.unauthenticated));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -209,25 +245,32 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _authService.resetPassword(email);
       if (isClosed) return;
-      emit(state.copyWith(
-        status: AuthStatus.passwordResetSent,
-      ),);
+      emit(state.copyWith(status: AuthStatus.passwordResetSent));
     } catch (e) {
       if (isClosed) return;
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
+  }
+
+  /// Flip the cubit back to a non-error idle state after the login
+  /// screen has shown the password-reset SnackBar. Without this, the
+  /// status would stay on [AuthStatus.passwordResetSent] and the next
+  /// sign-in attempt would be misinterpreted by the [BlocListener].
+  ///
+  /// Idempotent: a no-op if we're already unauthenticated. Safe to call
+  /// from a listener because it doesn't await anything.
+  void emitIdleAfterReset() {
+    if (state.status != AuthStatus.passwordResetSent) return;
+    emit(state.copyWith(status: AuthStatus.unauthenticated));
   }
 
   Future<void> updateUserRole(UserRole role) async {
     if (state.user == null) return;
     try {
       // Optimistic local update so the UI reflects the change instantly.
-      emit(state.copyWith(
-        user: state.user!.copyWith(role: role),
-      ),);
+      emit(state.copyWith(user: state.user!.copyWith(role: role)));
       // Persist to roles/{uid}. Failure surfaces as an error state but the
       // optimistic update is left in place so the admin can retry.
       await _firestoreService.setUserRole(state.user!.id, role);
@@ -237,10 +280,12 @@ class AuthCubit extends Cubit<AuthState> {
         userRole: role.name,
       );
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Failed to update role: $e',
-      ),);
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Failed to update role: $e',
+        ),
+      );
     }
   }
 
@@ -252,15 +297,16 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await _authService.updateDisplayName(displayName);
       final refreshed = await _authService.reloadUser();
-      emit(state.copyWith(
-        status: AuthStatus.authenticated,
-        user: refreshed ?? state.user!.copyWith(displayName: displayName),
-      ),);
+      emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          user: refreshed ?? state.user!.copyWith(displayName: displayName),
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -280,10 +326,9 @@ class AuthCubit extends Cubit<AuthState> {
       );
       emit(state.copyWith(status: AuthStatus.authenticated));
     } catch (e) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      ),);
+      emit(
+        state.copyWith(status: AuthStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 }

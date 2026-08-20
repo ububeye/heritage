@@ -1,11 +1,11 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class RatingStars extends StatelessWidget {
-
   const RatingStars({
     super.key,
     required this.rating,
@@ -26,28 +26,24 @@ class RatingStars extends StatelessWidget {
           IconData icon;
 
           if (rating >= starValue) {
-            icon = Icons.star;
+            icon = PhosphorIconsFill.star;
           } else if (rating >= starValue - 0.5) {
-            icon = Icons.star_half;
+            icon = PhosphorIconsFill.starHalf;
           } else {
-            icon = Icons.star_border;
+            icon = PhosphorIconsRegular.star;
           }
 
-          return Icon(
-            icon,
-            size: size,
-            color: context.semanticColors.rating,
-          );
+          return Icon(icon, size: size, color: context.semanticColors.rating);
         }),
         if (showValue) ...[
           const SizedBox(width: 4),
           Text(
             rating.toStringAsFixed(1),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: size * 0.875,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
+              fontSize: size * 0.875,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ],
       ],
@@ -56,19 +52,14 @@ class RatingStars extends StatelessWidget {
 }
 
 class RatingBadge extends StatelessWidget {
-
-  const RatingBadge({
-    super.key,
-    required this.rating,
-    this.label,
-  });
+  const RatingBadge({super.key, required this.rating, this.label});
   final double rating;
   final String? label;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: AppInsets.pillRow,
       decoration: BoxDecoration(
         // RatingBadge sits over a hero image — fixed-content scrim so
         // the star + number stay legible on any photograph.
@@ -78,27 +69,23 @@ class RatingBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.star,
-            size: 14,
-            color: context.semanticColors.rating,
-          ),
+          Icon(PhosphorIconsFill.star, size: 14, color: context.semanticColors.rating),
           const SizedBox(width: 4),
           Text(
             rating.toStringAsFixed(1),
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.semanticColors.onImage,
-                ),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: context.semanticColors.onImage,
+            ),
           ),
           if (label != null) ...[
             const SizedBox(width: 4),
             Text(
               label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: context.semanticColors.onImageMuted,
-                  ),
+                color: context.semanticColors.onImageMuted,
+              ),
             ),
           ],
         ],

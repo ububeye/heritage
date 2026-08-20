@@ -5,7 +5,6 @@ import '../../data/models/audio_state.dart';
 enum SiteDetailStatus { initial, loading, loaded, error }
 
 class SiteDetailState extends Equatable {
-
   const SiteDetailState({
     this.status = SiteDetailStatus.initial,
     this.site,

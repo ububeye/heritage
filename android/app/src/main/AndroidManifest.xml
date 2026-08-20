@@ -48,5 +48,20 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Maps hand-off — without these declarations, Android 11+
+             package-visibility filtering returns false from
+             canLaunchUrl for the `geo:` scheme and the `https`
+             Maps URL, so the navigate-chooser falls back to a
+             browser instead of opening the user's installed maps
+             app directly. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
     </queries>
 </manifest>

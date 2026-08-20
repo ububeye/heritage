@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/utils/debouncer.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// A debounced search input with a prefix search icon and a suffix clear
 /// button. The clear button is rendered conditionally based on the
@@ -8,7 +10,6 @@ import '../../core/utils/debouncer.dart';
 /// immediately when the user types — previously the button only updated
 /// when something else rebuilt the parent.
 class SearchBarWidget extends StatefulWidget {
-
   const SearchBarWidget({
     super.key,
     required this.controller,
@@ -46,9 +47,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: AppRadius.fullBorder,
+        boxShadow: AppShadows.lowFor(Theme.of(context).brightness),
       ),
       child: ValueListenableBuilder<TextEditingValue>(
         valueListenable: widget.controller,
@@ -60,25 +61,27 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
             decoration: InputDecoration(
               hintText: widget.hintText,
               hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textHint,
-                  ),
+                color: Theme.of(context).colorScheme.outline,
+              ),
               prefixIcon: Icon(
-                Icons.search,
+                PhosphorIconsRegular.magnifyingGlass,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              suffixIcon: hasText
-                  ? Semantics(
-                      label: 'Clear search',
-                      button: true,
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+              suffixIcon:
+                  hasText
+                      ? Semantics(
+                        label: 'Clear search',
+                        button: true,
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: _clear,
                         ),
-                        onPressed: _clear,
-                      ),
-                    )
-                  : null,
+                      )
+                      : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,

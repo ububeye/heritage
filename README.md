@@ -64,7 +64,7 @@ A digital tour guide app for Stone Town, Zanzibar (UNESCO World Heritage Site). 
 | State Management | flutter_bloc (Cubit) |
 | Backend | Firebase (Auth, Firestore) |
 | Image Storage | Cloudinary |
-| Maps (browse, view, picker) | `flutter_map` + OpenStreetMap (free, no API key) |
+| Maps (browse, view, picker, live navigation) | `flutter_map` + CARTO Voyager tiles (free, no API key) |
 | Maps (live navigation) | `google_maps_flutter` — **gated behind an API key** in `AppConstants.googleMapsApiKey`. Without a key, "Navigate" buttons show a friendly explanation instead of opening the screen, because the Google Maps SDK crashes on emulators and devices without Google Play services / billing. |
 | Text-to-Speech | flutter_tts |
 | Location | Geolocator |
@@ -152,31 +152,45 @@ User roles live in the Firestore `roles/{uid}` collection with the shape:
 
 The app uses two map libraries, chosen for their respective strengths:
 
-- **`flutter_map` + OpenStreetMap** (free, no API key) is used for all browse and admin screens:
+- **`flutter_map` + OpenStreetMap (CARTO Voyager tiles)** is used for **all** map screens, including live navigation:
   - Explore screen's "Map view" (taps a marker to open site detail)
   - "View on Map" screen for a single site (with a Navigate FAB)
   - Admin "Add Site" and "Edit Site" location pickers (drag the pin, tap to drop a new one, "My location" button snaps to GPS)
-- **`google_maps_flutter`** is used in the live-navigation screen (`NavigationScreen`) for GPS-follow + polylines. **It requires a Google Maps Android/iOS API key configured in `android/app/src/main/AndroidManifest.xml` and `ios/Runner/AppDelegate.swift` for tiles to render.** Without a key, the map shows a blank area with a friendly explanation banner, but the navigation logic (distance, ETA, arrival detection via `Geolocator`) still works correctly.
+  - Live navigation screen (`NavigationScreenOpen`) — GPS-follow camera, polyline, arrival detection, off-route detection, rerouting. No Google Maps API key is required.
+- **Routing engine**: `RoutingService` talks to the public OSRM foot profile (`https://router.project-osrm.org/route/v1/foot`) with a 30-minute in-memory cache. An optional OpenRouteService key is supported via `runtimeConfig` if the public demo is rate-limited.
+- **Tile caching**: `TileCacheService` provides a disk-backed tile cache so previously-visited tiles render offline.
 
-### OSM tile usage
+### Tile usage
 
-`flutter_map` fetches tiles from `https://tile.openstreetmap.org/`. The OpenStreetMap Foundation's [tile usage policy](https://operations.osmfoundation.org/policies/tiles/) allows light use with a descriptive `User-Agent` (we set `com.example.stone_town_heritage_vt_guide`) but prohibits heavy production traffic. For a final-year demo this is well within limits. For production deployment, switch to a paid tile provider (Stadia Maps, Mapbox, etc.) — only [lib/ui/widgets/heritage_map.dart](lib/ui/widgets/heritage_map.dart) would need to change.
+`flutter_map` fetches tiles from CARTO's free Voyager basemap (`https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png`). CARTO's free tier is fine for development and low-traffic demos and is faster / better-styled than the raw OSM tile server. For production deployment, switch to a paid tile provider (Stadia Maps, Mapbox, etc.) — only [lib/ui/widgets/heritage_map.dart](lib/ui/widgets/heritage_map.dart) would need to change.
 
 ## Architecture
 
 The application follows a clean layered architecture using `flutter_bloc`:
 
-- **core/**: Theme definitions, constants, colors, and global utils.
-- **data/**: Data Models (`SiteModel`), Services (`AuthService`, `FirestoreService`, `CloudinaryService`), Repositories.
-- **blocs/**: Business logic using Cubits. Separated by feature (e.g., `SiteListCubit`, `AuthCubit`, `ExploreCubit`).
+- **core/**: Theme definitions, constants, colors, and global utils. Includes the GPS smoothing (`GpsFilter`), heading source (`HeadingSource`), off-route hysteresis (`OffRouteHysteresis`), and orthogonal polyline projection (`PolylineSnap`).
+- **data/**: Data Models (`SiteModel`), Services (`AuthService`, `FirestoreService`, `CloudinaryService`, `RoutingService`, `LocationService`, `TileCacheService`), Repositories.
+- **state/**: Cross-cutting state managers shared between screens. Currently `MapCameraController` — owns the `MapController` and exposes a `CameraMode` enum so the navigation screen and the heritage map share the same camera state instead of fighting each other.
+- **blocs/**: Business logic using Cubits. Separated by feature (e.g., `SiteListCubit`, `AuthCubit`, `ExploreCubit`, `NavigationCubit`).
 - **ui/**: Screens and reusable Widgets.
+
+### Navigation state machine
+
+The `NavigationCubit` is the single source of truth for live-navigation state. It owns:
+
+- **Permission gating** — emits `permission_denied` if the user hasn't granted location.
+- **Bounds check** — emits `destination_out_of_bounds` for sites outside Unguja.
+- **GPS smoothing** — wraps every Position in `GpsFilter` (accuracy-weighted EMA + 3σ outlier rejection).
+- **Heading** — uses `HeadingSource` (EMA + GPS-derived bearing fallback when `pos.heading == 0`).
+- **Off-route detection** — `OffRouteHysteresis` (cross-track > 30 m sustained for 1.5 s).
+- **Arrival debounce** — requires 2 consecutive fixes inside the entry radius (3 for ≥ 50 m radii) before firing `NavigationStatus.arrived`. Once fired, the state stays `arrived` so the banner doesn't flicker off on subsequent fixes.
+- **Session reentrancy** — a monotonically increasing `_sessionId` is checked by every async callback so a stale GPS fix from a previous navigation can't update the new state.
 
 ## Troubleshooting
 
 ### Maps Troubleshooting
-- **Google Maps API Key**: If you intend to use the Google Maps provider for live navigation, ensure that `googleMapsApiKey` in `lib/core/constants/app_constants.dart` is populated with a valid key and that your package name/bundle ID is whitelisted.
-- **OpenStreetMap Policy**: The OpenStreetMap tiles are provided for demo/development purposes. For production, please switch to a paid tile provider (such as Mapbox or Stadia Maps) by changing the tile URL in `HeritageMap` to comply with OSM's usage policy.
-- **Emulators & Google Maps**: `google_maps_flutter` may crash on emulators without Google Play Services. To mitigate this, the app detects if the API key is null and gracefully degrades to an OpenStreetMap-based fallback.
+- **Routing engine flakiness**: The public OSRM demo can be slow or rate-limited. The `RoutingService` returns a 2-point straight-line fallback if the request fails or times out — the camera and HUD still work, just without turn-by-turn.
+- **Tile provider**: For production, replace the CARTO Voyager URL in `HeritageMap` with your paid provider (e.g. Stadia Maps, Mapbox).
 
 ## Screenshots
 
@@ -188,6 +202,35 @@ The application follows a clean layered architecture using `flutter_bloc`:
 
 *Site Detail & Audio Player*
 > [Placeholder: Add screenshots of the Site Detail screen and Bottom Audio Player here]
+
+## Firebase
+
+This project uses Firebase for Auth and Cloud Firestore. The
+config files for the Firebase CLI are at the repo root:
+
+- `firebase.json` — tells the CLI what to deploy.
+- `firestore.rules` — security rules (`sites`, `activities`, `users`, `roles`).
+- `firestore.indexes.json` — composite indexes (empty until needed).
+- `.firebaserc` — pins the default project to `stone-town-heritage-vt-guide`.
+
+The Android client reads `android/app/google-services.json` directly.
+iOS / web / desktop clients need a generated `lib/firebase_options.dart`
+— run `flutterfire configure` if you target those.
+
+### Deploy Firestore rules + indexes
+
+```bash
+# One-time per machine
+npm install -g firebase-tools
+firebase login
+
+# From the repo root
+firebase deploy --only firestore
+```
+
+That pushes both `firestore.rules` and `firestore.indexes.json`. To
+preview a rules change without committing it, run
+`firebase emulators:start --only firestore` first.
 
 ## License
 

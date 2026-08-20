@@ -4,10 +4,7 @@ import 'package:equatable/equatable.dart';
 /// `flutter_tts.pause()` is iOS-only; on Android we stop the engine and
 /// restart from this saved offset when the user resumes.
 class PausedResumePoint extends Equatable {
-  const PausedResumePoint({
-    required this.text,
-    required this.charOffset,
-  });
+  const PausedResumePoint({required this.text, required this.charOffset});
   final String text;
   final int charOffset;
 
@@ -16,8 +13,8 @@ class PausedResumePoint extends Equatable {
 }
 
 class AudioState extends Equatable {
-
   const AudioState({
+    this.siteId,
     this.isPlaying = false,
     this.isPaused = false,
     this.position = Duration.zero,
@@ -30,6 +27,10 @@ class AudioState extends Equatable {
     this.spokenText = '',
     this.pausedResumePoint,
   });
+
+  /// The ID of the site this audio playback session belongs to.
+  /// Prevents audio state and resume points from leaking across different sites.
+  final String? siteId;
   final bool isPlaying;
   final bool isPaused;
   final Duration position;
@@ -74,6 +75,7 @@ class AudioState extends Equatable {
   }
 
   AudioState copyWith({
+    String? siteId,
     bool? isPlaying,
     bool? isPaused,
     Duration? position,
@@ -88,6 +90,7 @@ class AudioState extends Equatable {
     bool clearPausedResumePoint = false,
   }) {
     return AudioState(
+      siteId: siteId ?? this.siteId,
       isPlaying: isPlaying ?? this.isPlaying,
       isPaused: isPaused ?? this.isPaused,
       position: position ?? this.position,
@@ -98,24 +101,26 @@ class AudioState extends Equatable {
       wasTruncated: wasTruncated ?? this.wasTruncated,
       maxDurationSeconds: maxDurationSeconds ?? this.maxDurationSeconds,
       spokenText: spokenText ?? this.spokenText,
-      pausedResumePoint: clearPausedResumePoint
-          ? null
-          : (pausedResumePoint ?? this.pausedResumePoint),
+      pausedResumePoint:
+          clearPausedResumePoint
+              ? null
+              : (pausedResumePoint ?? this.pausedResumePoint),
     );
   }
 
   @override
   List<Object?> get props => [
-        isPlaying,
-        isPaused,
-        position,
-        duration,
-        languageCode,
-        isLoading,
-        errorMessage,
-        wasTruncated,
-        maxDurationSeconds,
-        spokenText,
-        pausedResumePoint,
-      ];
+    siteId,
+    isPlaying,
+    isPaused,
+    position,
+    duration,
+    languageCode,
+    isLoading,
+    errorMessage,
+    wasTruncated,
+    maxDurationSeconds,
+    spokenText,
+    pausedResumePoint,
+  ];
 }

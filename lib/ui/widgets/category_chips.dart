@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 
 class CategoryChips extends StatelessWidget {
-
   const CategoryChips({
     super.key,
     required this.categories,
@@ -37,26 +38,32 @@ class CategoryChips extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final category = allCategories[index];
-              final isSelected = (category == 'all' && selectedCategory == null) ||
+              final isSelected =
+                  (category == 'all' && selectedCategory == null) ||
                   category == selectedCategory;
 
               return GestureDetector(
                 onTap: () => onSelected(category == 'all' ? null : category),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: AppDurations.fast,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
-                    ),
+                    color:
+                        isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: AppRadius.fullBorder,
                   ),
-                  child: Text(
-                    _tr(locState, category),
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: isSelected ? AppColors.textOnPrimary : AppColors.textPrimary,
-                        ),
+                  child: Center(
+                    child: Text(
+                      _tr(locState, category),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color:
+                            isSelected
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
                 ),
               );

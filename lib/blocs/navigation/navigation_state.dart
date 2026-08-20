@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 import '../../data/models/navigation_state.dart';
 
 class NavigationCubitState extends Equatable {
-
   const NavigationCubitState({
     this.navigationState = const NavigationState(),
     this.currentSiteId,

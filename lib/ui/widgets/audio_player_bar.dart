@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/language_meta.dart';
 import '../../blocs/localization/localization_cubit.dart';
 import '../../data/models/audio_state.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Bottom-sheet audio player used on the site detail screen.
 ///
@@ -46,10 +48,12 @@ class AudioPlayerBar extends StatelessWidget {
     final isPlaying = audioState.isPlaying;
     final showReplay = isPremium && audioState.duration > Duration.zero;
     final showPreviewBadge =
-        audioState.wasTruncated && !isPremium && audioState.duration > Duration.zero;
+        audioState.wasTruncated &&
+        !isPremium &&
+        audioState.duration > Duration.zero;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppInsets.card,
       decoration: BoxDecoration(
         color: scheme.surface,
         boxShadow: [
@@ -69,8 +73,8 @@ class AudioPlayerBar extends StatelessWidget {
           // was built with. Now everything (play/pause label, replay
           // tooltip) updates together.
           builder: (context, locState) {
-            final playPauseLabel = locState.translations[
-                    isPlaying ? 'pause' : 'play'] ??
+            final playPauseLabel =
+                locState.translations[isPlaying ? 'pause' : 'play'] ??
                 (isPlaying ? 'Pause' : 'Play');
             return Row(
               children: [
@@ -92,10 +96,10 @@ class AudioPlayerBar extends StatelessWidget {
                         height: 56,
                         decoration: BoxDecoration(
                           color: scheme.secondary,
-                          borderRadius: BorderRadius.circular(28),
+                          borderRadius: AppRadius.avatarBorder,
                         ),
                         child: Icon(
-                          isPlaying ? Icons.pause : Icons.play_arrow,
+                          isPlaying ? PhosphorIconsRegular.pause : PhosphorIconsRegular.play,
                           size: 32,
                           color: scheme.onSecondary,
                         ),
@@ -132,16 +136,18 @@ class AudioPlayerBar extends StatelessWidget {
                         LinearProgressIndicator(
                           backgroundColor:
                               Theme.of(context).colorScheme.outline,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.secondary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.secondary,
+                          ),
                           minHeight: 4,
                         )
                       else
                         LinearProgressIndicator(
                           value: audioState.progress.clamp(0.0, 1.0),
-                          backgroundColor: Theme.of(context).colorScheme.outline,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.outline,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.secondary,
+                            Theme.of(context).colorScheme.secondary,
                           ),
                           minHeight: 4,
                         ),
@@ -150,9 +156,8 @@ class AudioPlayerBar extends StatelessWidget {
                         audioState.isLoading
                             ? 'Loading…'
                             : '${audioState.positionText} / ${audioState.durationText}',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -161,7 +166,10 @@ class AudioPlayerBar extends StatelessWidget {
                   IconButton(
                     tooltip: locState.translations['replay'] ?? 'Replay',
                     onPressed: onReplay,
-                    icon: Icon(Icons.replay, color: Theme.of(context).colorScheme.primary),
+                    icon: Icon(
+                      Icons.replay,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
               ],
             );
@@ -183,12 +191,12 @@ class _LanguageChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppRadius.lgBorder,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: AppInsets.pillTight,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.lgBorder,
           border: Border.all(color: Theme.of(context).colorScheme.outline),
         ),
         child: Row(
@@ -199,13 +207,13 @@ class _LanguageChip extends StatelessWidget {
             Text(
               LanguageMeta.name(code),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(width: 2),
             Icon(
-              Icons.expand_more,
+              PhosphorIconsRegular.caretDown,
               size: 16,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -225,16 +233,16 @@ class _PreviewBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: AppInsets.pillTiny,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.secondary,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.bannerBorder,
       ),
       child: Text(
         'PREVIEW',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textOnAccent,
-            ),
+          color: Theme.of(context).colorScheme.onSecondary,
+        ),
       ),
     );
   }

@@ -17,4 +17,7 @@ class AppDurations {
   // Expand / collapse panels (settings sub-tiles, transcript).
   static const Duration expand = Duration(milliseconds: 220);
   static const Duration collapse = Duration(milliseconds: 180);
+
+  /// Marker pulse on the navigation screen (1400 ms).
+  static const Duration onboardingReveal = Duration(milliseconds: 1400);
 }

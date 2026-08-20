@@ -18,10 +18,10 @@ class RuntimeConfigSnapshot {
   /// [AppConstants] (private defaults live here, not there, so the
   /// SharedPreferences keys stay the single point of documentation).
   factory RuntimeConfigSnapshot.initial() => const RuntimeConfigSnapshot(
-        freeAudioMaxSeconds: 30,
-        orsApiKey: '',
-        maintenanceMode: false,
-      );
+    freeAudioMaxSeconds: 30,
+    orsApiKey: '',
+    maintenanceMode: false,
+  );
 
   final int freeAudioMaxSeconds;
   final String orsApiKey;
@@ -47,11 +47,8 @@ class RuntimeConfigSnapshot {
       other.maintenanceMode == maintenanceMode;
 
   @override
-  int get hashCode => Object.hash(
-        freeAudioMaxSeconds,
-        orsApiKey,
-        maintenanceMode,
-      );
+  int get hashCode =>
+      Object.hash(freeAudioMaxSeconds, orsApiKey, maintenanceMode);
 
   @override
   String toString() =>
@@ -93,8 +90,7 @@ class RuntimeConfigService {
       freeAudioMaxSeconds:
           _prefs.getInt(AppConstants.keyFreeAudioMaxSeconds) ?? 30,
       orsApiKey: _prefs.getString(AppConstants.keyOrsApiKey) ?? '',
-      maintenanceMode:
-          _prefs.getBool(AppConstants.keyMaintenanceMode) ?? false,
+      maintenanceMode: _prefs.getBool(AppConstants.keyMaintenanceMode) ?? false,
     );
   }
 

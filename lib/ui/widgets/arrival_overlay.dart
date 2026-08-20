@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../data/models/site_model.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_durations.dart';
+import '../../data/services/shared_prefs_service.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ArrivalOverlay extends StatefulWidget {
-
   const ArrivalOverlay({
     super.key,
     required this.site,
@@ -31,19 +33,36 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
   void initState() {
     super.initState();
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: AppDurations.pulse,
       vsync: this,
-    )..repeat(reverse: true);
-
+    );
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+    _applyReduceMotion();
+
+    // Honour mid-session toggles of the reduce-motion pref. The pulse
+    // animation lives inside the arrived state, so stopping/starting it
+    // here makes the toggle responsive without forcing a screen rebuild.
+    SharedPrefsService.instance.onPrefsChanged.addListener(_applyReduceMotion);
   }
 
   @override
   void dispose() {
+    SharedPrefsService.instance.onPrefsChanged
+        .removeListener(_applyReduceMotion);
     _pulseController.dispose();
     super.dispose();
+  }
+
+  void _applyReduceMotion() {
+    if (!mounted) return;
+    final reduce = SharedPrefsService.instance.reduceMotion;
+    if (reduce) {
+      if (_pulseController.isAnimating) _pulseController.stop();
+    } else {
+      if (!_pulseController.isAnimating) _pulseController.repeat(reverse: true);
+    }
   }
 
   @override
@@ -60,7 +79,7 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
               child: IconButton(
                 onPressed: widget.onClose,
                 icon: Icon(
-                  Icons.close,
+                  PhosphorIconsRegular.x,
                   // Close icon over the scrim/map — fixed-content white.
                   color: context.semanticColors.onImage,
                   size: 28,
@@ -76,38 +95,48 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: AppRadius.sheetBorderSmBorder,
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondary.withValues(alpha: 0.5),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
                         ],
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: AppRadius.sheetBorderSmBorder,
                         child: CachedNetworkImage(
                           imageUrl: widget.site.getTransformedImageUrl(
                             transformation: 'w_400,c_fill,q_auto,f_auto',
                           ),
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: Theme.of(context).colorScheme.surfaceContainer,
-                            child: Icon(
-                              Icons.image,
-                              color: Theme.of(context).colorScheme.outline,
-                              size: 48,
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: Theme.of(context).colorScheme.surfaceContainer,
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: Theme.of(context).colorScheme.outline,
-                              size: 48,
-                            ),
-                          ),
+                          placeholder:
+                              (context, url) => Container(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
+                                child: Icon(
+                                  Icons.image,
+                                  color: Theme.of(context).colorScheme.outline,
+                                  size: 48,
+                                ),
+                              ),
+                          errorWidget:
+                              (context, url, error) => Container(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: Theme.of(context).colorScheme.outline,
+                                  size: 48,
+                                ),
+                              ),
                         ),
                       ),
                     ),
@@ -115,17 +144,16 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                     Text(
                       'You have arrived at',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            // Subtitle over the scrim — onImageMuted.
-                            color: context.semanticColors.onImageMuted,
-                          ),
+                        // Subtitle over the scrim — onImageMuted.
+                        color: context.semanticColors.onImageMuted,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       widget.site.getName(widget.uiLanguage),
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: context.semanticColors.onImage,
-                          ),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(color: context.semanticColors.onImage),
                     ),
                     const SizedBox(height: 40),
                     ScaleTransition(
@@ -137,17 +165,19 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                           height: 80,
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.secondary,
-                            borderRadius: BorderRadius.circular(40),
+                            borderRadius: AppRadius.heroGreetingBorder,
                             boxShadow: [
                               BoxShadow(
-                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.secondary.withValues(alpha: 0.5),
                                 blurRadius: 20,
                                 spreadRadius: 5,
                               ),
                             ],
                           ),
                           child: Icon(
-                            Icons.play_arrow,
+                            PhosphorIconsRegular.play,
                             size: 48,
                             color: Theme.of(context).colorScheme.onSecondary,
                           ),
@@ -158,9 +188,9 @@ class _ArrivalOverlayState extends State<ArrivalOverlay>
                     Text(
                       'Tap to start audio guide',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            // Hint over scrim — onImageMuted.
-                            color: context.semanticColors.onImageMuted,
-                          ),
+                        // Hint over scrim — onImageMuted.
+                        color: context.semanticColors.onImageMuted,
+                      ),
                     ),
                   ],
                 ),

@@ -1,13 +1,14 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
+import '../../core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_semantic_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/site_model.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class FeaturedSiteCard extends StatelessWidget {
-
   const FeaturedSiteCard({
     super.key,
     required this.site,
@@ -31,14 +32,7 @@ class FeaturedSiteCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.card),
-          boxShadow: [
-            BoxShadow(
-              // Featured-card shadow — theme-aware.
-              color: context.semanticColors.shadow,
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppShadows.mediumFor(Theme.of(context).brightness),
         ),
         child: Stack(
           children: [
@@ -51,22 +45,24 @@ class FeaturedSiteCard extends StatelessWidget {
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.secondary,
+                placeholder:
+                    (context, url) => Container(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  child: Icon(
-                    Icons.image_not_supported,
-                    color: Theme.of(context).colorScheme.outline,
-                    size: 48,
-                  ),
-                ),
+                errorWidget:
+                    (context, url, error) => Container(
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Theme.of(context).colorScheme.outline,
+                        size: 48,
+                      ),
+                    ),
               ),
             ),
             // Hero gradient overlay — fixed scrim tone so foreground
@@ -88,16 +84,16 @@ class FeaturedSiteCard extends StatelessWidget {
               top: 16,
               left: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: AppInsets.pillSm,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.secondary,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.sheetBorderSmBorder,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.star,
+                      PhosphorIconsFill.star,
                       size: 14,
                       color: Theme.of(context).colorScheme.onSecondary,
                     ),
@@ -105,9 +101,9 @@ class FeaturedSiteCard extends StatelessWidget {
                     Text(
                       'Featured',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontSize: 12,
-                            color: AppColors.textOnAccent,
-                          ),
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -117,18 +113,18 @@ class FeaturedSiteCard extends StatelessWidget {
               top: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: AppInsets.tag,
                 decoration: BoxDecoration(
                   // Rating pill sits over the hero image — scrim
                   // background and fixed-content foreground.
                   color: context.semanticColors.imageScrim,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppRadius.mdBorder,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.star,
+                      PhosphorIconsFill.star,
                       size: 14,
                       color: context.semanticColors.rating,
                     ),
@@ -136,9 +132,9 @@ class FeaturedSiteCard extends StatelessWidget {
                     Text(
                       site.rating?.toStringAsFixed(1) ?? '4.8',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontSize: 12,
-                            color: context.semanticColors.onImage,
-                          ),
+                        fontSize: 12,
+                        color: context.semanticColors.onImage,
+                      ),
                     ),
                   ],
                 ),
@@ -149,15 +145,15 @@ class FeaturedSiteCard extends StatelessWidget {
               left: 0,
               right: 0,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: AppInsets.card,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       site.getName(uiLanguage),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: context.semanticColors.onImage,
-                          ),
+                        color: context.semanticColors.onImage,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -169,7 +165,9 @@ class FeaturedSiteCard extends StatelessWidget {
                               // Button border + foreground over hero
                               // image — fixed white.
                               foregroundColor: context.semanticColors.onImage,
-                              side: BorderSide(color: context.semanticColors.onImage),
+                              side: BorderSide(
+                                color: context.semanticColors.onImage,
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                             child: const Text('View on Map'),
@@ -180,8 +178,10 @@ class FeaturedSiteCard extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: onStartAudio,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.secondary,
-                              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.secondary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onSecondary,
                               padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                             child: const Text('Start Audio Guide'),

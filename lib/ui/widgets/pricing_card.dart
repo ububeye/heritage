@@ -1,4 +1,7 @@
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_durations.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -47,13 +50,12 @@ class PricingCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isPrimary = selected;
-    final bg = isPrimary
-        ? scheme.primary
-        : scheme.surface;
+    final bg = isPrimary ? scheme.primary : scheme.surface;
     final fg = isPrimary ? scheme.onPrimary : scheme.onSurface;
-    final muted = isPrimary
-        ? scheme.onPrimary.withValues(alpha: 0.85)
-        : scheme.onSurface.withValues(alpha: 0.7);
+    final muted =
+        isPrimary
+            ? scheme.onPrimary.withValues(alpha: 0.85)
+            : scheme.onSurface.withValues(alpha: 0.7);
     final borderColor = isPrimary ? scheme.primary : theme.dividerColor;
     final borderWidth = isPrimary ? 2.0 : 1.0;
 
@@ -61,23 +63,20 @@ class PricingCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.card),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
+        duration: AppDurations.collapse,
         curve: Curves.easeOut,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius:
-              BorderRadius.circular(AppRadius.card),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: borderColor, width: borderWidth),
-          boxShadow: isPrimary
-              ? [
-                  BoxShadow(
-                    color: scheme.primary.withValues(alpha: 0.30),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          boxShadow:
+              isPrimary
+                  ? AppShadows.brandHaloFor(
+                    Theme.of(context).brightness,
+                    primaryColor: scheme.primary,
+                  )
+                  : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -89,28 +88,25 @@ class PricingCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: fg,
-                      ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
                 ),
                 if (badge != null) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
+                    padding: AppInsets.pillTiny,
                     decoration: BoxDecoration(
                       color: scheme.secondary,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: AppRadius.bannerBorder,
                     ),
                     child: Text(
                       badge!,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: scheme.onSecondary,
-                          ),
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -123,17 +119,16 @@ class PricingCard extends StatelessWidget {
               children: [
                 Text(
                   '\$${price.toStringAsFixed(2)}',
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontSize: 28,
-                        color: fg,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.displayMedium?.copyWith(fontSize: 28, color: fg),
                 ),
                 const SizedBox(width: 2),
                 Text(
                   priceSubtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: muted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: muted),
                 ),
               ],
             ),
@@ -141,9 +136,9 @@ class PricingCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 secondaryLine!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: muted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: muted),
                 textAlign: TextAlign.center,
               ),
             ],
