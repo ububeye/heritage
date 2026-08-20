@@ -67,10 +67,41 @@ class _LoginScreenState extends State<LoginScreen>
     context.read<AuthCubit>().signInWithGoogle();
   }
 
+  /// Open a dialog that asks for the user's email and fires
+  /// [AuthCubit.resetPassword]. The login screen's [BlocListener] picks
+  /// up the resulting [AuthStatus.passwordResetSent] and shows the
+  /// "check your inbox" SnackBar.
+  ///
+  /// [locState] is captured before the dialog opens so the dialog
+  /// text doesn't need to read from a [BuildContext] across an await.
+  /// We pre-fill the email field with whatever the user already typed
+  /// into the login form, so the most common case (typo in their
+  /// password) is one tap and one confirmation away from being fixed.
+  Future<void> _showForgotPasswordDialog(LocalizationState locState) async {
+    final initialEmail = _emailController.text.trim();
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => _ForgotPasswordDialog(
+        initialEmail: initialEmail,
+        authCubit: context.read<AuthCubit>(),
+        localizationCubit: context.read<LocalizationCubit>(),
+        locState: locState,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
+        // Capture the localization state up-front so the
+        // password-reset branch can render the success SnackBar text
+        // — the BlocListener's `context` is the same as the build
+        // context's subtree, so reading LocalizationCubit here is
+        // safe and avoids re-walking the widget tree on each emit.
+        final listenerLoc =
+            context.read<LocalizationCubit>().state;
         if (state.status == AuthStatus.authenticated) {
           // Check if user is admin - send to admin shell
           if (state.user?.role == UserRole.admin) {
@@ -97,6 +128,18 @@ class _LoginScreenState extends State<LoginScreen>
               MaterialPageRoute(builder: (_) => const HomeScreen()),
             );
           }
+        } else if (state.status == AuthStatus.passwordResetSent) {
+          // Password reset email was sent. Tell the user to check
+          // their inbox; the user is *not* signed in so we stay on
+          // the login screen.
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_tr(listenerLoc, 'password_reset_sent')),
+            ),
+          );
+          // Flip the cubit back to a non-error idle state so the next
+          // sign-in attempt isn't masked by the reset status.
+          context.read<AuthCubit>().emitIdleAfterReset();
         } else if (state.status == AuthStatus.error &&
             state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -215,7 +258,39 @@ class _LoginScreenState extends State<LoginScreen>
                                   return null;
                                 },
                               ),
-                              const SizedBox(height: 24),
+                              // "Forgot password?" — right-aligned
+                              // under it. Pre-fills the email field if
+                              // the user already typed one, so they
+                              // don't retype it in the dialog.
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () =>
+                                      _showForgotPasswordDialog(locState),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    minimumSize: const Size(0, 32),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    _tr(locState, 'forgot_password'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
                               BlocBuilder<AuthCubit, AuthState>(
                                 builder: (context, authState) {
                                   return SizedBox(
@@ -442,6 +517,137 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         );
       },
+    );
+  }
+}
+
+/// Stateful dialog for the password-reset flow. Owns its own
+/// [TextEditingController] and [GlobalKey<FormState>] so their lifetimes
+/// match the dialog route exactly — the [LoginScreen] doesn't dispose
+/// the controller from its `showDialog` scope, which previously raced
+/// the dialog's unmount and produced "TextEditingController was used
+/// after being disposed" rebuild errors when the cubit's emit
+/// triggered a BlocBuilder rebuild mid-pop.
+class _ForgotPasswordDialog extends StatefulWidget {
+  const _ForgotPasswordDialog({
+    required this.initialEmail,
+    required this.authCubit,
+    required this.localizationCubit,
+    required this.locState,
+  });
+
+  final String initialEmail;
+  final AuthCubit authCubit;
+  final LocalizationCubit localizationCubit;
+  final LocalizationState locState;
+
+  @override
+  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  late final TextEditingController _emailController;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    // Flutter disposes the TextField's listener chain during the
+    // dialog's unmount. dispose() here runs *after* that — so the
+    // controller has no live listeners at this point and Dispose
+    // won't race a rebuild.
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  String _tr(String key) =>
+      widget.locState.translations[key] ?? key;
+
+  Future<void> _send() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final email = _emailController.text.trim();
+    // Pop first so the dialog unmount fires before the cubit emits
+    // `loading` (which the dialog's BlocBuilder would otherwise react
+    // to mid-unmount).
+    if (!mounted) return;
+    Navigator.pop(context);
+    await widget.authCubit.resetPassword(email);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>.value(value: widget.authCubit),
+        BlocProvider<LocalizationCubit>.value(value: widget.localizationCubit),
+      ],
+      child: BlocBuilder<AuthCubit, AuthState>(
+        builder: (innerContext, authState) {
+          final isLoading = authState.status == AuthStatus.loading;
+          return AlertDialog(
+            title: Text(_tr('forgot_password_title')),
+            content: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _tr('forgot_password_body'),
+                    style: Theme.of(innerContext).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !isLoading,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: _tr('email'),
+                      prefixIcon: Icon(
+                        PhosphorIconsRegular.envelopeSimple,
+                        color: Theme.of(innerContext).colorScheme.primary,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: AppRadius.mdBorder,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          value.trim().isEmpty ||
+                          !value.contains('@')) {
+                        return _tr('error_invalid_email');
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed:
+                    isLoading ? null : () => Navigator.pop(innerContext),
+                child: Text(_tr('cancel')),
+              ),
+              ElevatedButton(
+                onPressed: isLoading ? null : _send,
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(_tr('forgot_password_send')),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

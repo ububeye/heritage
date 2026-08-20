@@ -130,6 +130,13 @@
   "error_weak_password": "Password must be at least 6 characters",
   "error_password_mismatch": "Passwords do not match",
   "error_auth_failed": "Authentication failed",
+
+  "forgot_password": "Forgot password?",
+  "forgot_password_title": "Reset your password",
+  "forgot_password_body": "Enter your account email and we'll send a link to set a new password.",
+  "forgot_password_send": "Send reset link",
+  "password_reset_sent": "Check your inbox — we sent a password reset link.",
+  "password_reset_no_account": "No account found with that email.",
   "error_location_permission": "Location permission required",
   "error_location_service": "Please enable location services",
 

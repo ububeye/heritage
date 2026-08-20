@@ -254,6 +254,18 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  /// Flip the cubit back to a non-error idle state after the login
+  /// screen has shown the password-reset SnackBar. Without this, the
+  /// status would stay on [AuthStatus.passwordResetSent] and the next
+  /// sign-in attempt would be misinterpreted by the [BlocListener].
+  ///
+  /// Idempotent: a no-op if we're already unauthenticated. Safe to call
+  /// from a listener because it doesn't await anything.
+  void emitIdleAfterReset() {
+    if (state.status != AuthStatus.passwordResetSent) return;
+    emit(state.copyWith(status: AuthStatus.unauthenticated));
+  }
+
   Future<void> updateUserRole(UserRole role) async {
     if (state.user == null) return;
     try {
