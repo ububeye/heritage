@@ -157,10 +157,15 @@ class PremiumCubit extends Cubit<PremiumState> {
         // buying) uses the unlimited chunk. Without this, the user
         // would still hear the 30s preview until they restart the app.
         _ttsService?.setPremium(true);
-        // Mirror the entitlement onto the auth state so settings/profile
-        // surfaces update without an app restart.
+        // Flip the auth state so the 7 audio languages unlock
+        // immediately on every screen that reads AuthState.isPremium.
+        // We intentionally skip the post-purchase refreshUser()
+        // round-trip here: there is no Cloud Function mirroring the
+        // store webhook back to the user's role document yet, so
+        // refreshUser() would resolve to role=free and overwrite the
+        // optimistic flip within hundreds of ms.
         if (isClosed) return;
-        await _mirrorUserPremium(true);
+        _auth?.markUserPremiumOptimistic(true);
       case BillingCancelled():
         if (isClosed) return;
         emit(
@@ -211,22 +216,5 @@ class PremiumCubit extends Cubit<PremiumState> {
     if (isClosed) return;
     emit(state.copyWith(isPremium: isPremium));
     _ttsService?.setPremium(isPremium);
-  }
-
-  Future<void> _mirrorUserPremium(bool value) async {
-    final auth = _auth;
-    if (auth == null) return;
-    try {
-      // The source of truth for premium is the Firestore
-      // `users/{uid}.isPremium` field, written by a Cloud Function that
-      // mirrors the store webhook. Until that lands, the AuthCubit user
-      // model may keep its old `isPremium` — the upgrade screen paints
-      // the right thing from the cubit's own state, and Settings reads
-      // it from there too.
-      await auth.refreshUser();
-    } catch (_) {
-      // Best-effort: the upgrade screen has already updated its own
-      // state; the auth mirror can recover on next launch.
-    }
   }
 }

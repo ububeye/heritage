@@ -153,7 +153,20 @@ class PremiumOfferScreen extends StatelessWidget {
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
           value: cubit,
-          child: const UpgradeContent(mode: UpgradeMode.onboarding),
+          child: UpgradeContent(
+            mode: UpgradeMode.onboarding,
+            // On success, collapse the entire stack back to a fresh
+            // HomeScreen. Without this, the user lands back on
+            // PremiumOfferScreen after dismissing the success dialog —
+            // which feels like a separate paywall page rather than the
+            // same app.
+            onSuccessDismiss: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                (route) => false,
+              );
+            },
+          ),
         ),
       ),
     );

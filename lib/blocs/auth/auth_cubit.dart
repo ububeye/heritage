@@ -21,13 +21,39 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       final refreshed = await _authService.reloadUser();
       if (refreshed == null) return;
-      final liveRole = await _firestoreService.getUserRole(refreshed.id);
-      final resolved =
-          liveRole == null ? refreshed : refreshed.copyWith(role: liveRole);
+      final resolved = await _resolveRoleWithDemoOverride(refreshed);
       emit(state.copyWith(user: resolved));
     } catch (e) {
       // Best-effort: keep the existing user model on failure.
     }
+  }
+
+  /// Look up the user's authoritative role in Firestore. Prefers the
+  /// canonical `roles/{uid}` doc, falling back to the legacy
+  /// `users/{uid}.role` field for documents predating the split.
+  Future<UserRole?> _resolveLiveRole(UserModel base) async {
+    final fromRoles = await _firestoreService.getUserRole(base.id);
+    if (fromRoles != null) return fromRoles;
+    final firestoreUser = await _firestoreService.getUserById(base.id);
+    return firestoreUser?.role;
+  }
+
+  /// Resolve the user's role on this device. Authoritative source is
+  /// Firestore (via [_resolveLiveRole]), but for the demo build we also
+  /// honour the local "I bought premium on this device" flag so a
+  /// purchase survives app restarts and sign-outs. There is no Cloud
+  /// Function mirroring the store webhook back to Firestore, so without
+  /// this override the server-side role would always read as `free` on
+  /// the next launch and the 7 audio languages would re-lock.
+  ///
+  /// Admin wins over the demo override — an admin-promoted user keeps
+  /// the `admin` role even if the device has a prior in-app purchase.
+  Future<UserModel> _resolveRoleWithDemoOverride(UserModel base) async {
+    final liveRole = await _resolveLiveRole(base);
+    final fromServer = base.copyWith(role: liveRole ?? base.role);
+    if (!SharedPrefsService.instance.isPremiumDemo) return fromServer;
+    if (fromServer.role == UserRole.admin) return fromServer;
+    return fromServer.copyWith(role: UserRole.premium);
   }
 
   Future<void> checkAuthStatus() async {
@@ -38,19 +64,10 @@ class AuthCubit extends Cubit<AuthState> {
       if (userModel != null) {
         // Authoritative role source: roles/{uid}.
         // Backward-compatible fallback: users/{uid}.role for documents
-        // where role is stored on the user profile.
-        UserModel resolved = userModel;
-        final roleFromRoles = await _firestoreService.getUserRole(userModel.id);
-        if (roleFromRoles != null) {
-          resolved = resolved.copyWith(role: roleFromRoles);
-        } else {
-          final firestoreUser = await _firestoreService.getUserById(
-            userModel.id,
-          );
-          if (firestoreUser != null) {
-            resolved = resolved.copyWith(role: firestoreUser.role);
-          }
-        }
+        // where role is stored on the user profile. The demo override
+        // (see _resolveRoleWithDemoOverride) then promotes the role to
+        // premium if this device has a prior in-app purchase on record.
+        final resolved = await _resolveRoleWithDemoOverride(userModel);
         if (resolved.disabled) {
           await _authService.signOut();
           emit(
@@ -86,11 +103,12 @@ class AuthCubit extends Cubit<AuthState> {
       if (user != null) {
         // Refresh from Firebase Auth (claims, etc.) then re-resolve role
         // from roles/{uid} so first sign-in lands with the canonical role.
+        // The demo override (see _resolveRoleWithDemoOverride) then
+        // promotes the role to premium if this device has a prior
+        // in-app purchase on record.
         final refreshedUser = await _authService.reloadUser();
         final base = refreshedUser ?? user;
-        final liveRole = await _firestoreService.getUserRole(base.id);
-        final resolved =
-            liveRole == null ? base : base.copyWith(role: liveRole);
+        final resolved = await _resolveRoleWithDemoOverride(base);
         if (resolved.disabled) {
           await _authService.signOut();
           emit(
@@ -188,10 +206,12 @@ class AuthCubit extends Cubit<AuthState> {
       // role lookup (the only remaining async work).
       emit(state.copyWith(status: AuthStatus.loading));
 
-      final liveRole = await _firestoreService.getUserRole(user.id);
+      // Resolve the canonical role from roles/{uid} (with fallback to
+      // users/{uid}.role). The demo override (see
+      // _resolveRoleWithDemoOverride) then promotes the role to
+      // premium if this device has a prior in-app purchase on record.
+      final resolved = await _resolveRoleWithDemoOverride(user);
       if (isClosed) return;
-      final resolved =
-          liveRole == null ? user : user.copyWith(role: liveRole);
       await SharedPrefsService.instance.setUserLoggedIn(
         true,
         userId: resolved.id,
@@ -288,6 +308,22 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     }
+  }
+
+  /// Optimistically flip the current user's role to premium (or back to
+  /// free). Mirrors a successful purchase onto the auth state without
+  /// waiting for a Firestore Cloud Function to update the user's role
+  /// document. Until that Cloud Function is deployed, every screen that
+  /// gates UX on [AuthState.isPremium] would still see "free" for hundreds
+  /// of ms after a purchase — this lets the UI react instantly.
+  ///
+  /// Idempotent: a no-op if the requested value already matches the
+  /// current role, so the [Cubit] equality check makes the no-op safe.
+  void markUserPremiumOptimistic(bool value) {
+    if (state.user == null) return;
+    final target = value ? UserRole.premium : UserRole.free;
+    if (state.user!.role == target) return;
+    emit(state.copyWith(user: state.user!.copyWith(role: target)));
   }
 
   /// Update the user's display name. Persists to Firebase Auth, then
