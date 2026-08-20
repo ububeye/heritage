@@ -157,12 +157,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             borderRadius: AppRadius.ctaButtonBorder,
                           ),
                         ),
+                        // No explicit Text style — the button's
+                        // foregroundColor (scheme.onPrimary) drives the
+                        // color via DefaultTextStyle inside ElevatedButton.
+                        // Passing textTheme.labelLarge here would overwrite
+                        // the foreground with onSurface (textTheme colour),
+                        // which is black-on-black in light mode and
+                        // white-on-white in dark mode → invisible text.
                         child: Text(
                           isLast
                               ? (loc.translations['onboarding_get_started'] ??
                                   'Get Started')
                               : (loc.translations['onboarding_next'] ?? 'Next'),
-                          style: Theme.of(context).textTheme.labelLarge,
                         ),
                       ),
                     ],
