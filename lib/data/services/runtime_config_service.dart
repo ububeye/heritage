@@ -12,6 +12,7 @@ class RuntimeConfigSnapshot {
     required this.freeAudioMaxSeconds,
     required this.orsApiKey,
     required this.maintenanceMode,
+    required this.googleSignInEnabled,
   });
 
   /// Default values for a fresh install — mirrors the keys in
@@ -21,21 +22,25 @@ class RuntimeConfigSnapshot {
     freeAudioMaxSeconds: 30,
     orsApiKey: '',
     maintenanceMode: false,
+    googleSignInEnabled: false,
   );
 
   final int freeAudioMaxSeconds;
   final String orsApiKey;
   final bool maintenanceMode;
+  final bool googleSignInEnabled;
 
   RuntimeConfigSnapshot copyWith({
     int? freeAudioMaxSeconds,
     String? orsApiKey,
     bool? maintenanceMode,
+    bool? googleSignInEnabled,
   }) {
     return RuntimeConfigSnapshot(
       freeAudioMaxSeconds: freeAudioMaxSeconds ?? this.freeAudioMaxSeconds,
       orsApiKey: orsApiKey ?? this.orsApiKey,
       maintenanceMode: maintenanceMode ?? this.maintenanceMode,
+      googleSignInEnabled: googleSignInEnabled ?? this.googleSignInEnabled,
     );
   }
 
@@ -44,17 +49,23 @@ class RuntimeConfigSnapshot {
       other is RuntimeConfigSnapshot &&
       other.freeAudioMaxSeconds == freeAudioMaxSeconds &&
       other.orsApiKey == orsApiKey &&
-      other.maintenanceMode == maintenanceMode;
+      other.maintenanceMode == maintenanceMode &&
+      other.googleSignInEnabled == googleSignInEnabled;
 
   @override
-  int get hashCode =>
-      Object.hash(freeAudioMaxSeconds, orsApiKey, maintenanceMode);
+  int get hashCode => Object.hash(
+        freeAudioMaxSeconds,
+        orsApiKey,
+        maintenanceMode,
+        googleSignInEnabled,
+      );
 
   @override
   String toString() =>
       'RuntimeConfigSnapshot(seconds=$freeAudioMaxSeconds, '
       'orsApiKey=${orsApiKey.isEmpty ? '(empty)' : '(set)'}, '
-      'maintenance=$maintenanceMode)';
+      'maintenance=$maintenanceMode, '
+      'googleSignIn=$googleSignInEnabled)';
 }
 
 /// Singleton over [SharedPreferences] that owns the three runtime-config
@@ -91,6 +102,8 @@ class RuntimeConfigService {
           _prefs.getInt(AppConstants.keyFreeAudioMaxSeconds) ?? 30,
       orsApiKey: _prefs.getString(AppConstants.keyOrsApiKey) ?? '',
       maintenanceMode: _prefs.getBool(AppConstants.keyMaintenanceMode) ?? false,
+      googleSignInEnabled:
+          _prefs.getBool(AppConstants.keyGoogleSignInEnabled) ?? false,
     );
   }
 
@@ -135,6 +148,7 @@ class RuntimeConfigService {
   int get freeAudioMaxSeconds => _current.freeAudioMaxSeconds;
   String get orsApiKey => _current.orsApiKey;
   bool get maintenanceMode => _current.maintenanceMode;
+  bool get googleSignInEnabled => _current.googleSignInEnabled;
 
   // ── Stream (consumed by the cubit for UI rebuilds) ─────────────────
 
@@ -169,6 +183,12 @@ class RuntimeConfigService {
   Future<void> setMaintenanceMode(bool enabled) async {
     await _prefs.setBool(AppConstants.keyMaintenanceMode, enabled);
     _current = _current.copyWith(maintenanceMode: enabled);
+    _controller.add(_current);
+  }
+
+  Future<void> setGoogleSignInEnabled(bool enabled) async {
+    await _prefs.setBool(AppConstants.keyGoogleSignInEnabled, enabled);
+    _current = _current.copyWith(googleSignInEnabled: enabled);
     _controller.add(_current);
   }
 

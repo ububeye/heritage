@@ -84,11 +84,18 @@ class AuthService {
       // emulator with no Google Play Services). Route through the same
       // mapper as the email path.
       throw _handleAuthError(e);
-    } catch (_) {
+    } catch (e, st) {
       // PlatformException from google_sign_in (missing SHA-1, OAuth
       // client id, no Play Services) and any other native failure. The
       // raw exception isn't user-actionable, so swap it for a friendly
-      // localised message.
+      // localised message — but log the real cause first so the next
+      // device log shows *which* of the four common causes is actually
+      // firing on this build (emulator, SHA-1 mismatch, Play Services
+      // missing, google-services.json drift).
+      // ignore: avoid_print
+      print('Google sign-in failed: $e');
+      // ignore: avoid_print
+      print('Stack:\n$st');
       throw Exception('Google sign-in is unavailable on this device');
     }
     if (googleUser == null) return null; // user cancelled

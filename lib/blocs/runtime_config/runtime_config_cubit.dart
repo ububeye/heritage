@@ -36,6 +36,7 @@ class RuntimeConfigCubit extends Cubit<RuntimeConfigState> {
         freeAudioMaxSeconds: snap.freeAudioMaxSeconds,
         orsApiKey: snap.orsApiKey,
         maintenanceMode: snap.maintenanceMode,
+        googleSignInEnabled: snap.googleSignInEnabled,
       ),
     );
   }
@@ -47,6 +48,9 @@ class RuntimeConfigCubit extends Cubit<RuntimeConfigState> {
 
   Future<void> setMaintenanceMode(bool enabled) =>
       _service.setMaintenanceMode(enabled);
+
+  Future<void> setGoogleSignInEnabled(bool enabled) =>
+      _service.setGoogleSignInEnabled(enabled);
 
   @override
   Future<void> close() {

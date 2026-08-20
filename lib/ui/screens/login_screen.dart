@@ -7,6 +7,7 @@ import '../../blocs/auth/auth_cubit.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/premium/premium_cubit.dart';
 import '../../blocs/localization/localization_cubit.dart';
+import '../../blocs/runtime_config/runtime_config_cubit.dart';
 import '../../data/services/shared_prefs_service.dart';
 import 'register_screen.dart';
 import 'premium_offer_screen.dart';
@@ -328,38 +329,65 @@ class _LoginScreenState extends State<LoginScreen>
                                 },
                               ),
                               const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Divider(
-                                      color: Theme.of(context).dividerColor,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    child: Text(
-                                      'or',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.7),
+                              // "or" divider + Google button are gated
+                              // behind RuntimeConfigCubit.googleSignInEnabled.
+                              // Default is false so a misconfigured Firebase
+                              // OAuth client (missing SHA-1, package mismatch,
+                              // no Play Services) can't leave the "Google
+                              // sign-in is unavailable on this device"
+                              // message in front of end users. Flip the
+                              // flag from admin_settings once the SHA-1 +
+                              // google-services.json are verified.
+                              BlocBuilder<RuntimeConfigCubit, RuntimeConfigState>(
+                                buildWhen: (prev, next) =>
+                                    prev.googleSignInEnabled !=
+                                    next.googleSignInEnabled,
+                                builder: (context, runtimeConfig) {
+                                  if (!runtimeConfig.googleSignInEnabled) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Divider(
+                                              color: Theme.of(context)
+                                                  .dividerColor,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets
+                                                .symmetric(horizontal: 16),
+                                            child: Text(
+                                              'or',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withValues(
+                                                          alpha: 0.7,
+                                                        ),
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Divider(
+                                              color: Theme.of(context)
+                                                  .dividerColor,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Divider(
-                                      color: Theme.of(context).dividerColor,
-                                    ),
-                                  ),
-                                ],
+                                      const SizedBox(height: 16),
+                                      _buildGoogleButton(),
+                                    ],
+                                  );
+                                },
                               ),
-                              const SizedBox(height: 16),
-                              _buildGoogleButton(),
                             ],
                           ),
                         ),

@@ -237,6 +237,12 @@ class AppConstants {
   static const String keyFreeAudioMaxSeconds = 'free_audio_max_seconds';
   static const String keyOrsApiKey = 'ors_api_key';
   static const String keyMaintenanceMode = 'maintenance_mode';
+  /// Toggle for the "Continue with Google" button on the login screen.
+  /// Default is false so a misconfigured Firebase OAuth client (missing
+  /// SHA-1, package mismatch, etc.) can't leave a confusing "sign-in is
+  /// unavailable" message in front of users. Flip to true from
+  /// admin_settings once the SHA-1 + google-services.json are verified.
+  static const String keyGoogleSignInEnabled = 'google_sign_in_enabled';
 
   // Map providers (removed: the OSM-only build uses a hardcoded CARTO
   // URL in the two TileLayer call-sites. Re-introduce here when a
