@@ -506,6 +506,23 @@ class _ThreePlanRow extends StatelessWidget {
   final PlanId selected;
   final ValueChanged<PlanId> onSelect;
 
+  /// Wraps an [onSelect] callback so tapping a plan card both
+  /// records the selection (drives the visual selected state and
+  /// the bottom CTA label/legal copy) AND opens the [PaymentSheet]
+  /// for that plan. Previously the cards only called [onSelect] —
+  /// the user tapped a card, saw no immediate feedback, then had to
+  /// hunt for the bottom CTA to actually pay. That two-tap dance was
+  /// the source of "shows plans but not payment" bug reports.
+  VoidCallback _tap(BuildContext context, PlanId id) {
+    return () {
+      onSelect(id);
+      // Guarded so the bottom CTA's behaviour (select + pay) and the
+      // plan-card tap behaviour stay consistent if either path is
+      // ever wired differently.
+      PaymentSheet.push(context, id);
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -520,7 +537,7 @@ class _ThreePlanRow extends StatelessWidget {
                 priceLabel: '\$${AppConstants.explorerMonthlyPrice.toStringAsFixed(2)}',
                 period: '/month',
                 selected: selected == PlanId.monthly,
-                onTap: () => onSelect(PlanId.monthly),
+                onTap: _tap(context, PlanId.monthly),
                 color: const Color(0xFF6366F1),
                 features: const ['7 languages', 'GPS nav', 'No ads'],
               ),
@@ -534,7 +551,7 @@ class _ThreePlanRow extends StatelessWidget {
                 period: '/year',
                 badge: 'Save 17%',
                 selected: selected == PlanId.yearly,
-                onTap: () => onSelect(PlanId.yearly),
+                onTap: _tap(context, PlanId.yearly),
                 color: const Color(0xFF6366F1),
                 features: const ['7 languages', 'GPS nav', 'No ads'],
               ),
@@ -547,8 +564,8 @@ class _ThreePlanRow extends StatelessWidget {
         _PlanCardFeatured(
           selected: selected == PlanId.proMonthly || selected == PlanId.proYearly,
           selectedId: selected,
-          onSelectMonthly: () => onSelect(PlanId.proMonthly),
-          onSelectYearly: () => onSelect(PlanId.proYearly),
+          onSelectMonthly: _tap(context, PlanId.proMonthly),
+          onSelectYearly: _tap(context, PlanId.proYearly),
         ),
 
         const SizedBox(height: 12),
@@ -556,7 +573,7 @@ class _ThreePlanRow extends StatelessWidget {
         // Lifetime — full-width
         _LifetimeCard(
           selected: selected == PlanId.lifetime,
-          onTap: () => onSelect(PlanId.lifetime),
+          onTap: _tap(context, PlanId.lifetime),
         ),
       ],
     );

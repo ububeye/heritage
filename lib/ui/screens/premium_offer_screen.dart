@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../blocs/premium/premium_cubit.dart';
 import 'home_screen.dart';
+import 'upgrade_content.dart';
 
 /// First-login value-prop screen. Replaces the original paywall with
 /// a low-pressure intro that lists what premium unlocks and lets the
@@ -104,6 +105,30 @@ class PremiumOfferScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
+              // "See plans" — let users inspect pricing and buy from
+              // the offer screen without going through Settings. We
+              // route into UpgradeContent with onboarding mode so the
+              // secondary copy ("Maybe later") stays consistent with
+              // this screen's low-pressure framing. PremiumCubit is
+              // re-provided on the pushed route because new
+              // MaterialPageRoute subtrees do not inherit bloc
+              // providers from the parent navigator.
+              OutlinedButton(
+                onPressed: () => _seePlans(context),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  foregroundColor: scheme.primary,
+                  side: BorderSide(color: scheme.primary, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'See plans',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(height: 8),
               TextButton(
                 onPressed: () => _skip(context),
                 child: const Text('Maybe later'),
@@ -119,6 +144,18 @@ class PremiumOfferScreen extends StatelessWidget {
     context.read<PremiumCubit>().skipPremiumOffer();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  }
+
+  void _seePlans(BuildContext context) {
+    final cubit = context.read<PremiumCubit>();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: cubit,
+          child: const UpgradeContent(mode: UpgradeMode.onboarding),
+        ),
+      ),
     );
   }
 }
