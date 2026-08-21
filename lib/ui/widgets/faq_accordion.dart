@@ -68,39 +68,47 @@ class _FaqTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // The outer Theme wrapper strips Material from the ancestor chain,
+    // so we re-introduce a transparent Material here. ExpansionTile's
+    // internal ListTile needs a Material ancestor for ink splashes and
+    // the standard background; the surrounding Container already paints
+    // our visible surface, so a transparent Material is the right
+    // semantic with zero visual change.
     return Theme(
       data: Theme.of(context).copyWith(
         dividerColor: Colors.transparent,
         splashColor: scheme.primary.withValues(alpha: 0.06),
       ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        leading:
-            entry.icon != null
-                ? Icon(entry.icon, color: scheme.primary, size: 22)
-                : null,
-        title: Text(
-          entry.question,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontSize: 15,
-            color: scheme.onSurface,
-          ),
-        ),
-        iconColor: scheme.primary,
-        collapsedIconColor: scheme.onSurface.withValues(alpha: 0.5),
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              entry.answer,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                height: 1.4,
-                color: scheme.onSurface.withValues(alpha: 0.75),
-              ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          leading: entry.icon != null
+              ? Icon(entry.icon, color: scheme.primary, size: 22)
+              : null,
+          title: Text(
+            entry.question,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontSize: 15,
+              color: scheme.onSurface,
             ),
           ),
-        ],
+          iconColor: scheme.primary,
+          collapsedIconColor: scheme.onSurface.withValues(alpha: 0.5),
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                entry.answer,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  height: 1.4,
+                  color: scheme.onSurface.withValues(alpha: 0.75),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
