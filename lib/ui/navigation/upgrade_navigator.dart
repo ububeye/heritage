@@ -12,13 +12,20 @@ import '../screens/upgrade_screen.dart';
 /// providers from the parent navigator, so the cubit must be passed in.
 ///
 /// [onSuccessDismiss] fires after the user taps "Start Exploring" in
-/// the success dialog. Most callers pass a single [Navigator.pop] to
-/// return the user to whichever screen launched the paywall; the
-/// first-login offer passes a `pushAndRemoveUntil(HomeScreen)` so the
-/// offer screen itself is dismissed (and bypasses this helper entirely
-/// to avoid the Settings-style AppBar).
+/// the success dialog. Most callers leave this null and rely on the
+/// default behaviour in [UpgradeContent._showSuccessDialog], which
+/// automatically pops every route in the upgrade-purchase stack
+/// (UpgradeScreen + PaymentSheet) and returns the user to the screen
+/// that opened the paywall. The first-login offer still passes its
+/// own `pushAndRemoveUntil(HomeScreen)` to also clear the offer
+/// screen itself.
 class UpgradeNavigator {
   const UpgradeNavigator._();
+
+  /// Stable route name so the success dialog can walk back through
+  /// the upgrade-purchase stack regardless of which screen opened it.
+  /// See [UpgradeContent._showSuccessDialog].
+  static const String routeName = '/upgrade-screen';
 
   static Future<void> open(
     BuildContext context, {
@@ -27,6 +34,7 @@ class UpgradeNavigator {
     final cubit = context.read<PremiumCubit>();
     return Navigator.of(context).push<void>(
       MaterialPageRoute(
+        settings: const RouteSettings(name: UpgradeNavigator.routeName),
         builder: (_) => BlocProvider.value(
           value: cubit,
           child: UpgradeScreen(onSuccessDismiss: onSuccessDismiss),

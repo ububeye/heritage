@@ -20,6 +20,7 @@ class FakeBillingProvider implements BillingProvider {
   FakeBillingProvider({
     this.forceError,
     this.simulatedNetworkDown = false,
+    this.seedRandomCancellation = true,
     Random? rng,
   }) : _rng = rng ?? Random();
 
@@ -30,6 +31,15 @@ class FakeBillingProvider implements BillingProvider {
   /// When true, every purchase / restore returns a transient
   /// `Network unavailable` error after a short delay.
   final bool simulatedNetworkDown;
+
+  /// When true (default), ~10% of purchases round to [BillingCancelled]
+  /// so the cancelled branch of the UI is reachable in manual QA and
+  /// integration tests. Pass `false` from `app.dart` for shipped demo
+  /// builds — the demo user expects every successful tap to unlock
+  /// premium, not have a 1-in-10 chance of silently dismissing. Tests
+  /// that need the cancelled branch can still flip this flag on (or
+  /// use [forceCancel] for a deterministic single-call cancel).
+  final bool seedRandomCancellation;
 
   /// RNG used to introduce latency + occasional cancellation. Pass a
   /// seeded `Random(0)` in tests for deterministic behaviour.
@@ -65,8 +75,11 @@ class FakeBillingProvider implements BillingProvider {
     }
 
     // Round 10 % of purchases to cancelled so the cancelled branch of the
-    // UI is reachable in manual QA.
-    if (_rng.nextDouble() < 0.10) {
+    // UI is reachable in manual QA. Gated on [seedRandomCancellation] so
+    // shipped demo builds (see `app.dart`) can opt out and always return
+    // success — the user shouldn't see a fake random cancel when they
+    // haven't actually cancelled anything.
+    if (seedRandomCancellation && _rng.nextDouble() < 0.10) {
       return const BillingCancelled();
     }
 

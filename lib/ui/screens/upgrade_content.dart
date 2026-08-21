@@ -10,6 +10,7 @@ import '../../core/theme/app_spacing.dart';
 import '../widgets/faq_accordion.dart';
 import '../widgets/payment_method_icons.dart';
 import '../widgets/trial_badge.dart';
+import '../navigation/upgrade_navigator.dart';
 import 'payment_sheet.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -283,6 +284,11 @@ class UpgradeContent extends StatelessWidget {
   }
 
   Future<void> _showSuccessDialog(BuildContext context) async {
+    // Capture the outer navigator up front so the post-dismiss
+    // unwind runs against the same navigator that pushed the
+    // UpgradeScreen + PaymentSheet. The dialog's own context
+    // resolves to the dialog's route, which is too narrow — popping
+    // via `Navigator.of(dialogContext)` only closes the dialog.
     final navigator = Navigator.of(context);
     final customDismiss = onSuccessDismiss;
     // Branch copy on the purchased plan. Lifetime is a one-time
@@ -387,12 +393,53 @@ class UpgradeContent extends StatelessWidget {
       },
     );
 
-    if (result == true) {
-      if (customDismiss != null) {
-        customDismiss();
-      } else if (navigator.canPop()) {
-        navigator.pop();
-      }
+    if (result != true) {
+      // Dialog dismissed without tapping the CTA (e.g. system back).
+      // Still clean up the upgrade stack so the user doesn't have to
+      // manually back out of the paywall after paying.
+      return _autoUnwindUpgradeStack(navigator, customDismiss);
+    }
+    _autoUnwindUpgradeStack(navigator, customDismiss);
+  }
+
+  /// Pop every route in the upgrade-purchase stack until we reach a
+  /// route that isn't UpgradeScreen or PaymentSheet. This is the
+  /// default dismiss behaviour and works for every call site —
+  /// Settings, Detail, Profile, AppBar — without each caller having
+  /// to wire their own callback. Callers that want to also clear
+  /// other routes (e.g. first-login offer screen pushing Home) can
+  /// still pass [onSuccessDismiss] which runs after the unwind.
+  void _autoUnwindUpgradeStack(
+    NavigatorState navigator,
+    VoidCallback? customDismiss,
+  ) {
+    // Best-effort unwind: popUntil accepts a predicate that returns
+    // true for the route we want to keep. Keep popping while the
+    // topmost route is one of ours. After the predicate fires we
+    // also run the caller's custom dismiss so the first-login offer
+    // can still pushAndRemoveUntil to Home.
+    final upgradeRouteNames = <String>{
+      UpgradeNavigator.routeName,
+      PaymentSheet.routeName,
+    };
+    try {
+      navigator.popUntil((route) {
+        final name = route.settings.name;
+        return name == null || !upgradeRouteNames.contains(name);
+      });
+    } catch (_) {
+      // popUntil can throw if the navigator is mid-transition; fall
+      // back to a single pop so the user is never stuck on the
+      // upgrade screen.
+      if (navigator.canPop()) navigator.pop();
+    }
+    if (customDismiss != null) {
+      customDismiss();
+    } else if (!navigator.canPop()) {
+      // Defensive: if the unwind happened to land on a root route
+      // and the caller didn't bring a custom dismiss, we still need
+      // to make sure the upgrade screen is gone. popUntil already
+      // handled that — this branch is a no-op fallback.
     }
   }
 }

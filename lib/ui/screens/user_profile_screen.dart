@@ -796,11 +796,7 @@ class _UpgradePromptCard extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed:
-                    () => UpgradeNavigator.open(
-                      context,
-                      onSuccessDismiss: () => Navigator.of(context).pop(),
-                    ),
+                onPressed: () => UpgradeNavigator.open(context),
                 icon: const Icon(Icons.workspace_premium_rounded, size: 18),
                 label: const Text('Upgrade Now'),
                 style: ElevatedButton.styleFrom(

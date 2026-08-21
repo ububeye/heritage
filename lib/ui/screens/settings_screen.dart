@@ -197,12 +197,7 @@ class _SettingsBody extends StatelessWidget {
                       iconColor: Theme.of(context).colorScheme.secondary,
                       title: tr(locState, 'upgrade_to_premium'),
                       subtitle: tr(locState, 'unlock_premium'),
-                      onTap:
-                          () => UpgradeNavigator.open(
-                            context,
-                            onSuccessDismiss:
-                                () => Navigator.of(context).pop(),
-                          ),
+                      onTap: () => UpgradeNavigator.open(context),
                     ),
                   ],
                 ),
@@ -242,10 +237,7 @@ class _SettingsBody extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
-                  UpgradeNavigator.open(
-                    context,
-                    onSuccessDismiss: () => Navigator.of(context).pop(),
-                  );
+                  UpgradeNavigator.open(context);
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(

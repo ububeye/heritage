@@ -639,13 +639,13 @@ class _DetailScreenState extends State<DetailScreen> {
                           onUpgrade:
                               () => UpgradeNavigator.open(
                                 context,
-                                // After a successful purchase, return to
-                                // this same detail screen so the user can
-                                // keep exploring with all 7 audio
-                                // languages. The banner rebuilds and
-                                // disappears as isPremium flips.
-                                onSuccessDismiss:
-                                    () => Navigator.of(context).pop(),
+                                // No onSuccessDismiss needed: the
+                                // success dialog in UpgradeContent
+                                // auto-unwinds the upgrade + payment
+                                // stack (see _showSuccessDialog),
+                                // returning the user to this detail
+                                // screen where the banner rebuilds
+                                // out as isPremium flips.
                               ),
                           message: '30 sec limit • Upgrade for full audio',
                         ),

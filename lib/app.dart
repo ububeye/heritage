@@ -74,7 +74,14 @@ class _StoneTownAppState extends State<StoneTownApp> {
 
     // Singleton for now; the real RevenueCat provider will own its own
     // lifecycle. Switching providers is a one-line change here.
-    final BillingProvider billing = FakeBillingProvider();
+    // `seedRandomCancellation: false` — the demo build should always
+    // unlock premium on a successful Pay tap. The ~10% random cancel
+    // is gated on the flag for tests that need to exercise the
+    // cancelled branch; opted out here so a real user tapping Pay
+    // isn't silently dismissed by the fake provider.
+    final BillingProvider billing = FakeBillingProvider(
+      seedRandomCancellation: false,
+    );
 
     return MultiBlocProvider(
       providers: [
@@ -190,10 +197,7 @@ class _StoneTownAppState extends State<StoneTownApp> {
                   action: SnackBarAction(
                     label: 'Upgrade',
                     onPressed: () {
-                      UpgradeNavigator.open(
-                        context,
-                        onSuccessDismiss: () => Navigator.of(context).pop(),
-                      );
+                      UpgradeNavigator.open(context);
                     },
                   ),
                   duration: const Duration(seconds: 6),

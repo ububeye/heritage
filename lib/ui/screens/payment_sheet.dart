@@ -28,16 +28,30 @@ class PaymentSheet extends StatefulWidget {
   final PlanId planId;
 
   static Future<void> push(BuildContext context, PlanId planId) {
+    // Capture the cubit BEFORE the route push. Reading the provider
+    // inside the builder closure races with the navigator's mount of
+    // the new route — the caller's context can be partially torn down
+    // by the time the builder runs, which throws `ProviderNotFound`
+    // and silently drops the cubit reference. The result: the Pay
+    // button reaches `cubit.purchase()` against a null/stale instance
+    // and appears to do nothing. Same pattern as `UpgradeNavigator`.
+    final cubit = context.read<PremiumCubit>();
     return Navigator.of(context).push<void>(
       MaterialPageRoute(
+        settings: const RouteSettings(name: PaymentSheet.routeName),
         fullscreenDialog: true,
         builder: (_) => BlocProvider.value(
-          value: context.read<PremiumCubit>(),
+          value: cubit,
           child: PaymentSheet(planId: planId),
         ),
       ),
     );
   }
+
+  /// Stable route name so the success dialog can identify and pop
+  /// this route as part of the upgrade-purchase stack unwind.
+  /// See [UpgradeContent._showSuccessDialog].
+  static const String routeName = '/payment-sheet';
 
   @override
   State<PaymentSheet> createState() => _PaymentSheetState();
@@ -272,7 +286,22 @@ class _PaymentSheetState extends State<PaymentSheet>
             label: state.errorMessage ?? 'Payment failed',
           );
         } else if (state.lastOutcome == PurchaseOutcome.cancelled) {
+          // Previously silent: the overlay just hid and the user was
+          // left staring at the payment sheet with no indication of
+          // what happened. This is the path the fake provider hits
+          // ~10 % of the time and the only path for a real user
+          // tapping back in the Play / Stripe sheet. Surface a
+          // gentle SnackBar so the next tap is informed.
           setState(() => _showOverlay = false);
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Payment cancelled. Tap Pay to try again.'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
         }
       },
       child: Scaffold(
