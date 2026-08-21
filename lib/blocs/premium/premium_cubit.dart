@@ -33,10 +33,14 @@ class PremiumCubit extends Cubit<PremiumState> {
   /// the right state on first frame. The BillingProvider call happens
   /// separately via [initialize].
   void _hydrateFromPrefs() {
+    final uid = _auth?.state.user?.id;
     emit(
       state.copyWith(
         showPremiumOffer: _prefs.showPremiumOffer,
-        isPremium: _prefs.isPremiumDemo,
+        // Per-user demo override. Defaults to false when the auth
+        // cubit isn't wired yet (constructor-time) or when no user is
+        // signed in — premium is re-evaluated on the next auth refresh.
+        isPremium: uid != null ? _prefs.isPremiumDemoFor(uid) : false,
       ),
     );
   }
@@ -138,7 +142,22 @@ class PremiumCubit extends Cubit<PremiumState> {
         :final receiptId,
         :final trialActiveUntil,
       ):
-        await _prefs.setPremiumDemo(true);
+        // Persist the entitlement under the current user's uid so it
+        // survives restarts and sign-out + sign-in on this device,
+        // but never leaks to a different account on the same device.
+        final userId = _auth?.state.user?.id;
+        if (userId != null) {
+          await _prefs.setPremiumDemoFor(userId, true);
+        } else {
+          // Unreachable in production: the upgrade screen requires
+          // auth. Asserted so a future regression in the auth wiring
+          // surfaces in debug builds instead of silently dropping the
+          // persisted entitlement.
+          assert(
+            userId != null,
+            'PremiumCubit: BillingSuccess fired without an authenticated user',
+          );
+        }
         await _prefs.setShowPremiumOffer(false);
         if (isClosed) return;
         emit(
@@ -163,9 +182,12 @@ class PremiumCubit extends Cubit<PremiumState> {
         // round-trip here: there is no Cloud Function mirroring the
         // store webhook back to the user's role document yet, so
         // refreshUser() would resolve to role=free and overwrite the
-        // optimistic flip within hundreds of ms.
+        // optimistic flip within hundreds of ms. Guarded by the same
+        // userId check as the prefs write above so the two stay in
+        // sync — a uid-less flip without a prefs write would be a
+        // phantom upgrade that evaporates on restart.
         if (isClosed) return;
-        _auth?.markUserPremiumOptimistic(true);
+        if (userId != null) _auth?.markUserPremiumOptimistic(true);
       case BillingCancelled():
         if (isClosed) return;
         emit(
@@ -209,10 +231,12 @@ class PremiumCubit extends Cubit<PremiumState> {
   }
 
   /// Dev-only override. Lets a build flag flip premium status without
-  /// going through the billing provider. Never wired to UI.
+  /// going through the billing provider. Never wired to UI. Persistence
+  /// is intentionally a no-op here — production-grade tests inject their
+  /// own prefs and a stale uid-keyed entry from this path would otherwise
+  /// leak across test runs.
   @visibleForTesting
   Future<void> setPremium(bool isPremium) async {
-    await _prefs.setPremiumDemo(isPremium);
     if (isClosed) return;
     emit(state.copyWith(isPremium: isPremium));
     _ttsService?.setPremium(isPremium);

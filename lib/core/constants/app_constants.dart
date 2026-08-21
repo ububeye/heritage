@@ -211,7 +211,11 @@ class AppConstants {
   static const String keyAudioLanguage = 'audio_language';
   static const String keyItinerary = 'itinerary';
   static const String keyShowPremiumOffer = 'show_premium_offer';
-  static const String keyIsPremiumDemo = 'is_premium_demo';
+  /// Per-user demo premium override. Keyed by Firebase Auth UID; values
+  /// are 'true' / 'false' encoded as JSON. Replaces the previous
+  /// per-device scalar `keyIsPremiumDemo` which leaked across accounts
+  /// on the same device.
+  static const String keyPremiumDemoByUser = 'premium_demo_by_user_v1';
   /// Set to true once the user has heard at least one audio preview.
   /// Used by login_screen / register_screen to skip the post-login
   /// value-prop screen for users who already know the audio exists.

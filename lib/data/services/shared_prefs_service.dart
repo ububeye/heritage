@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
@@ -109,12 +111,38 @@ class SharedPrefsService {
     _notify();
   }
 
-  // Premium status (demo only — no real billing integration).
-  bool get isPremiumDemo =>
-      _preferences.getBool(AppConstants.keyIsPremiumDemo) ?? false;
+  // Premium status (demo only — no real billing integration). Scoped
+  // per Firebase Auth UID so a purchase follows the user across
+  // sign-out + sign-in on the same device, and never leaks to other
+  // accounts on the same device.
+  Map<String, bool> get premiumDemoByUser {
+    final raw = _preferences.getString(AppConstants.keyPremiumDemoByUser);
+    if (raw == null || raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return decoded.map((k, v) => MapEntry(k, v == true));
+    } catch (_) {
+      // Corrupt entry — treat as empty so a single bad write doesn't
+      // permanently lock out the device from premium.
+      return const {};
+    }
+  }
 
-  Future<void> setPremiumDemo(bool value) async {
-    await _preferences.setBool(AppConstants.keyIsPremiumDemo, value);
+  bool isPremiumDemoFor(String userId) =>
+      premiumDemoByUser[userId] ?? false;
+
+  Future<void> setPremiumDemoFor(String userId, bool value) async {
+    if (isPremiumDemoFor(userId) == value) return;
+    final map = Map<String, bool>.from(premiumDemoByUser);
+    if (value) {
+      map[userId] = true;
+    } else {
+      map.remove(userId);
+    }
+    await _preferences.setString(
+      AppConstants.keyPremiumDemoByUser,
+      jsonEncode(map),
+    );
     _notify();
   }
 

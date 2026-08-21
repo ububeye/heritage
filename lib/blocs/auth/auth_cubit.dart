@@ -40,18 +40,24 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// Resolve the user's role on this device. Authoritative source is
   /// Firestore (via [_resolveLiveRole]), but for the demo build we also
-  /// honour the local "I bought premium on this device" flag so a
-  /// purchase survives app restarts and sign-outs. There is no Cloud
-  /// Function mirroring the store webhook back to Firestore, so without
-  /// this override the server-side role would always read as `free` on
-  /// the next launch and the 7 audio languages would re-lock.
+  /// honour the per-user "I bought premium on this device" flag so a
+  /// purchase survives app restarts and sign-outs for that account
+  /// only. There is no Cloud Function mirroring the store webhook back
+  /// to Firestore, so without this override the server-side role would
+  /// always read as `free` on the next launch and the 7 audio languages
+  /// would re-lock.
+  ///
+  /// The override is keyed by Firebase Auth UID so a purchase never
+  /// leaks to a different account on the same device.
   ///
   /// Admin wins over the demo override — an admin-promoted user keeps
   /// the `admin` role even if the device has a prior in-app purchase.
   Future<UserModel> _resolveRoleWithDemoOverride(UserModel base) async {
     final liveRole = await _resolveLiveRole(base);
     final fromServer = base.copyWith(role: liveRole ?? base.role);
-    if (!SharedPrefsService.instance.isPremiumDemo) return fromServer;
+    if (!SharedPrefsService.instance.isPremiumDemoFor(base.id)) {
+      return fromServer;
+    }
     if (fromServer.role == UserRole.admin) return fromServer;
     return fromServer.copyWith(role: UserRole.premium);
   }
