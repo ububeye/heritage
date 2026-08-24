@@ -15,6 +15,16 @@ class UserCubit extends Cubit<UserState> {
       final users = await _firestoreService.getAllUsers();
       // Roles live in roles/{uid}, not on the user profile. Enrich each
       // user with the canonical role for display in the admin table.
+      // We derive the premium count from the same `roles` map instead of
+      // running a separate `getPremiumUserCount()` Firestore query:
+      //   * It reuses data we already loaded (one fewer round-trip).
+      //   * It removes the silent `catch (e) → return 0` in
+      //     `getPremiumUserCount`, which would mask a real
+      //     permission-denied on the `roles` collection as "no premium
+      //     users exist".
+      //   * If the admin's `roles/{adminUid}` doc is missing, both the
+      //     user-list enrichment AND the count fail in the same way —
+      //     surfaces the bug instead of hiding it.
       final roles = await _firestoreService.bulkGetRoles(
         users.map((u) => u.id),
       );
@@ -24,8 +34,21 @@ class UserCubit extends Cubit<UserState> {
             return r == null ? u : u.copyWith(role: r);
           }).toList();
       final total = enriched.length;
-      final premium = enriched.where((u) => u.role == UserRole.premium).length;
       final admins = enriched.where((u) => u.role == UserRole.admin).length;
+      // Premium count from the role doc we already loaded. Also count
+      // users with a future subscription_expiry whose roles/{uid} doc
+      // is missing or has no explicit override — that's the path a
+      // Cloud Function / billing webhook upgrade would take if it
+      // only writes subscription_expiry to users/{uid}.
+      final now = DateTime.now();
+      final premium = enriched.where((u) {
+        final r = roles[u.id];
+        if (r == UserRole.premium) return true;
+        if (r == UserRole.admin) return false; // admins counted above
+        if (r == UserRole.free) return false; // explicit demotion wins
+        final exp = u.subscriptionExpiry;
+        return exp != null && exp.isAfter(now);
+      }).length;
 
       emit(
         state.copyWith(
