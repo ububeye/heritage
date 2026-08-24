@@ -9,6 +9,64 @@ import 'shared_prefs_service.dart';
 
 enum TtsState { playing, stopped, paused, continued }
 
+/// Fallback chain of BCP-47 tags for each short language code we support.
+///
+/// Each short code maps to an ordered list of candidate locales, most-
+/// preferred first. When [setLanguage] is asked for `'fr'` but the device
+/// doesn't have `fr-FR`, we try `fr-CA`, `fr-BE`, etc. before giving up.
+/// Last-resort fallback inside [resolveBestCandidate] is a `startsWith`
+/// prefix scan against the device's available list — catches OEM-specific
+/// tags like `fr-XX-zzz` that don't appear in this table.
+const Map<String, List<String>> _voiceCandidates = {
+  'en': ['en-US', 'en-GB', 'en-AU', 'en-CA', 'en-IN', 'en-NZ', 'en-IE', 'en-ZA'],
+  'sw': ['sw-KE', 'sw-TZ'],
+  'fr': ['fr-FR', 'fr-CA', 'fr-BE', 'fr-CH', 'fr-LU'],
+  'de': ['de-DE', 'de-AT', 'de-CH'],
+  'ar': ['ar-SA', 'ar-EG', 'ar-AE', 'ar-XB'],
+  'it': ['it-IT', 'it-CH'],
+  'es': ['es-ES', 'es-MX', 'es-AR', 'es-CL', 'es-CO'],
+};
+
+/// Walk [_voiceCandidates] for [shortCode] against the device's
+/// [available] locales and return the first match.
+///
+/// Returns `null` if:
+///   * [shortCode] isn't in the candidate table at all (unsupported).
+///   * The device has no locale matching any candidate AND no locale
+///     sharing the short-code prefix.
+///
+/// Pure function — no engine touch. Unit-testable.
+String? resolveBestCandidate(String shortCode, List<String> available) {
+  final candidates = _voiceCandidates[shortCode];
+  if (candidates == null) return null;
+  for (final tag in candidates) {
+    if (available.contains(tag)) return tag;
+  }
+  // Last-resort prefix scan — catches engine-extended tags like
+  // `fr-XX-zzz` that aren't in the table but share the family.
+  final prefix = '$shortCode-';
+  for (final tag in available) {
+    if (tag.startsWith(prefix)) return tag;
+  }
+  return null;
+}
+
+/// Inverse of [resolveBestCandidate]: given the device's [available]
+/// list of BCP-47 tags, return the set of supported short codes the
+/// device can speak. Used by the audio picker to show accurate
+/// availability (e.g. a device with `fr-CA` should still show French).
+List<String> resolveShortCodesForAvailable(List<String> available) {
+  final out = <String>[];
+  for (final entry in _voiceCandidates.entries) {
+    final code = entry.key;
+    if (resolveBestCandidate(code, available) != null) {
+      out.add(code);
+    }
+  }
+  // Stable order — prefer the order of the table (en, sw, fr, ...).
+  return out;
+}
+
 /// What [TtsService.setLanguage] actually did. Replaces the previous
 /// `String?` return contract, which conflated "voice unavailable" with
 /// "engine kept the previous voice, which happens to equal what the
@@ -305,11 +363,41 @@ class TtsService {
   }
 
   Future<void> _setDefaultLanguage() async {
-    final languages =
+    // Boot the engine with the user's persisted audio language (not a
+    // hardcoded English). Previously this defaulted to `'en-US'`, so a
+    // user who had picked `'fr'` last session heard English on cold
+    // start until the first setLanguage('fr') call — which itself
+    // would fail on devices without `fr-FR` installed (see Bug 3 fix).
+    //
+    // We use the same candidate resolver as setLanguage() so a missing
+    // exact tag falls back to the closest installed locale in the same
+    // language family. SharedPrefsService.instance may throw if not yet
+    // initialized (e.g. in tests) — swallow and fall back to 'en'.
+    final preferred = _safeReadAudioLanguagePreference();
+    final available =
         (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
-    if (languages.contains('en-US')) {
-      await _flutterTts.setLanguage('en-US');
-      _currentLanguage = 'en-US';
+    final resolved = resolveBestCandidate(preferred, available);
+    if (resolved != null) {
+      await _flutterTts.setLanguage(resolved);
+      _currentLanguage = resolved;
+      _resolvedCache[preferred] = resolved;
+    } else {
+      // Nothing installed for the requested family. Record what we
+      // tried so the first real setLanguage() can re-attempt with
+      // fresh device data; leave the engine on whatever its native
+      // default is.
+      _currentLanguage = preferred;
+    }
+  }
+
+  /// Read the persisted audio-language preference. Returns 'en' on any
+  /// failure (SharedPrefs not initialized, getter throws, etc.) so a
+  /// unit-test boot path doesn't NPE inside TtsService.init().
+  static String _safeReadAudioLanguagePreference() {
+    try {
+      return SharedPrefsService.instance.audioLanguage;
+    } catch (_) {
+      return 'en';
     }
   }
 
@@ -377,56 +465,36 @@ class TtsService {
   /// [SetLanguageOutcome.unsupportedCode] means the code isn't in our
   /// supported map at all; the engine is untouched.
   Future<SetLanguageOutcome> setLanguage(String languageCode) async {
-    const languageMap = {
-      'en': 'en-US',
-      'sw': 'sw-KE',
-      'fr': 'fr-FR',
-      'de': 'de-DE',
-      'ar': 'ar-SA',
-      'it': 'it-IT',
-      'es': 'es-ES',
-    };
-
-    final ttsLanguage = languageMap[languageCode];
-    if (ttsLanguage == null) {
+    if (!_voiceCandidates.containsKey(languageCode)) {
       return SetLanguageOutcome.unsupportedCode;
     }
 
     final availableLanguages =
         (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
-    if (!availableLanguages.contains(ttsLanguage)) {
-      // Voice not installed. Don't switch; the engine keeps its previous
-      // (or default) voice. Caller can read `currentLanguage` to find out
-      // what's actually playing.
+    final resolved = resolveBestCandidate(languageCode, availableLanguages);
+    if (resolved == null) {
+      // No installed voice in the requested language family. Don't
+      // switch; the engine keeps its previous (or default) voice.
+      // Caller can read `currentLanguage` to find out what's playing
+      // and surface a fallback SnackBar via LocalizationCubit.
       return SetLanguageOutcome.voiceUnavailable;
     }
 
-    await _flutterTts.setLanguage(ttsLanguage);
-    _currentLanguage = ttsLanguage;
+    await _flutterTts.setLanguage(resolved);
+    _currentLanguage = resolved;
+    _resolvedCache[languageCode] = resolved;
     return SetLanguageOutcome.ok;
   }
 
   Future<List<String>> getAvailableLanguages() async {
     final languages =
         (await _flutterTts.getLanguages as List?)?.cast<String>() ?? [];
-    final supported = <String>[];
+    final supported = resolveShortCodesForAvailable(languages);
 
-    final languageMap = {
-      'en-US': 'en',
-      'sw-KE': 'sw',
-      'fr-FR': 'fr',
-      'de-DE': 'de',
-      'ar-SA': 'ar',
-      'it-IT': 'it',
-      'es-ES': 'es',
-    };
-
-    for (final lang in languages) {
-      if (languageMap.containsKey(lang)) {
-        supported.add(languageMap[lang]!);
-      }
-    }
-
+    // Defensive fallback: if the device reports zero installed voices
+    // (rare, but happens on stripped-down emulators / sandbox builds),
+    // always show English + Swahili so the picker isn't empty for free
+    // users — those two are the only free-tier languages.
     return supported.isEmpty ? ['en', 'sw'] : supported;
   }
 
@@ -473,23 +541,29 @@ class TtsService {
   /// availability guard in [setLanguage]. Used internally by [speak] to
   /// restore the engine's voice handle after a stop/cancel cycle without
   /// an extra async availability query on every utterance.
+  ///
+  /// The resolved BCP-47 tag is cached in [_resolvedCache] after the
+  /// first [setLanguage] or [_setDefaultLanguage] call so subsequent
+  /// per-utterance re-applies don't have to re-query getLanguages().
+  /// If the cache is empty (first-ever speak before any setLanguage),
+  /// we walk the candidate list assuming the requested tag IS available
+  /// — that matches the previous behaviour and is fine for the common
+  /// case where the user is hearing the requested voice.
   Future<void> _forceApplyLanguage(String languageCode) async {
-    const languageMap = {
-      'en': 'en-US',
-      'sw': 'sw-KE',
-      'fr': 'fr-FR',
-      'de': 'de-DE',
-      'ar': 'ar-SA',
-      'it': 'it-IT',
-      'es': 'es-ES',
-    };
-    final ttsLang = languageMap[languageCode] ?? _currentLanguage;
+    final ttsLang = _resolvedCache[languageCode] ?? languageCode;
     await _flutterTts.setLanguage(ttsLang);
     _currentLanguage = ttsLang;
     // Re-apply speech rate because changing language/voice on native engines
     // (especially Android TextToSpeech) resets the rate back to default.
     await _flutterTts.setSpeechRate(_engineRateForMultiplier(_currentSpeedMultiplier));
   }
+
+  /// Cached mapping from short code → resolved BCP-47 tag the device
+  /// actually accepted. Populated by [setLanguage] and
+  /// [_setDefaultLanguage] so [_forceApplyLanguage] can re-apply the
+  /// same voice on every utterance without a fresh getLanguages() call.
+  /// Keyed by short code; the value is the BCP-47 tag we last picked.
+  final Map<String, String> _resolvedCache = {};
 
   /// Compute the chunk the engine will speak for [text] under the
   /// current premium/maxDuration settings. Extracted from [speak] so
@@ -964,9 +1038,20 @@ class TtsService {
   /// the visible position picks up where the engine stopped, not at
   /// zero. No-op when the offset is already at end-of-text.
   ///
+  /// [languageCode] is the short audio-language code the customer was
+  /// listening to at pause time. We pass it through to
+  /// [_forceApplyLanguage] instead of using the global [_currentLanguage]
+  /// so a customer who paused in French and switched audio language
+  /// in Settings mid-pause still hears French on resume (the global
+  /// state may have moved to the new language, but they want to
+  /// continue what they were listening to).
+  ///
   /// Caller is expected to follow up with `startReportingPosition`
   /// (or `playAudio` re-emitting state) so the bar advances.
-  Future<void> resumeFrom(PausedResumePoint point) async {
+  Future<void> resumeFrom(
+    PausedResumePoint point, {
+    required String languageCode,
+  }) async {
     if (point.charOffset >= point.text.length) return;
     final suffix = point.text.substring(point.charOffset);
     if (Platform.isAndroid) {
@@ -978,7 +1063,7 @@ class TtsService {
     // calls _flutterTts.stop() on Android, which can silently release
     // the engine's voice handle. Without this, the resumed suffix plays
     // in silence — the same root cause as the stop→play voice loss.
-    await _forceApplyLanguage(_currentLanguage);
+    await _forceApplyLanguage(languageCode);
     // Bug 7 fix: stamp the start time so the completion handler can
     // compute the real duration and fire _onCompletion. Without this,
     // _speakStartMs is null after a pause→resume cycle (because

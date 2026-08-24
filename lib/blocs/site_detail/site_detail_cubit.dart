@@ -557,8 +557,11 @@ class SiteDetailCubit extends Cubit<SiteDetailState> {
 
     _startPositionTicker();
 
-    // 3. Re-speak suffix via TTS engine
-    await _ttsService.resumeFrom(point);
+    // 3. Re-speak suffix via TTS engine. Pass the audio language the
+    // customer was listening to at pause time so a mid-pause audio-
+    // language change in Settings doesn't snap them to a different
+    // voice on resume.
+    await _ttsService.resumeFrom(point, languageCode: langCode);
     if (isClosed || opId != _audioOpSeq) return;
   }
 

@@ -91,7 +91,9 @@ class _StoneTownAppState extends State<StoneTownApp> {
         BlocProvider<SiteListCubit>(create: (_) => SiteListCubit()),
         BlocProvider<NavigationCubit>(create: (_) => NavigationCubit()),
         BlocProvider<UserLocationCubit>(create: (_) => UserLocationCubit()),
-        BlocProvider<LanguageCubit>(create: (_) => LanguageCubit()),
+        BlocProvider<LanguageCubit>(
+          create: (_) => LanguageCubit(ttsService: ttsService),
+        ),
         // Registered before SiteDetailCubit: BlocProvider is lazy: false by
         // default, so each create closure runs during MultiBlocProvider's
         // first mount. SiteDetailCubit's create below reads
@@ -99,8 +101,9 @@ class _StoneTownAppState extends State<StoneTownApp> {
         // *above* it (and therefore registered earlier in the list).
         BlocProvider<LocalizationCubit>(
           create:
-              (_) =>
-                  LocalizationCubit(ttsService: ttsService)..loadTranslations(),
+              (_) => LocalizationCubit(
+                engineErrors: ttsService,
+              )..loadTranslations(),
         ),
         BlocProvider<SiteDetailCubit>(
           create:

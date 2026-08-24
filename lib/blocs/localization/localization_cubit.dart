@@ -6,18 +6,23 @@ import '../../data/services/shared_prefs_service.dart';
 import '../../data/services/tts_service.dart';
 
 class LocalizationCubit extends Cubit<LocalizationState> {
-  LocalizationCubit({required TtsService ttsService})
-    : _ttsService = ttsService,
+  /// [engineErrors] is the [TtsService] used solely as an error sink —
+  /// we forward native-engine failures (network down, missing voice,
+  /// plugin exception) into the same SnackBar channel as
+  /// voice-fallback and preview-ended. We deliberately do NOT call
+  /// [TtsService.setLanguage] from this cubit: the UI language and the
+  /// audio language are independent (the customer picks them
+  /// separately). Driving the TTS voice from UI-language changes
+  /// silently undoes the customer's audio-language pick.
+  LocalizationCubit({required TtsService engineErrors})
+    : _engineErrors = engineErrors,
       super(const LocalizationState()) {
-    // Forward native TTS engine errors into the same SnackBar channel as
-    // voice-fallback and preview-ended. Without this, a "no network" or
-    // missing-voice failure shows as a silent dead bar.
-    _ttsService.setOnError((message) {
+    _engineErrors.setOnError((message) {
       reportTtsEngineError(message);
     });
   }
 
-  final TtsService _ttsService;
+  final TtsService _engineErrors;
 
   /// Monotonic request counter for language loads. Bumped before every
   /// `_loadJsonFile` and `setLanguage` await. After the await resolves we
@@ -63,26 +68,11 @@ class LocalizationCubit extends Cubit<LocalizationState> {
     try {
       final translations = await _loadJsonFile(languageCode);
       if (token != _loadSeq) return; // raced with a newer request
-      // Sync the TTS voice to the persisted UI language on startup so a
-      // user who set Swahili last session hears Swahili when they hit play,
-      // not whatever voice the engine booted with. We only surface a
-      // fallback signal when the requested voice is unavailable AND the
-      // engine's active voice is genuinely different from what the user
-      // asked for — otherwise the SnackBar would say e.g. "English voice
-      // not installed — playing in English", which is useless.
-      final outcome = await _ttsService.setLanguage(languageCode);
-      if (token != _loadSeq) return; // raced with a newer request
-      final activeCode = _ttsService.currentLanguage.split('-').first;
-      final isGenuineFallback =
-          outcome == SetLanguageOutcome.voiceUnavailable &&
-          activeCode != languageCode;
       emit(
         state.copyWith(
           status: LocalizationStatus.loaded,
           currentLanguage: languageCode,
           translations: translations,
-          ttsFallback: isGenuineFallback ? activeCode : null,
-          ttsFallbackRequested: isGenuineFallback ? languageCode : null,
         ),
       );
     } catch (e) {
@@ -102,21 +92,10 @@ class LocalizationCubit extends Cubit<LocalizationState> {
     try {
       final translations = await _loadJsonFile(resolved);
       if (token != _loadSeq) return;
-      // Mirror the UI language onto the TTS engine. Only emit a fallback
-      // signal when the engine ended up speaking something different from
-      // what the user asked for; otherwise the SnackBar is misleading.
-      final outcome = await _ttsService.setLanguage(resolved);
-      if (token != _loadSeq) return;
-      final activeCode = _ttsService.currentLanguage.split('-').first;
-      final isGenuineFallback =
-          outcome == SetLanguageOutcome.voiceUnavailable &&
-          activeCode != resolved;
       emit(
         state.copyWith(
           currentLanguage: resolved,
           translations: translations,
-          ttsFallback: isGenuineFallback ? activeCode : null,
-          ttsFallbackRequested: isGenuineFallback ? resolved : null,
         ),
       );
     } catch (e) {
@@ -124,17 +103,10 @@ class LocalizationCubit extends Cubit<LocalizationState> {
       // Fallback to English
       final translations = await _loadJsonFile('en');
       if (token != _loadSeq) return;
-      final outcome = await _ttsService.setLanguage('en');
-      if (token != _loadSeq) return;
-      final activeCode = _ttsService.currentLanguage.split('-').first;
-      final isGenuineFallback =
-          outcome == SetLanguageOutcome.voiceUnavailable && activeCode != 'en';
       emit(
         state.copyWith(
           currentLanguage: 'en',
           translations: translations,
-          ttsFallback: isGenuineFallback ? activeCode : null,
-          ttsFallbackRequested: isGenuineFallback ? 'en' : null,
         ),
       );
     }
