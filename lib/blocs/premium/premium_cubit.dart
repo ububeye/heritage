@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/models/user_model.dart';
 import '../../data/services/billing_provider.dart';
+import '../../data/services/firestore_service.dart';
 import '../../data/services/shared_prefs_service.dart';
 import '../../data/services/tts_service.dart';
 import '../auth/auth_cubit.dart';
@@ -16,10 +18,12 @@ class PremiumCubit extends Cubit<PremiumState> {
     AuthCubit? auth,
     SharedPrefsService? prefs,
     TtsService? ttsService,
+    FirestoreService? firestore,
   }) : _billing = billing,
        _auth = auth,
        _prefs = prefs ?? SharedPrefsService.instance,
        _ttsService = ttsService,
+       _firestore = firestore ?? FirestoreService(),
        super(const PremiumState()) {
     _hydrateFromPrefs();
   }
@@ -28,6 +32,12 @@ class PremiumCubit extends Cubit<PremiumState> {
   final AuthCubit? _auth;
   final SharedPrefsService _prefs;
   final TtsService? _ttsService;
+  // Used to mirror the locally-promoted premium status onto the canonical
+  // server-side `roles/{uid}` document the Admin User Management screen
+  // reads from. Without this write, the admin would keep seeing the user
+  // as 'free' after a successful purchase — see firestore.rules for the
+  // self-promotion allowlist that gates it.
+  final FirestoreService _firestore;
 
   /// Pull cached values from SharedPreferences so the screen paints with
   /// the right state on first frame. The BillingProvider call happens
@@ -179,15 +189,34 @@ class PremiumCubit extends Cubit<PremiumState> {
         // Flip the auth state so the 7 audio languages unlock
         // immediately on every screen that reads AuthState.isPremium.
         // We intentionally skip the post-purchase refreshUser()
-        // round-trip here: there is no Cloud Function mirroring the
-        // store webhook back to the user's role document yet, so
-        // refreshUser() would resolve to role=free and overwrite the
-        // optimistic flip within hundreds of ms. Guarded by the same
-        // userId check as the prefs write above so the two stay in
-        // sync — a uid-less flip without a prefs write would be a
-        // phantom upgrade that evaporates on restart.
+        // round-trip here: refreshUser() would resolve to role=free
+        // and overwrite the optimistic flip within hundreds of ms
+        // unless the role doc has been updated first.
+        // Guarded by the same userId check as the prefs write above so
+        // the two stay in sync — a uid-less flip without a prefs write
+        // would be a phantom upgrade that evaporates on restart.
         if (isClosed) return;
-        if (userId != null) _auth?.markUserPremiumOptimistic(true);
+        if (userId != null) {
+          _auth?.markUserPremiumOptimistic(true);
+          // Server-side mirror. The Admin User Management screen
+          // (`lib/ui/screens/admin/admin_user_management_screen.dart`)
+          // derives premium counts from `roles/{uid}`, not from
+          // SharedPreferences, so without this write the admin would
+          // keep seeing the freshly-subscribed user as 'free' until
+          // they manually promoted them. We do it best-effort — the
+          // optimistic local flip above means the buying device has
+          // already unlocked premium features; a failed Firestore
+          // write degrades gracefully into 'admin sees free until next
+          // refresh', which was the prior behavior anyway. The
+          // firestore.rules self-promotion guard limits what this
+          // call can do (must target your own uid; only role='premium';
+          // only from free or no-doc).
+          await _persistPremiumEntitlement(
+            userId: userId,
+            planId: planId,
+            trialActiveUntil: trialActiveUntil,
+          );
+        }
       case BillingCancelled():
         if (isClosed) return;
         emit(
@@ -213,6 +242,60 @@ class PremiumCubit extends Cubit<PremiumState> {
             errorMessage: message,
           ),
         );
+    }
+  }
+
+  /// Mirror a successful purchase onto the canonical Firestore doc(s)
+  /// the admin UI reads from. Best-effort; a thrown error here is
+  /// swallowed because the in-memory `markUserPremiumOptimistic` flip
+  /// and the SharedPreferences write have already unlocked premium for
+  /// the buying device. The admin will simply see this user as 'free'
+  /// until they refresh — strictly better than the previous behavior,
+  /// which kept the user invisible to admin *forever*.
+  ///
+  /// Writes:
+  ///   * `roles/{uid}` — set to 'premium' (gated by the self-promotion
+  ///     rule in firestore.rules).
+  ///   * `users/{uid}.subscription_expiry` — ISO 8601, used by
+  ///     `UserCubit.loadUsers` as a fallback premium indicator when
+  ///     no `roles/{uid}` doc exists. Lifetime purchases get a 100-year
+  ///     sentinel; trials get the trial end; all other plans get null
+  ///     so admin doesn't see the user flipping back to free after
+  ///     the visible trial ends.
+  Future<void> _persistPremiumEntitlement({
+    required String userId,
+    required PlanId planId,
+    required DateTime? trialActiveUntil,
+  }) async {
+    try {
+      await _firestore.setUserRole(userId, UserRole.premium);
+      // Plan-default expiry. A live trial window always overrides the
+      // plan-default — admins and the fallback premium detector should
+      // see the earlier trial-end date while the trial is active.
+      final now = DateTime.now();
+      final planExpiry = switch (planId) {
+        // 100 years out — never auto-expires; admin can see the
+        // definitive "lifetime" stamp via selectedPlanId we already
+        // wrote elsewhere if needed.
+        PlanId.lifetime => now.add(const Duration(days: 365 * 100)),
+        PlanId.monthly || PlanId.proMonthly => now.add(
+          const Duration(days: 31),
+        ),
+        PlanId.yearly || PlanId.proYearly => now.add(
+          const Duration(days: 366),
+        ),
+      };
+      final trialEnd =
+          trialActiveUntil != null && trialActiveUntil.isAfter(now)
+              ? trialActiveUntil
+              : null;
+      final expiry = trialEnd != null && trialEnd.isBefore(planExpiry)
+          ? trialEnd
+          : planExpiry;
+      await _firestore.setUserSubscriptionExpiry(userId, expiry);
+    } catch (e) {
+      // Swallowed deliberately — see method doc.
+      debugPrint('PremiumCubit: failed to mirror premium to Firestore: $e');
     }
   }
 

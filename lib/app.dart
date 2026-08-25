@@ -125,6 +125,7 @@ class _StoneTownAppState extends State<StoneTownApp> {
                 billing: billing,
                 auth: ctx.read<AuthCubit>(),
                 ttsService: ttsService,
+                firestore: FirestoreService(),
               )..initialize(),
         ),
         BlocProvider<ExploreCubit>(create: (_) => ExploreCubit()),

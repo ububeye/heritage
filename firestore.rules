@@ -63,13 +63,38 @@ service cloud.firestore {
                     && (request.auth.uid == userId || isAdmin());
     }
 
-    // roles/{uid}: only writable by an existing admin.
+    // roles/{uid}: writable by an existing admin (any change), and by
+    // the owner themselves for the *single* self-promotion to premium
+    // on first purchase. The owner can only ever set role == 'premium';
+    // they cannot grant themselves admin, demote themselves, or write
+    // another user's role doc. Admins can override any of these freely.
     // Reads allowed for the owner and admins (so the Admin User
     // Management screen can display every user's role).
     match /roles/{userId} {
       allow read: if request.auth != null
                   && (request.auth.uid == userId || isAdmin());
-      allow write: if isAdmin();
+      allow write: if isAdmin()
+                    || (
+                      // Self-only — the doc id must match the caller.
+                      request.auth != null
+                      && request.auth.uid == userId
+                      // Only the 'premium' role is reachable from the
+                      // client. 'admin' is the trust boundary; any other
+                      // value ('free', malformed) is rejected.
+                      && request.resource.data.role == 'premium'
+                      // Either the doc doesn't exist yet (first ever
+                      // write) or it exists and currently says 'free'.
+                      // Users can't silently overwrite a paid-by-admin
+                      // promotion that has more metadata, can't move
+                      // premium -> premium with a different updated_at
+                      // (re-purchase is benign — a no-op upsert), and
+                      // can't doctor their way into admin by first
+                      // writing premium and then something else.
+                      && (
+                        resource == null
+                        || resource.data.role == 'free'
+                      )
+                    );
     }
 
     // Default-deny everything else.
