@@ -454,8 +454,24 @@ class _GradientHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hero height scales gently with the viewport. The decorative
+    // circles + content scale proportionally so the composition stays
+    // balanced from 320dp phones up to 4K. The previous fixed 200dp
+    // height cropped the bottom of the icon when the hero was
+    // squished in landscape, and consumed too much vertical real
+    // estate on small phones in portrait.
+    final mediaWidth = MediaQuery.sizeOf(context).width;
+    final heroHeight = mediaWidth < 360
+        ? 170.0
+        : mediaWidth < 480
+            ? 190.0
+            : 220.0;
+    // Scale every fixed-size piece inside the hero by the same ratio
+    // so the layout breathes consistently across sizes.
+    final scale = heroHeight / 200.0;
+
     return Container(
-      height: 200,
+      height: heroHeight,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -471,19 +487,19 @@ class _GradientHero extends StatelessWidget {
         children: [
           // Decorative circles
           Positioned(
-            top: -30,
-            right: -30,
-            child: _DecoCircle(size: 140, opacity: 0.12),
+            top: -30 * scale,
+            right: -30 * scale,
+            child: _DecoCircle(size: 140 * scale, opacity: 0.12),
           ),
           Positioned(
-            bottom: -20,
-            left: -10,
-            child: _DecoCircle(size: 100, opacity: 0.10),
+            bottom: -20 * scale,
+            left: -10 * scale,
+            child: _DecoCircle(size: 100 * scale, opacity: 0.10),
           ),
           Positioned(
-            top: 30,
-            left: 60,
-            child: _DecoCircle(size: 60, opacity: 0.08),
+            top: 30 * scale,
+            left: 60 * scale,
+            child: _DecoCircle(size: 60 * scale, opacity: 0.08),
           ),
           // Content
           Center(
@@ -491,8 +507,8 @@ class _GradientHero extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 80,
-                  height: 80,
+                  width: 80 * scale,
+                  height: 80 * scale,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     shape: BoxShape.circle,
@@ -501,18 +517,18 @@ class _GradientHero extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.workspace_premium,
-                    size: 44,
+                    size: 44 * scale,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 14),
-                const Text(
+                SizedBox(height: 14 * scale),
+                Text(
                   '✦ STONE TOWN PREMIUM ✦',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 13,
+                    fontSize: 13 * scale,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 2,
                   ),
@@ -574,27 +590,34 @@ class _ThreePlanRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Top row: Explorer (month+year) — 2 compact cards side-by-side
-        Row(
-          children: [
-            Expanded(
-              child: _PlanCard(
+        // Top row: Explorer (month+year) — 2 compact cards side-by-side.
+        // LayoutBuilder so the cards wrap to a Column on phones narrower
+        // than ~360dp instead of squeezing both cards into overflow.
+        // (Pre-fix: 50/50 Expanded pair caused the price + period to clip
+        // on iPhone SE / small Androids; the same render-overflow stripe
+        // that broke the Pro card's chips also broke these.) The 480dp
+        // breakpoint intentionally mirrors `AppBreakpoints.mobile` for
+        // consistency with the rest of the app's responsive layout.
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stackNarrow = constraints.maxWidth < 360;
+            final cards = [
+              _PlanCard(
                 tier: 'EXPLORER',
                 title: 'Monthly',
-                priceLabel: '\$${AppConstants.explorerMonthlyPrice.toStringAsFixed(2)}',
+                priceLabel:
+                    '\$${AppConstants.explorerMonthlyPrice.toStringAsFixed(2)}',
                 period: '/month',
                 selected: selected == PlanId.monthly,
                 onTap: _tap(context, PlanId.monthly),
                 color: const Color(0xFF6366F1),
                 features: const ['7 languages', 'GPS nav', 'No ads'],
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _PlanCard(
+              _PlanCard(
                 tier: 'EXPLORER',
                 title: 'Yearly',
-                priceLabel: '\$${AppConstants.explorerYearlyPrice.toStringAsFixed(2)}',
+                priceLabel:
+                    '\$${AppConstants.explorerYearlyPrice.toStringAsFixed(2)}',
                 period: '/year',
                 badge: 'Save 17%',
                 selected: selected == PlanId.yearly,
@@ -602,8 +625,24 @@ class _ThreePlanRow extends StatelessWidget {
                 color: const Color(0xFF6366F1),
                 features: const ['7 languages', 'GPS nav', 'No ads'],
               ),
-            ),
-          ],
+            ];
+            if (stackNarrow) {
+              return Column(
+                children: [
+                  cards[0],
+                  const SizedBox(height: 10),
+                  cards[1],
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: cards[0]),
+                const SizedBox(width: 10),
+                Expanded(child: cards[1]),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 12),
 
@@ -683,27 +722,32 @@ class _PlanCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    borderRadius: AppRadius.xsBorder,
-                  ),
-                  child: Text(
-                    tier,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: AppRadius.xsBorder,
+                    ),
+                    child: Text(
+                      tier,
+                      maxLines: 1,
+                      overflow: TextOverflow.fade,
+                      softWrap: false,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ),
                 if (badge != null) ...[
-                  const Spacer(),
+                  const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 5,
@@ -715,6 +759,8 @@ class _PlanCard extends StatelessWidget {
                     ),
                     child: Text(
                       badge!,
+                      maxLines: 1,
+                      softWrap: false,
                       style: TextStyle(
                         color: scheme.onSecondary,
                         fontSize: 9,
@@ -728,6 +774,9 @@ class _PlanCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.fade,
+              softWrap: false,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -735,25 +784,40 @@ class _PlanCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: priceLabel,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: selected ? color : scheme.onSurface,
+            // FittedBox keeps the price+period line readable when the
+            // side-by-side Explorer cards squeeze down to ~150dp wide
+            // on the smallest phones. Pre-fix: 22sp price with a 12sp
+            // "/month" TextSpan glued directly after it (no separator
+            // space) overflowed the right edge on iPhone-SE-width
+            // screens and rendered as a clipped "$4.99/month" that
+            // looked like a styling bug.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: priceLabel,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: selected ? color : scheme.onSurface,
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: period,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: scheme.onSurfaceVariant,
+                    TextSpan(
+                      // One leading space separates the price from the
+                      // period TextSpan. Doesn't show in the rendered
+                      // output beyond the natural word gap, so this is
+                      // the smallest possible visual fix.
+                      text: ' $period',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -1209,10 +1273,17 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // 0.85 alpha on onSurface keeps the section labels as visually
+    // secondary copy without dropping below WCAG AA contrast on the
+    // cream/beige light-mode background (~#FFFBF5) where the previous
+    // 0.65 alpha made "Choose your plan" / "What you'll get" look
+    // ghosted and faded into the page. We keep the labelLarge base
+    // font weight and the w700 bold so the hierarchy still reads.
     return Text(
       text,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+      style: theme.textTheme.labelLarge?.copyWith(
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
         fontWeight: FontWeight.w700,
       ),
     );
