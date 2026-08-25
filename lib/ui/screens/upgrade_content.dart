@@ -857,10 +857,15 @@ class _PlanCardFeatured extends StatelessWidget {
           ),
 
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
             child: Column(
               children: [
-                // Price toggle
+                // Price toggle. Each chip lives inside an Expanded so
+                // both share the row evenly regardless of price-text
+                // length; the chips themselves use FittedBox so they
+                // shrink gracefully on phones <360dp wide instead of
+                // throwing a render-overflow stripe (was the source of
+                // the "Sees plans page looks broken" report).
                 Row(
                   children: [
                     Expanded(
@@ -875,7 +880,7 @@ class _PlanCardFeatured extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: GestureDetector(
                         onTap: onSelectYearly,
@@ -933,7 +938,7 @@ class _PriceToggleChip extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       decoration: BoxDecoration(
         color: selected ? color : scheme.surface,
         borderRadius: AppRadius.mdBorder,
@@ -942,47 +947,81 @@ class _PriceToggleChip extends StatelessWidget {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : scheme.onSurface,
-                ),
-              ),
-              if (badge != null) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: AppRadius.xsBorder,
+          // FittedBox lets the chip shrink horizontally instead of
+          // overflowing when the parent's Expanded squeezes us below
+          // the intrinsic content width on narrow phones (~360dp and
+          // under). Previously this Row hard-rendered an "Yearly" +
+          // "Save 50%" + price stack with no fallback, which clipped
+          // the trailing badge and threw a render-overflow stripe on
+          // the Yearly chip. See PageRenderOverflow at PR review.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : scheme.onSurface,
                   ),
-                  child: Text(
-                    badge!,
-                    style: const TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                ),
+                if (badge != null) ...[
+                  const SizedBox(width: 4),
+                  // Contrast-aware badge fill. Previously the badge
+                  // background was `Colors.white.withValues(alpha:0.25)`
+                  // which is essentially invisible in BOTH states
+                  // (translucent white on a near-white surface when
+                  // unselected, and translucent white on the amber
+                  // chip when selected). The white text disappeared
+                  // into the white-tint background. Match the badge
+                  // container to the chip's own background and let
+                  // the badge sit as a pill alongside the label.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? Colors.white.withValues(alpha: 0.22)
+                          : color.withValues(alpha: 0.12),
+                      borderRadius: AppRadius.xsBorder,
+                    ),
+                    child: Text(
+                      badge!,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                        color: selected ? Colors.white : color,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            price,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: selected
-                  ? Colors.white.withValues(alpha: 0.9)
-                  : scheme.onSurfaceVariant,
+          const SizedBox(height: 4),
+          // Price line gets its own FittedBox so longer price strings
+          // (Pro \$59.99/yr) never overflow even if the chip itself
+          // ends up narrower than 100dp on tiny screens.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              price,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: selected
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
