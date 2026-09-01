@@ -29,7 +29,11 @@
       "Bash(dart format *)",
       "WebFetch(domain:github.com)",
       "Bash(gh api *)",
-      "Bash(python -c \"import json,sys,base64; c=json.load\\(sys.stdin\\); print\\(base64.b64decode\\(c['content']\\).decode\\('utf-8'\\)\\)\")"
+      "Bash(python -c \"import json,sys,base64; c=json.load\\(sys.stdin\\); print\\(base64.b64decode\\(c['content']\\).decode\\('utf-8'\\)\\)\")",
+      "Bash(ls C:/Users/noble/StudioProjects/sema_na_cgcla/ 2>&1 | head -30)",
+      "Read(//c/Users/noble/StudioProjects/sema_na_cgcla/**)",
+      "Bash(ls C:/Users/noble/StudioProjects/ 2>&1)",
+      "Read(//c/Users/noble/StudioProjects/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\noble\\.android"
